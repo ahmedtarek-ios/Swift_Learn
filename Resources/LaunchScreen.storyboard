@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="26600" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="launch-controller">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="26600"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Code Ascension Launch Screen-->
+        <scene sceneID="launch-scene">
+            <objects>
+                <viewController id="launch-controller" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="launch-root">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" image="LaunchBackground" translatesAutoresizingMaskIntoConstraints="NO" id="launch-background">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                            </imageView>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="CodeAscensionTransparent" translatesAutoresizingMaskIntoConstraints="NO" id="launch-logo">
+                                <rect key="frame" x="59" y="186" width="275" height="275"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" secondItem="launch-logo" secondAttribute="width" id="logo-square"/>
+                                    <constraint firstAttribute="width" relation="lessThanOrEqual" constant="360" id="logo-max-width"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="SWIFT LEARN" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="launch-title">
+                                <rect key="frame" x="87" y="489" width="219" height="45"/>
+                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="37"/>
+                                <color key="textColor" name="LaunchTitleColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="LEARN BY CODING" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="launch-subtitle">
+                                <rect key="frame" x="130" y="544" width="133" height="17"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="14"/>
+                                <color key="textColor" name="LaunchAccentColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="launch-accent-line">
+                                <rect key="frame" x="172.5" y="579" width="48" height="3"/>
+                                <color key="backgroundColor" name="LaunchAccentColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="3" id="line-height"/>
+                                    <constraint firstAttribute="width" constant="48" id="line-width"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="launch-safe-area"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="launch-background" firstAttribute="leading" secondItem="launch-root" secondAttribute="leading" id="background-leading"/>
+                            <constraint firstAttribute="trailing" secondItem="launch-background" secondAttribute="trailing" id="background-trailing"/>
+                            <constraint firstItem="launch-background" firstAttribute="top" secondItem="launch-root" secondAttribute="top" id="background-top"/>
+                            <constraint firstAttribute="bottom" secondItem="launch-background" secondAttribute="bottom" id="background-bottom"/>
+                            <constraint firstItem="launch-logo" firstAttribute="centerX" secondItem="launch-root" secondAttribute="centerX" id="logo-center-x"/>
+                            <constraint firstItem="launch-logo" firstAttribute="centerY" secondItem="launch-root" secondAttribute="centerY" constant="-65" id="logo-center-y"/>
+                            <constraint firstItem="launch-logo" firstAttribute="width" secondItem="launch-root" secondAttribute="width" multiplier="0.7" priority="750" id="logo-responsive-width"/>
+                            <constraint firstItem="launch-logo" firstAttribute="height" relation="lessThanOrEqual" secondItem="launch-root" secondAttribute="height" multiplier="0.48" id="logo-responsive-height"/>
+                            <constraint firstItem="launch-title" firstAttribute="top" secondItem="launch-logo" secondAttribute="bottom" constant="28" id="title-top"/>
+                            <constraint firstItem="launch-title" firstAttribute="centerX" secondItem="launch-root" secondAttribute="centerX" id="title-center-x"/>
+                            <constraint firstItem="launch-subtitle" firstAttribute="top" secondItem="launch-title" secondAttribute="bottom" constant="10" id="subtitle-top"/>
+                            <constraint firstItem="launch-subtitle" firstAttribute="centerX" secondItem="launch-root" secondAttribute="centerX" id="subtitle-center-x"/>
+                            <constraint firstItem="launch-accent-line" firstAttribute="top" secondItem="launch-subtitle" secondAttribute="bottom" constant="18" id="line-top"/>
+                            <constraint firstItem="launch-accent-line" firstAttribute="centerX" secondItem="launch-root" secondAttribute="centerX" id="line-center-x"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="launch-first-responder" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="53" y="375"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="CodeAscensionTransparent" width="1024" height="1024"/>
+        <image name="LaunchBackground" width="1024" height="1536"/>
+        <namedColor name="LaunchAccentColor">
+            <color red="0.85882352941176465" green="0.27450980392156865" blue="0.13725490196078433" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="LaunchTitleColor">
+            <color red="0.058823529411764705" green="0.078431372549019607" blue="0.12549019607843137" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "sourceID": "swift-6.4-beta-2026-07-31",
+  "status": "approved-canonical-source",
+  "approvedDate": "2026-08-16",
+  "title": "The Swift Programming Language (Swift 6.4 beta)",
+  "fileName": "swift_book.epub",
+  "sha256": "47f37e2a69e1b3554a347435cad838aa7c2bd8c679551f27ecac4c1cb5fd5679",
+  "contentLanguage": "en",
+  "decision": "Use the supplied Swift 6.4 beta EPUB as the canonical book source for curriculum extraction.",
+  "supersedesRequestedSource": "Swift 6.3",
+  "technicalValidationToolchainStatus": "unresolved-for-swift-6.4-beta"
+}

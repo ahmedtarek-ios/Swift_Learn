@@ -6,27 +6,29 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct Swift_LearnApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    private let container: AppContainer
+
+    init() {
+        let processInfo = ProcessInfo.processInfo
+        let isTesting = processInfo.arguments.contains("--ui-testing")
+            || processInfo.environment["XCTestConfigurationFilePath"] != nil
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            container = try AppContainer(isStoredInMemoryOnly: isTesting)
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            LearningRootView(
+                learningJourneyViewModel: container.learningJourneyViewModel,
+                learnerProfileViewModel: container.learnerProfileViewModel
+            )
         }
-        .modelContainer(sharedModelContainer)
     }
 }
