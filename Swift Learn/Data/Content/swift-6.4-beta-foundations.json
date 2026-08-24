@@ -1979,6 +1979,31 @@
       "summary": "Build Unicode-correct text and navigate it with String.Index.",
       "lessons": [
         {
+          "id": "swift.strings.foundation-bridging",
+          "title": "String and NSString Bridging",
+          "objective": "Recognize the Foundation class bridged with Swift String.",
+          "instruction": "Choose the Foundation class that bridges with Swift String.",
+          "codePrefix": "import Foundation\nlet bridgedStringType = ",
+          "codeSuffix": ".self",
+          "choices": [
+            {
+              "id": "nsstring-type",
+              "code": "NSString"
+            },
+            {
+              "id": "nsmutable-string-type",
+              "code": "NSMutableString"
+            }
+          ],
+          "correctChoiceID": "nsstring-type",
+          "correctFeedback": "Correct. Swift String bridges with Foundation's NSString class.",
+          "incorrectFeedback": "NSMutableString is the mutable Foundation string class. Swift String bridges with NSString.",
+          "sourceTitle": "Strings and Characters · String and NSString Bridging",
+          "sourceReferences": [
+            "LanguageGuide/StringsAndCharacters.xhtml#strings-and-characters"
+          ]
+        },
+        {
           "id": "swift.strings.literal",
           "title": "String Literals",
           "objective": "Create a String value from a double-quoted literal.",
@@ -3011,6 +3036,31 @@
           ]
         },
         {
+          "id": "swift.arrays.foundation-bridging",
+          "title": "Array and NSArray Bridging",
+          "objective": "Recognize the Foundation class bridged with Swift Array.",
+          "instruction": "Choose the Foundation class that bridges with Swift Array.",
+          "codePrefix": "import Foundation\nlet bridgedArrayType = ",
+          "codeSuffix": ".self",
+          "choices": [
+            {
+              "id": "nsarray-type",
+              "code": "NSArray"
+            },
+            {
+              "id": "nsset-type",
+              "code": "NSSet"
+            }
+          ],
+          "correctChoiceID": "nsarray-type",
+          "correctFeedback": "Correct. Swift Array bridges with Foundation's NSArray class.",
+          "incorrectFeedback": "NSSet represents a set. Swift Array bridges with NSArray.",
+          "sourceTitle": "Collection Types · Array and NSArray Bridging",
+          "sourceReferences": [
+            "LanguageGuide/CollectionTypes.xhtml#Arrays"
+          ]
+        },
+        {
           "id": "swift.arrays.type-syntax",
           "title": "Array Type Shorthand",
           "objective": "Declare an Array with [Element] shorthand syntax.",
@@ -3283,6 +3333,31 @@
           "sourceTitle": "Collection Types · Iterating Over an Array",
           "sourceReferences": [
             "LanguageGuide/CollectionTypes.xhtml#Iterating-Over-an-Array"
+          ]
+        },
+        {
+          "id": "swift.sets.foundation-bridging",
+          "title": "Set and NSSet Bridging",
+          "objective": "Recognize the Foundation class bridged with Swift Set.",
+          "instruction": "Choose the Foundation class that bridges with Swift Set.",
+          "codePrefix": "import Foundation\nlet bridgedSetType = ",
+          "codeSuffix": ".self",
+          "choices": [
+            {
+              "id": "nsset-type",
+              "code": "NSSet"
+            },
+            {
+              "id": "nsarray-type",
+              "code": "NSArray"
+            }
+          ],
+          "correctChoiceID": "nsset-type",
+          "correctFeedback": "Correct. Swift Set bridges with Foundation's NSSet class.",
+          "incorrectFeedback": "NSArray represents an ordered collection. Swift Set bridges with NSSet.",
+          "sourceTitle": "Collection Types · Set and NSSet Bridging",
+          "sourceReferences": [
+            "LanguageGuide/CollectionTypes.xhtml#Sets"
           ]
         },
         {
@@ -3583,6 +3658,31 @@
           "sourceTitle": "Collection Types · Set Membership and Equality",
           "sourceReferences": [
             "LanguageGuide/CollectionTypes.xhtml#Set-Membership-and-Equality"
+          ]
+        },
+        {
+          "id": "swift.dictionaries.foundation-bridging",
+          "title": "Dictionary and NSDictionary Bridging",
+          "objective": "Recognize the Foundation class bridged with Swift Dictionary.",
+          "instruction": "Choose the Foundation class that bridges with Swift Dictionary.",
+          "codePrefix": "import Foundation\nlet bridgedDictionaryType = ",
+          "codeSuffix": ".self",
+          "choices": [
+            {
+              "id": "nsdictionary-type",
+              "code": "NSDictionary"
+            },
+            {
+              "id": "nsarray-type",
+              "code": "NSArray"
+            }
+          ],
+          "correctChoiceID": "nsdictionary-type",
+          "correctFeedback": "Correct. Swift Dictionary bridges with Foundation's NSDictionary class.",
+          "incorrectFeedback": "NSArray represents an ordered collection. Swift Dictionary bridges with NSDictionary.",
+          "sourceTitle": "Collection Types · Dictionary and NSDictionary Bridging",
+          "sourceReferences": [
+            "LanguageGuide/CollectionTypes.xhtml#Dictionaries"
           ]
         },
         {
@@ -5766,6 +5866,7 @@
     {
       "id":"swift.initialization","title":"Level 14 · Initialization","summary":"Establish valid initial state across value and class hierarchies.","lessons":[
         {"id":"swift.initialization.basic","title":"Initializers","objective":"Initialize every stored property before an instance is used.","instruction":"Declare Fahrenheit's initializer.","codePrefix":"struct Fahrenheit {\n    var temperature: Double\n    ","codeSuffix":"() { temperature = 32.0 }\n}","choices":[{"id":"init-keyword","code":"init"},{"id":"new-keyword","code":"new"}],"correctChoiceID":"init-keyword","correctFeedback":"Correct. init establishes the instance's initial state.","incorrectFeedback":"Swift initializers use init, not new.","sourceTitle":"Initialization · Initializers","sourceReferences":["LanguageGuide/Initialization.xhtml#Initializers"]},
+        {"id":"swift.initialization.observer-bypass","title":"Initialization Bypasses Property Observers","objective":"Predict whether initialization assignments call property observers.","instruction":"Choose whether a default value or initializer assignment calls didSet.","codePrefix":"let observersRunDuringInitialization = ","codeSuffix":"","choices":[{"id":"observers-bypassed","code":"false"},{"id":"observers-called","code":"true"}],"correctChoiceID":"observers-bypassed","correctFeedback":"Correct. Default-value and initializer assignments set storage directly without calling property observers.","incorrectFeedback":"Property observers aren't called while default values or initializer assignments establish initial storage.","sourceTitle":"Initialization · Initial Values and Property Observers","sourceReferences":["LanguageGuide/Initialization.xhtml#Setting-Initial-Values-for-Stored-Properties"]},
         {"id":"swift.initialization.default-value","title":"Default Property Values","objective":"Provide initial storage at the declaration site.","instruction":"Give temperature a default value.","codePrefix":"var temperature: Double ","codeSuffix":"","choices":[{"id":"default-assignment","code":"= 32.0"},{"id":"default-comparison","code":"== 32.0"}],"correctChoiceID":"default-assignment","correctFeedback":"Correct. Assignment syntax supplies a default property value.","incorrectFeedback":"== compares values. Use = to initialize storage.","sourceTitle":"Initialization · Default Property Values","sourceReferences":["LanguageGuide/Initialization.xhtml#Default-Property-Values"]},
         {"id":"swift.initialization.parameter","title":"Initialization Parameters","objective":"Accept caller-provided initial state.","instruction":"Accept a Celsius temperature when initializing.","codePrefix":"init(","codeSuffix":") { self.temperature = celsius }","choices":[{"id":"celsius-parameter","code":"celsius: Double"},{"id":"celsius-return","code":"-> Double"}],"correctChoiceID":"celsius-parameter","correctFeedback":"Correct. Initializers take typed parameters like functions.","incorrectFeedback":"Initializers don't declare return types. Put celsius in the parameter list.","sourceTitle":"Initialization · Initialization Parameters","sourceReferences":["LanguageGuide/Initialization.xhtml#Initialization-Parameters"]},
         {"id":"swift.initialization.argument-label","title":"Initializer Argument Labels","objective":"Use a distinct external label for clarity.","instruction":"Expose fromFahrenheit as the call-site label.","codePrefix":"init(","codeSuffix":" fahrenheit: Double) { temperature = (fahrenheit - 32) / 1.8 }","choices":[{"id":"external-fahrenheit-label","code":"fromFahrenheit"},{"id":"omitted-fahrenheit-label","code":"_"}],"correctChoiceID":"external-fahrenheit-label","correctFeedback":"Correct. The external label makes calls read Temperature(fromFahrenheit:).","incorrectFeedback":"_ removes the label. Use fromFahrenheit for the call site.","sourceTitle":"Initialization · Parameter Names and Argument Labels","sourceReferences":["LanguageGuide/Initialization.xhtml#Parameter-Names-and-Argument-Labels"]},
@@ -5809,6 +5910,8 @@
     },
     {
       "id":"swift.error-handling","title":"Level 17 · Error Handling","summary":"Throw, propagate, catch, type, and clean up recoverable failures.","lessons":[
+        {"id":"swift.errors.nserror-interoperability","title":"NSError Interoperability","objective":"Recognize Swift error interoperability with Cocoa NSError patterns.","instruction":"Choose the Cocoa error type that interoperates with Swift error handling.","codePrefix":"import Foundation\nlet cocoaErrorType = ","codeSuffix":".self","choices":[{"id":"nserror-type","code":"NSError"},{"id":"nsexception-type","code":"NSException"}],"correctChoiceID":"nserror-type","correctFeedback":"Correct. Swift error handling interoperates with Cocoa patterns based on NSError.","incorrectFeedback":"NSException is an exception class. Swift errors interoperate with NSError patterns.","sourceTitle":"Error Handling · NSError Interoperability","sourceReferences":["LanguageGuide/ErrorHandling.xhtml#error-handling"]},
+        {"id":"swift.errors.no-stack-unwinding","title":"Throwing Without Stack Unwinding","objective":"Distinguish Swift throwing from exception mechanisms that unwind the call stack.","instruction":"Choose whether Swift throw uses exception-style stack unwinding.","codePrefix":"let swiftThrowUsesExceptionStyleStackUnwinding = ","codeSuffix":"","choices":[{"id":"no-stack-unwinding","code":"false"},{"id":"stack-unwinding","code":"true"}],"correctChoiceID":"no-stack-unwinding","correctFeedback":"Correct. Swift error handling doesn't use exception-style stack unwinding.","incorrectFeedback":"Swift throw resembles exception syntax, but Swift error handling doesn't unwind the call stack like those exception mechanisms.","sourceTitle":"Error Handling · Throwing and Stack Unwinding","sourceReferences":["LanguageGuide/ErrorHandling.xhtml#Handling-Errors"]},
         {"id":"swift.errors.throw","title":"Representing and Throwing Errors","objective":"Throw a typed error value when an operation can't continue.","instruction":"Signal that the vending machine lacks inventory.","codePrefix":"if count == 0 {\n    ","codeSuffix":" VendingMachineError.outOfStock\n}","choices":[{"id":"throw-error","code":"throw"},{"id":"return-error","code":"return"}],"correctChoiceID":"throw-error","correctFeedback":"Correct. throw transfers control with an Error value.","incorrectFeedback":"Returning an error value doesn't activate Swift error propagation. Use throw.","sourceTitle":"Error Handling · Representing and Throwing Errors","sourceReferences":["LanguageGuide/ErrorHandling.xhtml#Representing-and-Throwing-Errors"]},
         {"id":"swift.errors.do-catch","title":"Handling with do-catch","objective":"Handle a thrown error with matching catch clauses.","instruction":"Start the protected scope around a throwing call.","codePrefix":"","codeSuffix":" {\n    try vendingMachine.vend(itemNamed: \"Chips\")\n} catch {\n    print(error)\n}","choices":[{"id":"do-scope","code":"do"},{"id":"try-scope","code":"try"}],"correctChoiceID":"do-scope","correctFeedback":"Correct. do introduces the scope whose errors are handled by catch.","incorrectFeedback":"try marks the throwing expression. The surrounding handler begins with do.","sourceTitle":"Error Handling · Handling Errors Using Do-Catch","sourceReferences":["LanguageGuide/ErrorHandling.xhtml#Handling-Errors-Using-Do-Catch"]},
         {"id":"swift.errors.try-optional","title":"Convert Errors to Optionals","objective":"Turn a throwing expression into an optional result.","instruction":"Return nil when fetchData() throws.","codePrefix":"let data = ","codeSuffix":" fetchData()","choices":[{"id":"try-optional","code":"try?"},{"id":"try-force","code":"try!"}],"correctChoiceID":"try-optional","correctFeedback":"Correct. try? produces nil when an error is thrown.","incorrectFeedback":"try! traps on an error. Use try? to convert failure to nil.","sourceTitle":"Error Handling · Converting Errors to Optional Values","sourceReferences":["LanguageGuide/ErrorHandling.xhtml#Converting-Errors-to-Optional-Values"]},
@@ -5819,6 +5922,7 @@
     },
     {
       "id":"swift.concurrency","title":"Level 18 · Concurrency","summary":"Coordinate asynchronous work with tasks, isolation, actors, and Sendable data.","lessons":[
+        {"id":"swift.concurrency.thread-independence","title":"Async Thread Independence","objective":"Recognize that an async function isn't bound to one thread across suspension.","instruction":"Choose whether an async function must resume on the same thread where it suspended.","codePrefix":"let mustResumeOnOriginalThread = ","codeSuffix":"","choices":[{"id":"thread-not-guaranteed","code":"false"},{"id":"thread-guaranteed","code":"true"}],"correctChoiceID":"thread-not-guaranteed","correctFeedback":"Correct. An async function can suspend on one thread and resume on another.","incorrectFeedback":"Swift concurrency doesn't guarantee that an async function resumes on its original thread.","sourceTitle":"Concurrency · Threads and Asynchronous Functions","sourceReferences":["LanguageGuide/Concurrency.xhtml#concurrency"]},
         {"id":"swift.concurrency.async-function","title":"Asynchronous Functions","objective":"Declare and call work that can suspend.","instruction":"Mark listPhotos as asynchronous.","codePrefix":"func listPhotos(inGallery name: String) ","codeSuffix":" -> [String] { [] }","choices":[{"id":"async-keyword","code":"async"},{"id":"await-keyword","code":"await"}],"correctChoiceID":"async-keyword","correctFeedback":"Correct. async belongs in the function declaration.","incorrectFeedback":"await marks a potentially suspending call. Declarations use async.","sourceTitle":"Concurrency · Defining and Calling Asynchronous Functions","sourceReferences":["LanguageGuide/Concurrency.xhtml#Defining-and-Calling-Asynchronous-Functions"]},
         {"id":"swift.concurrency.await","title":"Await Suspension","objective":"Mark a call that may suspend the current task.","instruction":"Call listPhotos from asynchronous context.","codePrefix":"let names = ","codeSuffix":" listPhotos(inGallery: \"Summer\")","choices":[{"id":"await-call","code":"await"},{"id":"async-call","code":"async"}],"correctChoiceID":"await-call","correctFeedback":"Correct. await marks the potential suspension point.","incorrectFeedback":"async declares asynchronous functions. Calls use await.","sourceTitle":"Concurrency · Defining and Calling Asynchronous Functions","sourceReferences":["LanguageGuide/Concurrency.xhtml#Defining-and-Calling-Asynchronous-Functions"]},
         {"id":"swift.concurrency.async-sequence","title":"Asynchronous Sequences","objective":"Iterate values that arrive asynchronously.","instruction":"Await each value from an AsyncSequence.","codePrefix":"", "codeSuffix":" await line in handle.bytes.lines { print(line) }","choices":[{"id":"for-try-await","code":"for try"},{"id":"for-sync","code":"for"}],"correctChoiceID":"for-try-await","correctFeedback":"Correct. for try await handles asynchronous iteration that can throw.","incorrectFeedback":"This sequence is asynchronous and throwing. Use for try await.","sourceTitle":"Concurrency · Asynchronous Sequences","sourceReferences":["LanguageGuide/Concurrency.xhtml#Asynchronous-Sequences"]},
@@ -5860,6 +5964,7 @@
     },
     {
       "id":"swift.extensions","title":"Level 22 · Extensions","summary":"Add focused capabilities to existing types.","lessons":[
+        {"id":"swift.extensions.no-overrides","title":"Extensions Don't Override","objective":"Distinguish adding extension functionality from overriding existing functionality.","instruction":"Choose the capability an extension provides.","codePrefix":"let extensionCapability = ","codeSuffix":"","choices":[{"id":"add-functionality","code":"\"add new functionality\""},{"id":"override-functionality","code":"\"override existing functionality\""}],"correctChoiceID":"add-functionality","correctFeedback":"Correct. Extensions add new functionality but can't override existing functionality.","incorrectFeedback":"Extensions can't override existing functionality; they add new capabilities to an existing type.","sourceTitle":"Extensions · Adding Without Overriding","sourceReferences":["LanguageGuide/Extensions.xhtml#extensions"]},
         {"id":"swift.extensions.syntax","title":"Extension Syntax","objective":"Add functionality to an existing type.","instruction":"Open an extension on Double.","codePrefix":"", "codeSuffix":" Double { }","choices":[{"id":"extension-keyword","code":"extension"},{"id":"subclass-keyword","code":"class"}],"correctChoiceID":"extension-keyword","correctFeedback":"Correct. extension adds capabilities without subclassing.","incorrectFeedback":"Use extension to add members to an existing type.","sourceTitle":"Extensions · Syntax","sourceReferences":["LanguageGuide/Extensions.xhtml#Extension-Syntax"]},
         {"id":"swift.extensions.computed-property","title":"Extension Computed Properties","objective":"Add a derived property without adding storage.","instruction":"Convert kilometers to meters in a Double extension.","codePrefix":"var km: Double { ","codeSuffix":" }","choices":[{"id":"kilometers-expression","code":"self * 1_000.0"},{"id":"kilometers-storage","code":"stored = self * 1_000.0"}],"correctChoiceID":"kilometers-expression","correctFeedback":"Correct. Extensions can add computed properties.","incorrectFeedback":"Extensions can't add stored instance properties. Return a computed expression.","sourceTitle":"Extensions · Computed Properties","sourceReferences":["LanguageGuide/Extensions.xhtml#Computed-Properties"]},
         {"id":"swift.extensions.initializer","title":"Extension Initializers","objective":"Add a convenience initializer while preserving existing initialization.","instruction":"Add a size-based Rect initializer in an extension.","codePrefix":"extension Rect {\n    ","codeSuffix":"(center: Point, size: Size) { self.init() }\n}","choices":[{"id":"extension-init","code":"init"},{"id":"extension-new","code":"new"}],"correctChoiceID":"extension-init","correctFeedback":"Correct. Extensions can add initializers under the type's initialization rules.","incorrectFeedback":"Swift initialization uses init.","sourceTitle":"Extensions · Initializers","sourceReferences":["LanguageGuide/Extensions.xhtml#Initializers"]},

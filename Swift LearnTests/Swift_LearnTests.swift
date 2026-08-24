@@ -340,7 +340,7 @@ struct Swift_LearnTests {
 
         #expect(catalog.sourceID == "swift-6.4-beta-2026-07-31")
         #expect(catalog.levels.count == 33)
-        #expect(catalog.lessons.count == 477)
+        #expect(catalog.lessons.count == 486)
         let lessonIDs = catalog.lessons.map(\.id)
         #expect(lessonIDs.count == Set(lessonIDs).count)
         #expect(catalog.lessons.allSatisfy { !$0.choices.isEmpty })
@@ -382,6 +382,69 @@ struct Swift_LearnTests {
             catalog.lessons.last?.sourceReferences.contains(
                 "ReferenceManual/Attributes.xhtml#Declaration-Attributes-Used-by-Interface-Builder"
             ) == true
+        )
+    }
+
+    @Test
+    func caveatLessonsMapExactSourcesAndPlannedPositions() throws {
+        let catalog = try bundledCatalog()
+        let expectedSources = [
+            "swift.strings.foundation-bridging":
+                "LanguageGuide/StringsAndCharacters.xhtml#strings-and-characters",
+            "swift.arrays.foundation-bridging":
+                "LanguageGuide/CollectionTypes.xhtml#Arrays",
+            "swift.sets.foundation-bridging":
+                "LanguageGuide/CollectionTypes.xhtml#Sets",
+            "swift.dictionaries.foundation-bridging":
+                "LanguageGuide/CollectionTypes.xhtml#Dictionaries",
+            "swift.initialization.observer-bypass":
+                "LanguageGuide/Initialization.xhtml#Setting-Initial-Values-for-Stored-Properties",
+            "swift.errors.nserror-interoperability":
+                "LanguageGuide/ErrorHandling.xhtml#error-handling",
+            "swift.errors.no-stack-unwinding":
+                "LanguageGuide/ErrorHandling.xhtml#Handling-Errors",
+            "swift.concurrency.thread-independence":
+                "LanguageGuide/Concurrency.xhtml#concurrency",
+            "swift.extensions.no-overrides":
+                "LanguageGuide/Extensions.xhtml#extensions"
+        ]
+
+        for (lessonID, sourceReference) in expectedSources {
+            #expect(catalog.lesson(id: lessonID)?.sourceReferences == [sourceReference])
+        }
+
+        #expect(
+            catalog.levels.first { $0.id == "swift.text-and-unicode" }?.lessons.first?.id
+                == "swift.strings.foundation-bridging"
+        )
+        #expect(
+            catalog.levels.first { $0.id == "swift.collections" }?.lessons.map(\.id)
+                .filter { $0.hasSuffix("foundation-bridging") }
+                == [
+                    "swift.arrays.foundation-bridging",
+                    "swift.sets.foundation-bridging",
+                    "swift.dictionaries.foundation-bridging"
+                ]
+        )
+        #expect(
+            catalog.levels.first { $0.id == "swift.initialization" }?.lessons[1].id
+                == "swift.initialization.observer-bypass"
+        )
+        #expect(
+            catalog.levels.first { $0.id == "swift.error-handling" }?.lessons
+                .prefix(2).map(\.id)
+                == [
+                    "swift.errors.nserror-interoperability",
+                    "swift.errors.no-stack-unwinding"
+                ]
+        )
+        #expect(
+            catalog.levels.first { $0.id == "swift.concurrency" }?.lessons.first?.id
+                == "swift.concurrency.thread-independence"
+        )
+        #expect(
+            catalog.levels.first { $0.id == "swift.extensions" }?.lessons.first?.id
+                == "swift.extensions.no-overrides"
         )
     }
 

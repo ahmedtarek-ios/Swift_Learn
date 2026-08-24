@@ -30,7 +30,7 @@
 
 Swift Learn transforms Swift language material into a practical, code-first learning journey. Instead of asking developers to read an entire programming book from beginning to end, the app breaks the language into focused lessons that encourage learners to inspect code, predict results, complete challenges, understand feedback, and build confidence one skill at a time.
 
-The current app contains **477 ordered, source-linked lessons** derived from the project's selected Swift 6.4 beta source snapshot. Each lesson has a clear objective, a Swift code challenge, answer choices, immediate feedback, and a source reference. Completing a lesson saves progress and unlocks the next step in the journey.
+The current app contains **486 ordered, source-linked lessons** derived from the project's selected Swift 6.4 beta source snapshot. Each lesson has a clear objective, a Swift code challenge, answer choices, immediate feedback, and a source reference. Completing a lesson saves progress and unlocks the next step in the journey.
 
 Swift Learn is designed for developers who want to:
 
@@ -103,7 +103,7 @@ Complete the skill and unlock the next lesson
 
 ## Current Features
 
-- 477 ordered Swift lessons
+- 486 ordered Swift lessons
 - versioned and source-linked curriculum data
 - short code-completion challenges
 - deterministic answer evaluation
@@ -138,7 +138,7 @@ The curriculum is kept separate from the interface and is linked to a versioned 
 
 Current source state:
 
-- 477 canonical lessons are implemented;
+- 486 canonical lessons are implemented;
 - 649 source headings have recorded coverage decisions;
 - repeated concepts reuse canonical lesson identities instead of creating duplicate lessons;
 - lesson order and locked-state validation are enforced in the Domain layer;

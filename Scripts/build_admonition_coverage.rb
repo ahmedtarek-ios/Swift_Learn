@@ -79,6 +79,11 @@ manifest.fetch("documents").each do |document|
     end
 
     candidate_id = new_lesson_candidates[source_reference]
+    if candidate_id && catalog_lesson_ids.include?(candidate_id)
+      lesson_ids = (lesson_ids + [candidate_id]).uniq.sort
+      candidate_id = nil
+    end
+
     if lesson_ids.empty? && candidate_id.nil?
       raise "Note has no lesson decision: #{source_reference}"
     end
