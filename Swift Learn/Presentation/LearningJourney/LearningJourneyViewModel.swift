@@ -24,18 +24,22 @@ final class LearningJourneyViewModel {
     private(set) var attemptResult: LessonAttemptResult?
     private(set) var progressEvents: [LearningProgressEvent] = []
     private(set) var recentlyUnlockedLessonID: String?
+    private(set) var attemptRevision = 0
 
     private let loadJourney: LoadLearningJourneyUseCase
     private let submitAnswer: SubmitLessonAnswerUseCase
+    private let recordAttempt: RecordLearningAttemptUseCase
     private let calculateProgressEvents: CalculateLearningProgressEventsUseCase
 
     init(
         loadJourney: LoadLearningJourneyUseCase,
         submitAnswer: SubmitLessonAnswerUseCase,
+        recordAttempt: RecordLearningAttemptUseCase,
         calculateProgressEvents: CalculateLearningProgressEventsUseCase
     ) {
         self.loadJourney = loadJourney
         self.submitAnswer = submitAnswer
+        self.recordAttempt = recordAttempt
         self.calculateProgressEvents = calculateProgressEvents
     }
 
@@ -66,11 +70,22 @@ final class LearningJourneyViewModel {
 
         do {
             let journeyBeforeSubmission = journey
-            attemptResult = try submitAnswer.execute(
+            let result = try submitAnswer.execute(
                 lessonID: lessonID,
                 choiceID: selectedChoiceID
             )
-            if attemptResult?.isCorrect == true,
+            guard let lesson = journeyBeforeSubmission?.catalog.lesson(id: lessonID) else {
+                throw LearningDomainError.lessonNotFound
+            }
+            try recordAttempt.execute(
+                lessonID: lessonID,
+                activityID: lesson.activityID,
+                outcome: result.isCorrect ? .correct : .incorrect
+            )
+            attemptRevision += 1
+            attemptResult = result
+
+            if result.isCorrect,
                let journeyBeforeSubmission {
                 let updatedJourney = try loadJourney.execute()
                 journey = updatedJourney
@@ -105,6 +120,12 @@ final class LearningJourneyViewModel {
             guard case let .achievementEarned(achievement) = event else { return nil }
             return achievement
         }.first
+    }
+
+    var progressSummary: String? {
+        guard let journey else { return nil }
+        return "\(journey.completedLessonCount) of "
+            + "\(journey.totalLessonCount) skills practiced"
     }
 
     func dismissCurrentAchievement() {

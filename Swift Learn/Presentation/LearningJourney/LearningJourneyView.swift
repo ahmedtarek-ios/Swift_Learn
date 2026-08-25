@@ -9,11 +9,19 @@ import SwiftUI
 
 struct LearningJourneyView: View {
     @State private var viewModel: LearningJourneyViewModel
+    private let reviewViewModel: ReviewQueueViewModel
+    private let mistakeViewModel: MistakeNotebookViewModel
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.learnerMotionPreference) private var motionPreference
 
-    init(viewModel: LearningJourneyViewModel) {
+    init(
+        viewModel: LearningJourneyViewModel,
+        reviewViewModel: ReviewQueueViewModel,
+        mistakeViewModel: MistakeNotebookViewModel
+    ) {
         _viewModel = State(initialValue: viewModel)
+        self.reviewViewModel = reviewViewModel
+        self.mistakeViewModel = mistakeViewModel
     }
 
     var body: some View {
@@ -57,10 +65,12 @@ struct LearningJourneyView: View {
             LearningMotion.celebration(reduceMotion: reduceMotion),
             value: viewModel.currentAchievement?.id
         )
-        .task {
+        .task(id: viewModel.attemptRevision) {
             if viewModel.loadState == .idle {
                 viewModel.load()
             }
+            reviewViewModel.load()
+            mistakeViewModel.load()
         }
     }
 
@@ -131,6 +141,19 @@ struct LearningJourneyView: View {
                     value: journey.completedLessonCount
                 )
                 .accessibilityIdentifier("journey-progress-summary")
+
+            NavigationLink {
+                ReviewQueueView(
+                    viewModel: reviewViewModel,
+                    mistakeViewModel: mistakeViewModel
+                )
+            } label: {
+                Label(reviewViewModel.summary, systemImage: "clock.arrow.circlepath")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("journey-review-summary")
+            .accessibilityValue(reviewViewModel.summary)
         }
         .padding()
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
@@ -217,9 +240,6 @@ private struct LessonChallengeView: View {
     let viewModel: LearningJourneyViewModel
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.learnerMotionPreference) private var motionPreference
-#if os(tvOS)
-    @FocusState private var focusedChoiceID: String?
-#endif
 
     var body: some View {
         ScrollView {
@@ -235,12 +255,14 @@ private struct LessonChallengeView: View {
                     .font(.title3)
                     .accessibilityIdentifier("lesson-instruction")
 
-                codePanel
-
-                Text("Choose the missing Swift code")
-                    .font(.headline)
-
-                choiceButtons
+                CodeChoiceActivityView(
+                    lesson: lesson,
+                    selectedChoiceID: viewModel.selectedChoiceID,
+                    codeIdentifier: "lesson-code",
+                    choiceIdentifierPrefix: "choice-",
+                    selectChoice: viewModel.selectChoice,
+                    reduceMotion: reduceMotion
+                )
 
                 Button("Check Code") {
                     viewModel.submit(lessonID: lesson.id)
@@ -273,11 +295,6 @@ private struct LessonChallengeView: View {
             LearningMotion.feedback(reduceMotion: reduceMotion),
             value: viewModel.attemptResult
         )
-#if os(tvOS)
-        .onAppear {
-            focusedChoiceID = lesson.choices.first?.id
-        }
-#endif
     }
 
     private var reduceMotion: Bool {
@@ -285,60 +302,6 @@ private struct LessonChallengeView: View {
             systemReduceMotion: systemReduceMotion,
             preference: motionPreference
         )
-    }
-
-    private var codePanel: some View {
-        Text(lesson.code(selectedChoiceID: viewModel.selectedChoiceID))
-            .font(.system(.title3, design: .monospaced, weight: .semibold))
-            .foregroundStyle(.primary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
-            .contentTransition(.opacity)
-            .animation(
-                LearningMotion.selection(reduceMotion: reduceMotion),
-                value: viewModel.selectedChoiceID
-            )
-            .accessibilityIdentifier("lesson-code")
-    }
-
-    private var choiceButtons: some View {
-        HStack(spacing: 12) {
-            ForEach(lesson.choices) { choice in
-                Button {
-                    viewModel.selectChoice(choice.id)
-                } label: {
-                    HStack {
-                        Text(choice.code)
-                            .font(.body.monospaced().weight(.semibold))
-                        if viewModel.selectedChoiceID == choice.id {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                    .frame(minWidth: 90)
-                }
-                .buttonStyle(.bordered)
-                .tint(
-                    viewModel.selectedChoiceID == choice.id
-                        ? Color.accentColor
-                        : Color.secondary
-                )
-                .accessibilityIdentifier("choice-\(choice.id)")
-                .accessibilityValue(
-                    viewModel.selectedChoiceID == choice.id ? "Selected" : "Not selected"
-                )
-                .scaleEffect(
-                    viewModel.selectedChoiceID == choice.id && !reduceMotion ? 1.04 : 1
-                )
-                .animation(
-                    LearningMotion.selection(reduceMotion: reduceMotion),
-                    value: viewModel.selectedChoiceID
-                )
-#if os(tvOS)
-                .focused($focusedChoiceID, equals: choice.id)
-#endif
-            }
-        }
     }
 
     private func feedback(_ result: LessonAttemptResult) -> some View {
@@ -360,9 +323,11 @@ private struct LessonChallengeView: View {
 
             Text(result.feedback)
 
-            if result.isCorrect, let journey = viewModel.journey {
-                Text("\(journey.completedLessonCount) of \(journey.totalLessonCount) skills practiced")
+            if result.isCorrect,
+               let progressSummary = viewModel.progressSummary {
+                Text(progressSummary)
                     .font(.subheadline.weight(.semibold))
+                    .accessibilityLabel(progressSummary)
                     .accessibilityIdentifier("lesson-progress-summary")
 
                 if let nextLesson = viewModel.nextLesson(after: lesson.id) {
@@ -387,5 +352,9 @@ private struct LessonChallengeView: View {
 
 #Preview {
     let container = try! AppContainer(isStoredInMemoryOnly: true)
-    LearningJourneyView(viewModel: container.learningJourneyViewModel)
+    LearningJourneyView(
+        viewModel: container.learningJourneyViewModel,
+        reviewViewModel: container.reviewQueueViewModel,
+        mistakeViewModel: container.mistakeNotebookViewModel
+    )
 }

@@ -28,20 +28,30 @@ final class LearnerProfileViewModel {
     private(set) var loadState: LoadState = .idle
     private(set) var saveState: SaveState = .idle
     private(set) var snapshot: LearnerProfileSnapshot?
+    private(set) var masteryOverview: MasteryOverview?
 
     var draftDisplayName = LearnerProfile.defaultProfile.displayName
     var draftAvatar = LearnerProfile.defaultProfile.avatar
     var draftAppearance = LearnerProfile.defaultProfile.appearance
     var draftMotionPreference = LearnerProfile.defaultProfile.motionPreference
 
+    var progressSummary: String? {
+        guard let snapshot else { return nil }
+        return "\(snapshot.journey.completedLessonCount) of "
+            + "\(snapshot.journey.totalLessonCount) lessons completed"
+    }
+
     private let loadProfile: LoadLearnerProfileUseCase
+    private let loadMasteryOverview: LoadMasteryOverviewUseCase
     private let updateProfile: UpdateLearnerProfileUseCase
 
     init(
         loadProfile: LoadLearnerProfileUseCase,
+        loadMasteryOverview: LoadMasteryOverviewUseCase,
         updateProfile: UpdateLearnerProfileUseCase
     ) {
         self.loadProfile = loadProfile
+        self.loadMasteryOverview = loadMasteryOverview
         self.updateProfile = updateProfile
     }
 
@@ -51,6 +61,7 @@ final class LearnerProfileViewModel {
         do {
             let snapshot = try loadProfile.execute()
             apply(snapshot)
+            masteryOverview = try loadMasteryOverview.execute()
             loadState = .loaded
         } catch {
             loadState = .failed(error.localizedDescription)
@@ -69,6 +80,7 @@ final class LearnerProfileViewModel {
             )
             let snapshot = try loadProfile.execute()
             apply(snapshot)
+            masteryOverview = try loadMasteryOverview.execute()
             loadState = .loaded
             saveState = .saved
         } catch {

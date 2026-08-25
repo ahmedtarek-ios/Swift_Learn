@@ -40,13 +40,6 @@ struct LearnerProfileView: View {
             .navigationTitle("Profile")
         }
         .onAppear(perform: viewModel.load)
-        .onChange(of: viewModel.loadState) { _, state in
-#if os(tvOS)
-            if state == .loaded {
-                focusedControlID = "profile-avatar-code"
-            }
-#endif
-        }
     }
 
     @ViewBuilder
@@ -62,6 +55,9 @@ struct LearnerProfileView: View {
                 .padding()
             }
             .accessibilityIdentifier("profile-screen")
+#if os(tvOS)
+            .defaultFocus($focusedControlID, "profile-avatar-code")
+#endif
         }
     }
 
@@ -235,13 +231,29 @@ struct LearnerProfileView: View {
                 )
             }
 
-            Text(
-                "\(snapshot.journey.completedLessonCount) of "
-                    + "\(snapshot.journey.totalLessonCount) lessons completed"
-            )
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .accessibilityIdentifier("profile-progress-summary")
+            if let progressSummary = viewModel.progressSummary {
+                Text(progressSummary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(progressSummary)
+                    .accessibilityIdentifier("profile-progress-summary")
+            }
+
+            if let mastery = viewModel.masteryOverview {
+                Divider()
+                HStack(spacing: 24) {
+                    stat(value: mastery.proficientCount, label: "Proficient")
+                    stat(value: mastery.masteredCount, label: "Mastered")
+                    stat(value: mastery.reviewDueCount, label: "Review due")
+                }
+                Text(
+                    "\(mastery.masteredCount) mastered, "
+                        + "\(mastery.reviewDueCount) review due"
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("profile-mastery-summary")
+            }
         }
         .padding()
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))

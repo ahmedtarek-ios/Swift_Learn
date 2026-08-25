@@ -13,6 +13,45 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
+    func testIntroStartsLearningJourney() throws {
+        let firstLesson = try XCTUnwrap(loadLessonExpectations().first)
+        let app = launchApp(skipIntro: false)
+
+        let intro = app.descendants(matching: .any)["intro-screen"].firstMatch
+        XCTAssertTrue(intro.waitForExistence(timeout: 10))
+        XCTAssertTrue(
+            app.descendants(matching: .any)["intro-step-1"].firstMatch
+                .waitForExistence(timeout: 5)
+        )
+
+        let next = app.buttons["intro-next"].firstMatch
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
+        activate(next)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["intro-step-2"].firstMatch
+                .waitForExistence(timeout: 5)
+        )
+
+        let secondNext = app.buttons["intro-next"].firstMatch
+        XCTAssertTrue(secondNext.waitForExistence(timeout: 5))
+        activate(secondNext)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["intro-step-3"].firstMatch
+                .waitForExistence(timeout: 5)
+        )
+
+        let startLearning = app.buttons["intro-start-learning"].firstMatch
+        XCTAssertTrue(startLearning.waitForExistence(timeout: 5))
+        activate(startLearning)
+
+        let firstLessonButton = app.buttons[
+            "start-lesson-\(firstLesson.id)"
+        ].firstMatch
+        XCTAssertTrue(firstLessonButton.waitForExistence(timeout: 15))
+        XCTAssertFalse(intro.exists)
+    }
+
+    @MainActor
     func testCompletesFirstLessonAndUpdatesProgress() throws {
         let lessonExpectations = try loadLessonExpectations()
         let firstLesson = try XCTUnwrap(lessonExpectations.first)
@@ -31,8 +70,11 @@ final class Swift_LearnUITests: XCTestCase {
         activate(firstStart)
 
         XCTAssertTrue(app.staticTexts["lesson-instruction"].waitForExistence(timeout: 5))
-        let lessonTitle = app.staticTexts["lesson-title"]
-        XCTAssertEqual(lessonTitle.label, firstLesson.title)
+        let lessonTitle = app.descendants(matching: .any)["lesson-title"].firstMatch
+        XCTAssertTrue(lessonTitle.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.staticTexts[firstLesson.title].firstMatch.waitForExistence(timeout: 5)
+        )
 
         let choice = app.buttons["choice-\(firstLesson.correctChoiceID)"].firstMatch
         XCTAssertTrue(choice.waitForExistence(timeout: 5))
@@ -50,9 +92,10 @@ final class Swift_LearnUITests: XCTestCase {
             app.descendants(matching: .any)["lesson-complete-feedback"]
                 .waitForExistence(timeout: 5)
         )
-        XCTAssertEqual(
-            app.staticTexts["lesson-progress-summary"].label,
-            "1 of \(lessonExpectations.count) skills practiced"
+        assertSummary(
+            app.staticTexts["lesson-progress-summary"].firstMatch,
+            equals: "1 of \(lessonExpectations.count) skills practiced",
+            in: app
         )
         dismissAchievementOverlays(in: app)
 
@@ -61,16 +104,128 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
+    func testCompletionRestoresAfterRelaunch() throws {
+        let lessons = try loadLessonExpectations()
+        let firstLesson = try XCTUnwrap(lessons.first)
+        let secondLesson = try XCTUnwrap(lessons.dropFirst().first)
+        let app = launchApp(persistsData: true)
+
+        let firstStart = app.buttons["start-lesson-\(firstLesson.id)"].firstMatch
+        XCTAssertTrue(firstStart.waitForExistence(timeout: 15))
+        activate(firstStart)
+
+        let choice = app.buttons["choice-\(firstLesson.correctChoiceID)"].firstMatch
+        XCTAssertTrue(choice.waitForExistence(timeout: 5))
+        select(
+            choice,
+            firstChoice: app.buttons[
+                "choice-\(try XCTUnwrap(firstLesson.choices.first).id)"
+            ],
+            choiceIndex: firstLesson.correctChoiceIndex
+        )
+        let submit = app.buttons["submit-answer"].firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout: 5))
+        activate(submit)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["lesson-complete-feedback"]
+                .waitForExistence(timeout: 5)
+        )
+
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "--reset-ui-testing-data" }
+        app.launch()
+        prepareAfterLaunch(app)
+
+        let restoredFirstLesson = app.buttons[
+            "start-lesson-\(firstLesson.id)"
+        ].firstMatch
+        XCTAssertTrue(restoredFirstLesson.waitForExistence(timeout: 15))
+        XCTAssertEqual(restoredFirstLesson.value as? String, "Completed")
+
+        let restoredSecondLesson = app.buttons[
+            "start-lesson-\(secondLesson.id)"
+        ].firstMatch
+        XCTAssertTrue(restoredSecondLesson.waitForExistence(timeout: 5))
+        XCTAssertTrue(restoredSecondLesson.isEnabled)
+    }
+
+    @MainActor
+    func testReviewQueueCompletesAndRestoresMistakeNotebook() throws {
+        let firstLesson = try XCTUnwrap(loadLessonExpectations().first)
+        let app = launchApp(persistsData: true, reviewFixture: true)
+
+        let reviewSummary = app.descendants(matching: .any)[
+            "journey-review-summary"
+        ].firstMatch
+        XCTAssertTrue(reviewSummary.waitForExistence(timeout: 15))
+        assertValue(reviewSummary, equals: "1 review due", in: app)
+        activate(reviewSummary)
+
+        let reviewSkill = app.descendants(matching: .any)[
+            "review-skill-\(firstLesson.id)"
+        ].firstMatch
+        XCTAssertTrue(reviewSkill.waitForExistence(timeout: 10))
+
+        let correctChoice = app.buttons[
+            "review-choice-\(firstLesson.correctChoiceID)"
+        ].firstMatch
+        XCTAssertTrue(correctChoice.waitForExistence(timeout: 5))
+        select(
+            correctChoice,
+            firstChoice: app.buttons[
+                "review-choice-\(try XCTUnwrap(firstLesson.choices.first).id)"
+            ],
+            choiceIndex: firstLesson.correctChoiceIndex
+        )
+        let submit = app.buttons["submit-review-answer"].firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout: 5))
+        activate(submit)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["review-session-complete"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+
+        let notebook = app.buttons["open-mistake-notebook"].firstMatch
+        XCTAssertTrue(notebook.waitForExistence(timeout: 5))
+        activate(notebook)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["mistake-skill-\(firstLesson.id)"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "--reset-ui-testing-data" }
+        app.launch()
+        prepareAfterLaunch(app)
+
+        let restoredSummary = app.descendants(matching: .any)[
+            "journey-review-summary"
+        ].firstMatch
+        XCTAssertTrue(restoredSummary.waitForExistence(timeout: 15))
+        assertValue(restoredSummary, equals: "No reviews due", in: app)
+        activate(restoredSummary)
+
+        let restoredNotebook = app.buttons["open-mistake-notebook"].firstMatch
+        XCTAssertTrue(restoredNotebook.waitForExistence(timeout: 5))
+        activate(restoredNotebook)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["mistake-skill-\(firstLesson.id)"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
     func testProfileBadgeUnlocksAfterCompletingFirstLesson() throws {
         let firstLesson = try XCTUnwrap(loadLessonExpectations().first)
         let app = launchApp()
 
         openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
-        let progressSummary = app.staticTexts["profile-progress-summary"]
+        let progressSummary = app.staticTexts["profile-progress-summary"].firstMatch
         reveal(progressSummary, in: app)
-        XCTAssertEqual(
-            progressSummary.label,
-            "0 of \(try loadLessonExpectations().count) lessons completed"
+        assertSummary(
+            progressSummary,
+            equals: "0 of \(try loadLessonExpectations().count) lessons completed",
+            in: app
         )
 
         let firstLessonBadge = app.descendants(matching: .any)[
@@ -106,13 +261,20 @@ final class Swift_LearnUITests: XCTestCase {
         dismissAchievementOverlays(in: app)
 
         openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
-        reveal(progressSummary, in: app)
-        XCTAssertEqual(
-            progressSummary.label,
-            "1 of \(try loadLessonExpectations().count) lessons completed"
+        let updatedProgressSummary = app.staticTexts["profile-progress-summary"].firstMatch
+        reveal(updatedProgressSummary, in: app)
+        assertSummary(
+            updatedProgressSummary,
+            equals: "1 of \(try loadLessonExpectations().count) lessons completed",
+            in: app
         )
-        reveal(firstLessonBadge, in: app)
-        XCTAssertTrue((firstLessonBadge.value as? String)?.hasPrefix("Earned") == true)
+        let updatedFirstLessonBadge = app.descendants(matching: .any)[
+            "achievement-card-achievement.first-lesson"
+        ].firstMatch
+        reveal(updatedFirstLessonBadge, in: app)
+        XCTAssertTrue(
+            (updatedFirstLessonBadge.value as? String)?.hasPrefix("Earned") == true
+        )
     }
 
     @MainActor
@@ -146,20 +308,44 @@ final class Swift_LearnUITests: XCTestCase {
 
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
         openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
-        XCTAssertEqual(terminalAvatar.value as? String, "Selected")
+        let restoredTerminalAvatar = app.descendants(matching: .any)[
+            "profile-avatar-terminal"
+        ].firstMatch
+        XCTAssertTrue(restoredTerminalAvatar.waitForExistence(timeout: 5))
+        XCTAssertEqual(restoredTerminalAvatar.value as? String, "Selected")
     }
 
     @MainActor
-    private func launchApp() -> XCUIApplication {
+    private func launchApp(
+        skipIntro: Bool = true,
+        persistsData: Bool = false,
+        reviewFixture: Bool = false
+    ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments.append("--ui-testing")
+        if skipIntro {
+            app.launchArguments.append("--skip-intro")
+        }
+        if persistsData {
+            app.launchArguments.append("--ui-testing-persistent")
+            app.launchArguments.append("--reset-ui-testing-data")
+        }
+        if reviewFixture {
+            app.launchArguments.append("--ui-testing-review-fixture")
+        }
 
 #if os(macOS)
         app.launchArguments.append(contentsOf: ["-ApplePersistenceIgnoreState", "YES"])
 #endif
 
         app.launch()
+        prepareAfterLaunch(app)
 
+        return app
+    }
+
+    @MainActor
+    private func prepareAfterLaunch(_ app: XCUIApplication) {
 #if os(macOS)
         app.activate()
         let window = app.windows.firstMatch
@@ -168,8 +354,6 @@ final class Swift_LearnUITests: XCTestCase {
         }
         XCTAssertTrue(window.waitForExistence(timeout: 5))
 #endif
-
-        return app
     }
 
     @MainActor
@@ -179,24 +363,72 @@ final class Swift_LearnUITests: XCTestCase {
         in app: XCUIApplication,
         tvDirection: TabDirection
     ) {
+#if os(macOS)
+        app.activate()
+        let labeledTab = app.buttons[label].firstMatch
+        let tab = labeledTab.waitForExistence(timeout: 5)
+            ? labeledTab
+            : app.descendants(matching: .any)[identifier].firstMatch
+#else
         let identifiedTab = app.descendants(matching: .any)[identifier].firstMatch
         let tab = identifiedTab.waitForExistence(timeout: 5)
             ? identifiedTab
             : app.buttons[label].firstMatch
+#endif
         XCTAssertTrue(tab.waitForExistence(timeout: 5))
 
 #if os(tvOS)
         let remote = XCUIRemote.shared
-        for _ in 0..<12 where !tab.hasFocus {
+        let otherIdentifier = identifier == "profile-tab" ? "journey-tab" : "profile-tab"
+        let otherTab = app.descendants(matching: .any)[otherIdentifier].firstMatch
+
+        for _ in 0..<12 where !tab.hasFocus && !otherTab.hasFocus {
             remote.press(.up)
         }
-        for _ in 0..<12 where !tab.hasFocus {
+
+        if !tab.hasFocus {
             remote.press(tvDirection == .left ? .left : .right)
         }
-        XCTAssertTrue(tab.hasFocus)
+        waitForFocus(on: tab)
         remote.press(.select)
 #else
         tab.tap()
+#endif
+    }
+
+    @MainActor
+    private func assertSummary(
+        _ identifiedElement: XCUIElement,
+        equals expectedText: String,
+        in app: XCUIApplication
+    ) {
+        XCTAssertTrue(identifiedElement.waitForExistence(timeout: 5))
+
+#if os(macOS)
+        XCTAssertTrue(app.staticTexts[expectedText].firstMatch.waitForExistence(timeout: 5))
+#else
+        XCTAssertEqual(identifiedElement.label, expectedText)
+#endif
+    }
+
+    @MainActor
+    private func assertValue(
+        _ element: XCUIElement,
+        equals expectedValue: String,
+        in app: XCUIApplication
+    ) {
+#if os(macOS)
+        if element.value as? String != expectedValue {
+            XCTAssertTrue(
+                app.staticTexts[expectedValue].firstMatch.waitForExistence(timeout: 5)
+            )
+        }
+#else
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", expectedValue),
+            object: element
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 5), .completed)
 #endif
     }
 

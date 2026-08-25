@@ -42,6 +42,10 @@ struct LearningLesson: Identifiable, Equatable, Sendable {
     let sourceTitle: String
     let sourceReferences: [String]
 
+    var activityID: LearningActivityID {
+        LearningActivityID(rawValue: id)
+    }
+
     func choice(id: String) -> LearningChoice? {
         choices.first { $0.id == id }
     }

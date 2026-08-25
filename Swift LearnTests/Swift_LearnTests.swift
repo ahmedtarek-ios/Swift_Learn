@@ -13,6 +13,51 @@ import Testing
 @MainActor
 struct Swift_LearnTests {
     @Test
+    func introMovesThroughThreeStepsAndStartsLearning() {
+        let viewModel = IntroViewModel()
+
+        #expect(viewModel.isPresented)
+        #expect(viewModel.currentStep == .welcome)
+        #expect(viewModel.isFirstStep)
+
+        viewModel.showNextStep()
+
+        #expect(viewModel.currentStep == .practice)
+        #expect(!viewModel.isFirstStep)
+        #expect(!viewModel.isLastStep)
+
+        viewModel.showNextStep()
+
+        #expect(viewModel.currentStep == .progress)
+        #expect(viewModel.isLastStep)
+
+        viewModel.startLearning()
+
+        #expect(!viewModel.isPresented)
+    }
+
+    @Test
+    func introBackNavigationStopsAtFirstStep() {
+        let viewModel = IntroViewModel(currentStep: .progress)
+
+        viewModel.showPreviousStep()
+        #expect(viewModel.currentStep == .practice)
+
+        viewModel.showPreviousStep()
+        viewModel.showPreviousStep()
+
+        #expect(viewModel.currentStep == .welcome)
+        #expect(viewModel.isFirstStep)
+    }
+
+    @Test
+    func introCanStartDismissedForDeterministicLaunches() {
+        let viewModel = IntroViewModel(isPresented: false)
+
+        #expect(!viewModel.isPresented)
+    }
+
+    @Test
     func loadJourneyCombinesCatalogAndProgress() throws {
         let catalog = try bundledCatalog()
         let content = InMemoryLearningContentRepository(catalog: catalog)
@@ -304,6 +349,10 @@ struct Swift_LearnTests {
         #expect(viewModel.selectedChoiceID == "let")
         #expect(viewModel.attemptResult?.isCorrect == true)
         #expect(viewModel.journey?.completedLessonCount == 1)
+        #expect(
+            viewModel.progressSummary
+                == "1 of \(content.catalog.lessons.count) skills practiced"
+        )
         #expect(
             viewModel.recentlyUnlockedLessonID
                 == "swift.bindings.type-annotations"
@@ -693,6 +742,12 @@ struct Swift_LearnTests {
         viewModel.load()
         #expect(viewModel.loadState == .loaded)
         #expect(viewModel.snapshot?.profile == .defaultProfile)
+        #expect(viewModel.masteryOverview?.snapshots.count == catalog.lessons.count)
+        #expect(viewModel.masteryOverview?.masteredCount == 0)
+        #expect(
+            viewModel.progressSummary
+                == "0 of \(catalog.lessons.count) lessons completed"
+        )
 
         viewModel.draftDisplayName = "Grace"
         viewModel.draftAvatar = .star
@@ -754,7 +809,13 @@ struct Swift_LearnTests {
         content: InMemoryLearningContentRepository,
         progress: any LearningProgressRepository
     ) -> LearningJourneyViewModel {
-        LearningJourneyViewModel(
+        let loadCanonicalSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content
+            )
+        )
+        return LearningJourneyViewModel(
             loadJourney: LoadLearningJourneyUseCase(
                 contentRepository: content,
                 progressRepository: progress
@@ -762,6 +823,12 @@ struct Swift_LearnTests {
             submitAnswer: SubmitLessonAnswerUseCase(
                 contentRepository: content,
                 progressRepository: progress
+            ),
+            recordAttempt: RecordLearningAttemptUseCase(
+                loadCanonicalSkills: loadCanonicalSkills,
+                attemptRepository: InMemoryLearningAttemptRepository(),
+                clock: FixedLearningClock(now: Date(timeIntervalSince1970: 1_000)),
+                idGenerator: SystemLearningAttemptIDGenerator()
             ),
             calculateProgressEvents: CalculateLearningProgressEventsUseCase(
                 calculateAchievements: CalculateAchievementsUseCase()
@@ -779,11 +846,23 @@ struct Swift_LearnTests {
         catalog: LearningCatalog,
         profileRepository: any LearnerProfileRepository
     ) -> LearnerProfileViewModel {
-        LearnerProfileViewModel(
+        let contentRepository = InMemoryLearningContentRepository(catalog: catalog)
+        let attemptRepository = InMemoryLearningAttemptRepository()
+        return LearnerProfileViewModel(
             loadProfile: LoadLearnerProfileUseCase(
-                contentRepository: InMemoryLearningContentRepository(catalog: catalog),
+                contentRepository: contentRepository,
                 progressRepository: InMemoryLearningProgressRepository(),
                 profileRepository: profileRepository
+            ),
+            loadMasteryOverview: LoadMasteryOverviewUseCase(
+                loadCanonicalSkills: LoadCanonicalSkillsUseCase(
+                    contentRepository: contentRepository,
+                    skillRepository: ContentCanonicalSkillRepository(
+                        contentRepository: contentRepository
+                    )
+                ),
+                attemptRepository: attemptRepository,
+                clock: FixedLearningClock(now: Date(timeIntervalSince1970: 1_000))
             ),
             updateProfile: UpdateLearnerProfileUseCase(
                 profileRepository: profileRepository
@@ -831,6 +910,28 @@ private final class FailingLearningProgressRepository: LearningProgressRepositor
     func markCompleted(lessonID: String) throws {
         throw FixtureError.progressUnavailable
     }
+}
+
+@MainActor
+private final class InMemoryLearningAttemptRepository: LearningAttemptRepository {
+    private(set) var attempts: [LearningAttempt] = []
+
+    func record(_ attempt: LearningAttempt) {
+        attempts.append(attempt)
+    }
+
+    func loadAttempts(skillID: SkillID) -> [LearningAttempt] {
+        attempts.filter { $0.evidence.skillID == skillID }
+    }
+
+    func loadAllAttempts() -> [LearningAttempt] {
+        attempts
+    }
+}
+
+@MainActor
+private struct FixedLearningClock: LearningClock {
+    let now: Date
 }
 
 @MainActor
