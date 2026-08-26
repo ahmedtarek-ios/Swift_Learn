@@ -41,6 +41,14 @@ final class LearnerProfileViewModel {
             + "\(snapshot.journey.totalLessonCount) lessons completed"
     }
 
+    static func achievementAccessibilityValue(
+        for achievement: AchievementProgress
+    ) -> String {
+        let status = achievement.isEarned ? "Earned" : "Locked"
+        return "\(status), \(achievement.completedRequirementCount) of "
+            + "\(achievement.totalRequirementCount)"
+    }
+
     private let loadProfile: LoadLearnerProfileUseCase
     private let loadMasteryOverview: LoadMasteryOverviewUseCase
     private let updateProfile: UpdateLearnerProfileUseCase

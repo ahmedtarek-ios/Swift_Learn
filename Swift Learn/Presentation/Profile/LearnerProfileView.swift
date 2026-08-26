@@ -311,12 +311,13 @@ struct LearnerProfileView: View {
                 AchievementCard(achievement: achievement)
             }
             .buttonStyle(.plain)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(achievement.definition.title)
             .accessibilityIdentifier("achievement-card-\(achievement.id)")
             .accessibilityValue(
-                achievement.isEarned
-                    ? "Earned, \(achievement.completedRequirementCount) of \(achievement.totalRequirementCount)"
-                    : "Locked, \(achievement.completedRequirementCount) of \(achievement.totalRequirementCount)"
+                LearnerProfileViewModel.achievementAccessibilityValue(for: achievement)
             )
+            .accessibilityHint(achievement.definition.summary)
         }
     }
 

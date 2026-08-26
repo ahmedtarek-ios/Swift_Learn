@@ -169,7 +169,7 @@ final class Swift_LearnUITests: XCTestCase {
         let correctChoice = app.buttons[
             "review-choice-\(firstLesson.correctChoiceID)"
         ].firstMatch
-        XCTAssertTrue(correctChoice.waitForExistence(timeout: 5))
+        reveal(correctChoice, in: app)
         select(
             correctChoice,
             firstChoice: app.buttons[
@@ -232,7 +232,7 @@ final class Swift_LearnUITests: XCTestCase {
             "achievement-card-achievement.first-lesson"
         ].firstMatch
         reveal(firstLessonBadge, in: app)
-        XCTAssertTrue((firstLessonBadge.value as? String)?.hasPrefix("Locked") == true)
+        XCTAssertEqual(firstLessonBadge.value as? String, "Locked, 0 of 1")
 
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
         let startLesson = app.buttons["start-lesson-\(firstLesson.id)"].firstMatch
@@ -272,9 +272,7 @@ final class Swift_LearnUITests: XCTestCase {
             "achievement-card-achievement.first-lesson"
         ].firstMatch
         reveal(updatedFirstLessonBadge, in: app)
-        XCTAssertTrue(
-            (updatedFirstLessonBadge.value as? String)?.hasPrefix("Earned") == true
-        )
+        XCTAssertEqual(updatedFirstLessonBadge.value as? String, "Earned, 1 of 1")
     }
 
     @MainActor

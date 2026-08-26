@@ -132,6 +132,7 @@ struct ReviewQueueView: View {
         }
         .padding()
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("review-skill-\(item.id.rawValue)")
     }
 

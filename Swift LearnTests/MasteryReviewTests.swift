@@ -249,6 +249,8 @@ struct MasteryReviewTests {
         mistakes.load()
         #expect(review.loadState == .loaded)
         #expect(review.currentItem?.id == SkillID(rawValue: "skill.one"))
+        #expect(review.currentItem?.lesson.choices.map(\.id) == ["correct", "incorrect"])
+        #expect(review.currentItem?.lesson.correctChoiceID == "correct")
         #expect(mistakes.entries.count == 1)
 
         review.selectChoice("correct")

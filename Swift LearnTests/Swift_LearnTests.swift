@@ -621,6 +621,35 @@ struct Swift_LearnTests {
     }
 
     @Test
+    func achievementAccessibilityValueDescribesLockedAndEarnedProgress() {
+        let definition = AchievementDefinition(
+            id: "achievement.first-lesson",
+            title: "First Lesson",
+            summary: "Complete your first Swift lesson.",
+            kind: .firstLesson
+        )
+
+        #expect(
+            LearnerProfileViewModel.achievementAccessibilityValue(
+                for: AchievementProgress(
+                    definition: definition,
+                    completedRequirementCount: 0,
+                    totalRequirementCount: 1
+                )
+            ) == "Locked, 0 of 1"
+        )
+        #expect(
+            LearnerProfileViewModel.achievementAccessibilityValue(
+                for: AchievementProgress(
+                    definition: definition,
+                    completedRequirementCount: 1,
+                    totalRequirementCount: 1
+                )
+            ) == "Earned, 1 of 1"
+        )
+    }
+
+    @Test
     func progressEventsDescribeOnlyNewLearningTransitions() throws {
         let catalog = try bundledCatalog()
         let firstLesson = try #require(catalog.lessons.first)
