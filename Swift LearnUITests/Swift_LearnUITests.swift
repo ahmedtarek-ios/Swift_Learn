@@ -169,7 +169,7 @@ final class Swift_LearnUITests: XCTestCase {
         let correctChoice = app.buttons[
             "review-choice-\(firstLesson.correctChoiceID)"
         ].firstMatch
-        reveal(correctChoice, in: app)
+        revealInteractive(correctChoice, in: app)
         select(
             correctChoice,
             firstChoice: app.buttons[
@@ -178,7 +178,7 @@ final class Swift_LearnUITests: XCTestCase {
             choiceIndex: firstLesson.correctChoiceIndex
         )
         let submit = app.buttons["submit-review-answer"].firstMatch
-        XCTAssertTrue(submit.waitForExistence(timeout: 5))
+        revealInteractive(submit, in: app)
         activate(submit)
         XCTAssertTrue(
             app.descendants(matching: .any)["review-session-complete"]
@@ -232,7 +232,11 @@ final class Swift_LearnUITests: XCTestCase {
             "achievement-card-achievement.first-lesson"
         ].firstMatch
         reveal(firstLessonBadge, in: app)
-        XCTAssertEqual(firstLessonBadge.value as? String, "Locked, 0 of 1")
+        assertAchievement(
+            firstLessonBadge,
+            label: "First Lesson, Locked",
+            value: "Locked, 0 of 1"
+        )
 
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
         let startLesson = app.buttons["start-lesson-\(firstLesson.id)"].firstMatch
@@ -272,7 +276,11 @@ final class Swift_LearnUITests: XCTestCase {
             "achievement-card-achievement.first-lesson"
         ].firstMatch
         reveal(updatedFirstLessonBadge, in: app)
-        XCTAssertEqual(updatedFirstLessonBadge.value as? String, "Earned, 1 of 1")
+        assertAchievement(
+            updatedFirstLessonBadge,
+            label: "First Lesson, Earned",
+            value: "Earned, 1 of 1"
+        )
     }
 
     @MainActor
@@ -280,21 +288,27 @@ final class Swift_LearnUITests: XCTestCase {
         let app = launchApp()
         openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
 
-        let terminalAvatar = app.descendants(matching: .any)[
-            "profile-avatar-terminal"
+        let boyAvatar = app.descendants(matching: .any)[
+            "profile-avatar-boy"
         ].firstMatch
-        reveal(terminalAvatar, in: app)
+        reveal(boyAvatar, in: app)
 
 #if os(tvOS)
-        let codeAvatar = app.descendants(matching: .any)[
-            "profile-avatar-code"
+        let unknownAvatar = app.descendants(matching: .any)[
+            "profile-avatar-unknown"
         ].firstMatch
-        XCTAssertTrue(codeAvatar.waitForExistence(timeout: 5))
-        waitForFocus(on: codeAvatar)
+        XCTAssertTrue(unknownAvatar.waitForExistence(timeout: 5))
+        waitForFocus(on: unknownAvatar)
+#else
+        let customAvatar = app.descendants(matching: .any)[
+            "profile-avatar-custom"
+        ].firstMatch
+        XCTAssertTrue(customAvatar.waitForExistence(timeout: 5))
+        XCTAssertEqual(customAvatar.value as? String, "Not selected")
 #endif
 
-        focusAndActivate(terminalAvatar, tvPath: [.right])
-        XCTAssertEqual(terminalAvatar.value as? String, "Selected")
+        focusAndActivate(boyAvatar, tvPath: [.right])
+        XCTAssertEqual(boyAvatar.value as? String, "Selected")
 
         let saveProfile = app.buttons["save-profile"].firstMatch
         reveal(saveProfile, in: app)
@@ -306,11 +320,11 @@ final class Swift_LearnUITests: XCTestCase {
 
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
         openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
-        let restoredTerminalAvatar = app.descendants(matching: .any)[
-            "profile-avatar-terminal"
+        let restoredBoyAvatar = app.descendants(matching: .any)[
+            "profile-avatar-boy"
         ].firstMatch
-        XCTAssertTrue(restoredTerminalAvatar.waitForExistence(timeout: 5))
-        XCTAssertEqual(restoredTerminalAvatar.value as? String, "Selected")
+        XCTAssertTrue(restoredBoyAvatar.waitForExistence(timeout: 5))
+        XCTAssertEqual(restoredBoyAvatar.value as? String, "Selected")
     }
 
     @MainActor
@@ -448,6 +462,35 @@ final class Swift_LearnUITests: XCTestCase {
 #endif
 
         XCTAssertTrue(element.waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    private func revealInteractive(_ element: XCUIElement, in app: XCUIApplication) {
+#if os(tvOS)
+        reveal(element, in: app)
+#else
+        _ = element.waitForExistence(timeout: 2)
+
+        for _ in 0..<12 where !element.isHittable {
+            app.swipeUp()
+        }
+
+        XCTAssertTrue(element.waitForExistence(timeout: 5))
+        XCTAssertTrue(element.isHittable)
+#endif
+    }
+
+    @MainActor
+    private func assertAchievement(
+        _ element: XCUIElement,
+        label expectedLabel: String,
+        value expectedValue: String
+    ) {
+        XCTAssertEqual(element.label, expectedLabel)
+
+#if !os(macOS)
+        XCTAssertEqual(element.value as? String, expectedValue)
+#endif
     }
 
     @MainActor

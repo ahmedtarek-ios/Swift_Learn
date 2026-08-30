@@ -10,36 +10,48 @@ import Foundation
 struct LearnerProfile: Equatable, Sendable {
     static let defaultProfile = LearnerProfile(
         displayName: "Swift Learner",
-        avatar: .code,
+        avatar: .unknown,
+        customAvatarImageData: nil,
         appearance: .system,
         motionPreference: .system
     )
 
     let displayName: String
     let avatar: LearnerAvatar
+    let customAvatarImageData: Data?
     let appearance: LearnerAppearance
     let motionPreference: LearnerMotionPreference
 
     init(
         displayName: String,
         avatar: LearnerAvatar,
+        customAvatarImageData: Data? = nil,
         appearance: LearnerAppearance,
         motionPreference: LearnerMotionPreference = .system
     ) {
         self.displayName = displayName
         self.avatar = avatar
+        self.customAvatarImageData = customAvatarImageData
         self.appearance = appearance
         self.motionPreference = motionPreference
     }
 }
 
 enum LearnerAvatar: String, CaseIterable, Identifiable, Equatable, Sendable {
-    case code
-    case terminal
-    case book
-    case star
+    case unknown
+    case boy
+    case girl
+    case man
+    case woman
+    case grandfather
+    case grandmother
+    case custom
 
     var id: String { rawValue }
+
+    static var builtInCases: [LearnerAvatar] {
+        allCases.filter { $0 != .custom }
+    }
 }
 
 enum LearnerAppearance: String, CaseIterable, Identifiable, Equatable, Sendable {
@@ -115,6 +127,7 @@ struct LearnerProfileSnapshot: Equatable, Sendable {
 enum LearnerProfileError: LocalizedError, Equatable {
     case emptyDisplayName
     case displayNameTooLong
+    case missingCustomAvatarImage
 
     var errorDescription: String? {
         switch self {
@@ -122,6 +135,8 @@ enum LearnerProfileError: LocalizedError, Equatable {
             "Enter a display name."
         case .displayNameTooLong:
             "Display name must contain 40 characters or fewer."
+        case .missingCustomAvatarImage:
+            "Choose a Memoji or photo before saving this avatar."
         }
     }
 }

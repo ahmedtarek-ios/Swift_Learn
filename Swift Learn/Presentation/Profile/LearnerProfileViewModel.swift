@@ -25,13 +25,21 @@ final class LearnerProfileViewModel {
         case failed(String)
     }
 
+    enum AvatarImportState: Equatable {
+        case idle
+        case importing
+        case failed(String)
+    }
+
     private(set) var loadState: LoadState = .idle
     private(set) var saveState: SaveState = .idle
     private(set) var snapshot: LearnerProfileSnapshot?
     private(set) var masteryOverview: MasteryOverview?
+    private(set) var avatarImportState: AvatarImportState = .idle
 
     var draftDisplayName = LearnerProfile.defaultProfile.displayName
     var draftAvatar = LearnerProfile.defaultProfile.avatar
+    var draftCustomAvatarImageData = LearnerProfile.defaultProfile.customAvatarImageData
     var draftAppearance = LearnerProfile.defaultProfile.appearance
     var draftMotionPreference = LearnerProfile.defaultProfile.motionPreference
 
@@ -47,6 +55,13 @@ final class LearnerProfileViewModel {
         let status = achievement.isEarned ? "Earned" : "Locked"
         return "\(status), \(achievement.completedRequirementCount) of "
             + "\(achievement.totalRequirementCount)"
+    }
+
+    static func achievementAccessibilityLabel(
+        for achievement: AchievementProgress
+    ) -> String {
+        let status = achievement.isEarned ? "Earned" : "Locked"
+        return "\(achievement.definition.title), \(status)"
     }
 
     private let loadProfile: LoadLearnerProfileUseCase
@@ -83,6 +98,7 @@ final class LearnerProfileViewModel {
             _ = try updateProfile.execute(
                 displayName: draftDisplayName,
                 avatar: draftAvatar,
+                customAvatarImageData: draftCustomAvatarImageData,
                 appearance: draftAppearance,
                 motionPreference: draftMotionPreference
             )
@@ -96,10 +112,35 @@ final class LearnerProfileViewModel {
         }
     }
 
+    func selectBuiltInAvatar(_ avatar: LearnerAvatar) {
+        guard avatar != .custom else { return }
+        draftAvatar = avatar
+        avatarImportState = .idle
+    }
+
+    func beginAvatarImport() {
+        avatarImportState = .importing
+    }
+
+    func selectCustomAvatar(imageData: Data) {
+        guard imageData.isEmpty == false else {
+            avatarImportState = .failed("The selected image could not be loaded.")
+            return
+        }
+        draftCustomAvatarImageData = imageData
+        draftAvatar = .custom
+        avatarImportState = .idle
+    }
+
+    func failAvatarImport(_ message: String) {
+        avatarImportState = .failed(message)
+    }
+
     private func apply(_ snapshot: LearnerProfileSnapshot) {
         self.snapshot = snapshot
         draftDisplayName = snapshot.profile.displayName
         draftAvatar = snapshot.profile.avatar
+        draftCustomAvatarImageData = snapshot.profile.customAvatarImageData
         draftAppearance = snapshot.profile.appearance
         draftMotionPreference = snapshot.profile.motionPreference
     }

@@ -27,7 +27,7 @@ final class AppContainer {
         clock: any LearningClock = SystemLearningClock(),
         idGenerator: any LearningAttemptIDGenerating = SystemLearningAttemptIDGenerator()
     ) throws {
-        let schema = Schema(versionedSchema: SwiftLearnSchemaV2.self)
+        let schema = Schema(versionedSchema: SwiftLearnSchemaV3.self)
         let configuration: ModelConfiguration
         if let storageURL {
             configuration = ModelConfiguration(
@@ -144,6 +144,9 @@ final class AppContainer {
             modelContext.delete(record)
         }
         for record in try modelContext.fetch(FetchDescriptor<LearnerProfileRecord>()) {
+            modelContext.delete(record)
+        }
+        for record in try modelContext.fetch(FetchDescriptor<LearnerAvatarImageRecord>()) {
             modelContext.delete(record)
         }
         for record in try modelContext.fetch(FetchDescriptor<LearningAttemptRecord>()) {

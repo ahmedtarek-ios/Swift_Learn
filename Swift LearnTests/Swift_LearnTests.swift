@@ -621,31 +621,39 @@ struct Swift_LearnTests {
     }
 
     @Test
-    func achievementAccessibilityValueDescribesLockedAndEarnedProgress() {
+    func achievementAccessibilityDescribesLockedAndEarnedProgress() {
         let definition = AchievementDefinition(
             id: "achievement.first-lesson",
             title: "First Lesson",
             summary: "Complete your first Swift lesson.",
             kind: .firstLesson
         )
+        let locked = AchievementProgress(
+            definition: definition,
+            completedRequirementCount: 0,
+            totalRequirementCount: 1
+        )
+        let earned = AchievementProgress(
+            definition: definition,
+            completedRequirementCount: 1,
+            totalRequirementCount: 1
+        )
 
         #expect(
-            LearnerProfileViewModel.achievementAccessibilityValue(
-                for: AchievementProgress(
-                    definition: definition,
-                    completedRequirementCount: 0,
-                    totalRequirementCount: 1
-                )
-            ) == "Locked, 0 of 1"
+            LearnerProfileViewModel.achievementAccessibilityLabel(for: locked)
+                == "First Lesson, Locked"
         )
         #expect(
-            LearnerProfileViewModel.achievementAccessibilityValue(
-                for: AchievementProgress(
-                    definition: definition,
-                    completedRequirementCount: 1,
-                    totalRequirementCount: 1
-                )
-            ) == "Earned, 1 of 1"
+            LearnerProfileViewModel.achievementAccessibilityValue(for: locked)
+                == "Locked, 0 of 1"
+        )
+        #expect(
+            LearnerProfileViewModel.achievementAccessibilityLabel(for: earned)
+                == "First Lesson, Earned"
+        )
+        #expect(
+            LearnerProfileViewModel.achievementAccessibilityValue(for: earned)
+                == "Earned, 1 of 1"
         )
     }
 
@@ -706,7 +714,7 @@ struct Swift_LearnTests {
         let firstLessonID = try #require(catalog.lessons.first).id
         let profile = LearnerProfile(
             displayName: "Ada",
-            avatar: .terminal,
+            avatar: .boy,
             appearance: .dark
         )
         let useCase = LoadLearnerProfileUseCase(
@@ -735,7 +743,7 @@ struct Swift_LearnTests {
 
         let profile = try useCase.execute(
             displayName: "  Ada Lovelace  ",
-            avatar: .book,
+            avatar: .woman,
             appearance: .light,
             motionPreference: .reduced
         )
@@ -746,17 +754,33 @@ struct Swift_LearnTests {
         #expect(throws: LearnerProfileError.emptyDisplayName) {
             try useCase.execute(
                 displayName: "   ",
-                avatar: .code,
+                avatar: .unknown,
                 appearance: .system
             )
         }
         #expect(throws: LearnerProfileError.displayNameTooLong) {
             try useCase.execute(
                 displayName: String(repeating: "a", count: 41),
-                avatar: .code,
+                avatar: .unknown,
                 appearance: .system
             )
         }
+        #expect(throws: LearnerProfileError.missingCustomAvatarImage) {
+            try useCase.execute(
+                displayName: "Ada",
+                avatar: .custom,
+                appearance: .system
+            )
+        }
+
+        let customImageData = Data([0x01, 0x02, 0x03])
+        let customProfile = try useCase.execute(
+            displayName: "Ada",
+            avatar: .custom,
+            customAvatarImageData: customImageData,
+            appearance: .system
+        )
+        #expect(customProfile.customAvatarImageData == customImageData)
     }
 
     @Test
@@ -779,16 +803,33 @@ struct Swift_LearnTests {
         )
 
         viewModel.draftDisplayName = "Grace"
-        viewModel.draftAvatar = .star
+        viewModel.selectBuiltInAvatar(.girl)
         viewModel.draftAppearance = .dark
         viewModel.draftMotionPreference = .reduced
         viewModel.save()
 
         #expect(viewModel.saveState == .saved)
         #expect(viewModel.snapshot?.profile.displayName == "Grace")
-        #expect(viewModel.snapshot?.profile.avatar == .star)
+        #expect(viewModel.snapshot?.profile.avatar == .girl)
         #expect(viewModel.snapshot?.profile.appearance == .dark)
         #expect(viewModel.snapshot?.profile.motionPreference == .reduced)
+
+        let customImageData = Data([0xCA, 0xFE])
+        viewModel.beginAvatarImport()
+        #expect(viewModel.avatarImportState == .importing)
+        viewModel.selectCustomAvatar(imageData: customImageData)
+        #expect(viewModel.draftAvatar == .custom)
+        #expect(viewModel.draftCustomAvatarImageData == customImageData)
+        #expect(viewModel.avatarImportState == .idle)
+        viewModel.save()
+        #expect(viewModel.snapshot?.profile.avatar == .custom)
+        #expect(viewModel.snapshot?.profile.customAvatarImageData == customImageData)
+
+        viewModel.selectCustomAvatar(imageData: Data())
+        #expect(
+            viewModel.avatarImportState
+                == .failed("The selected image could not be loaded.")
+        )
 
         let failingViewModel = makeProfileViewModel(
             catalog: catalog,
@@ -811,12 +852,35 @@ struct Swift_LearnTests {
 
         let profile = LearnerProfile(
             displayName: "Chris",
-            avatar: .terminal,
+            avatar: .man,
             appearance: .dark,
             motionPreference: .reduced
         )
         try repository.saveProfile(profile)
         #expect(try repository.loadProfile() == profile)
+
+        let customImageData = Data([0x89, 0x50, 0x4E, 0x47])
+        let customProfile = LearnerProfile(
+            displayName: "Chris",
+            avatar: .custom,
+            customAvatarImageData: customImageData,
+            appearance: .dark,
+            motionPreference: .reduced
+        )
+        try repository.saveProfile(customProfile)
+        #expect(try repository.loadProfile() == customProfile)
+        #expect(
+            try container.modelContainer.mainContext.fetch(
+                FetchDescriptor<LearnerAvatarImageRecord>()
+            ).first?.imageData == customImageData
+        )
+
+        try repository.saveProfile(profile)
+        #expect(
+            try container.modelContainer.mainContext.fetch(
+                FetchDescriptor<LearnerAvatarImageRecord>()
+            ).isEmpty
+        )
 
         let record = try #require(
             container.modelContainer.mainContext.fetch(
@@ -829,7 +893,7 @@ struct Swift_LearnTests {
         try container.modelContainer.mainContext.save()
 
         let mappedProfile = try repository.loadProfile()
-        #expect(mappedProfile.avatar == .code)
+        #expect(mappedProfile.avatar == .unknown)
         #expect(mappedProfile.appearance == .system)
         #expect(mappedProfile.motionPreference == .system)
     }

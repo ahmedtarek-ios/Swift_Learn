@@ -238,6 +238,7 @@ struct LearningEvidenceTests {
                 .map(\.displayName) == ["Migration Learner"]
         )
         #expect(try context.fetch(FetchDescriptor<LearningAttemptRecord>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<LearnerAvatarImageRecord>()).isEmpty)
     }
 
     @Test
@@ -413,7 +414,7 @@ struct LearningEvidenceTests {
         container.mainContext.insert(
             LearnerProfileRecord(
                 displayName: "Migration Learner",
-                avatarRawValue: LearnerAvatar.terminal.rawValue,
+                avatarRawValue: LearnerAvatar.boy.rawValue,
                 appearanceRawValue: LearnerAppearance.dark.rawValue
             )
         )

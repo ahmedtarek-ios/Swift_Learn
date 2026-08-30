@@ -20,9 +20,13 @@ final class SwiftDataLearnerProfileRepository: LearnerProfileRepository {
             return .defaultProfile
         }
 
+        let avatar = LearnerAvatar(rawValue: record.avatarRawValue) ?? .unknown
         return LearnerProfile(
             displayName: record.displayName,
-            avatar: LearnerAvatar(rawValue: record.avatarRawValue) ?? .code,
+            avatar: avatar,
+            customAvatarImageData: avatar == .custom
+                ? try avatarImageRecord()?.imageData
+                : nil,
             appearance: LearnerAppearance(rawValue: record.appearanceRawValue) ?? .system,
             motionPreference: LearnerMotionPreference(
                 rawValue: record.motionPreferenceRawValue
@@ -47,11 +51,30 @@ final class SwiftDataLearnerProfileRepository: LearnerProfileRepository {
             )
         }
 
+        if profile.avatar == .custom,
+           let imageData = profile.customAvatarImageData,
+           imageData.isEmpty == false {
+            if let imageRecord = try avatarImageRecord() {
+                imageRecord.imageData = imageData
+            } else {
+                modelContext.insert(LearnerAvatarImageRecord(imageData: imageData))
+            }
+        } else if let imageRecord = try avatarImageRecord() {
+            modelContext.delete(imageRecord)
+        }
+
         try modelContext.save()
     }
 
     private func profileRecord() throws -> LearnerProfileRecord? {
         try modelContext.fetch(FetchDescriptor<LearnerProfileRecord>()).first {
+            $0.profileID == "local-learner"
+        }
+    }
+
+
+    private func avatarImageRecord() throws -> LearnerAvatarImageRecord? {
+        try modelContext.fetch(FetchDescriptor<LearnerAvatarImageRecord>()).first {
             $0.profileID == "local-learner"
         }
     }

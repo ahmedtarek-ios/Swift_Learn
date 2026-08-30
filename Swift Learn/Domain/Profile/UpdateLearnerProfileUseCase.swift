@@ -18,6 +18,7 @@ struct UpdateLearnerProfileUseCase {
     func execute(
         displayName: String,
         avatar: LearnerAvatar,
+        customAvatarImageData: Data? = nil,
         appearance: LearnerAppearance,
         motionPreference: LearnerMotionPreference = .system
     ) throws -> LearnerProfile {
@@ -28,10 +29,15 @@ struct UpdateLearnerProfileUseCase {
         guard normalizedName.count <= 40 else {
             throw LearnerProfileError.displayNameTooLong
         }
+        if avatar == .custom,
+           customAvatarImageData?.isEmpty != false {
+            throw LearnerProfileError.missingCustomAvatarImage
+        }
 
         let profile = LearnerProfile(
             displayName: normalizedName,
             avatar: avatar,
+            customAvatarImageData: avatar == .custom ? customAvatarImageData : nil,
             appearance: appearance,
             motionPreference: motionPreference
         )

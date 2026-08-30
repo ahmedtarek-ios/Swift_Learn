@@ -5,10 +5,18 @@
 //  Created by Ahmed Tarek on 23/08/2026.
 //
 
+import Foundation
+import ImageIO
 import SwiftUI
+#if !os(tvOS)
+import PhotosUI
+#endif
 
 struct LearnerProfileView: View {
     @Bindable private var viewModel: LearnerProfileViewModel
+#if !os(tvOS)
+    @State private var selectedPhotoItem: PhotosPickerItem?
+#endif
 #if os(tvOS)
     @FocusState private var focusedControlID: String?
 #endif
@@ -40,6 +48,11 @@ struct LearnerProfileView: View {
             .navigationTitle("Profile")
         }
         .onAppear(perform: viewModel.load)
+#if !os(tvOS)
+        .task(id: selectedPhotoItem) {
+            await importSelectedAvatar()
+        }
+#endif
     }
 
     @ViewBuilder
@@ -56,7 +69,7 @@ struct LearnerProfileView: View {
             }
             .accessibilityIdentifier("profile-screen")
 #if os(tvOS)
-            .defaultFocus($focusedControlID, "profile-avatar-code")
+            .defaultFocus($focusedControlID, "profile-avatar-unknown")
 #endif
         }
     }
@@ -64,11 +77,11 @@ struct LearnerProfileView: View {
     private func profileEditor(_ snapshot: LearnerProfileSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 16) {
-                Image(systemName: avatarSymbol(viewModel.draftAvatar))
-                    .font(.system(size: 38, weight: .bold))
-                    .frame(width: 72, height: 72)
-                    .foregroundStyle(.white)
-                    .background(Color.accentColor.gradient, in: Circle())
+                CircularLearnerAvatar(
+                    avatar: viewModel.draftAvatar,
+                    customImageData: viewModel.draftCustomAvatarImageData,
+                    size: 88
+                )
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -87,17 +100,23 @@ struct LearnerProfileView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Avatar")
                     .font(.headline)
-                HStack(spacing: 10) {
-                    ForEach(LearnerAvatar.allCases) { avatar in
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 72), spacing: 12)],
+                    alignment: .leading,
+                    spacing: 12
+                ) {
+                    ForEach(LearnerAvatar.builtInCases) { avatar in
                         Button {
-                            viewModel.draftAvatar = avatar
+                            viewModel.selectBuiltInAvatar(avatar)
                         } label: {
-                            Image(systemName: avatarSymbol(avatar))
-                                .frame(minWidth: 34, minHeight: 34)
+                            avatarTile(
+                                avatar,
+                                customImageData: viewModel.draftCustomAvatarImageData,
+                                isSelected: viewModel.draftAvatar == avatar
+                            )
                         }
-                        .buttonStyle(.bordered)
-                        .tint(viewModel.draftAvatar == avatar ? .accentColor : .secondary)
-                        .accessibilityLabel(avatarLabel(avatar))
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(avatar.accessibilityLabel)
                         .accessibilityIdentifier("profile-avatar-\(avatar.rawValue)")
                         .accessibilityValue(
                             viewModel.draftAvatar == avatar ? "Selected" : "Not selected"
@@ -109,7 +128,39 @@ struct LearnerProfileView: View {
                         )
 #endif
                     }
+#if !os(tvOS)
+                    let customAvatarImageData = viewModel.draftCustomAvatarImageData
+                    let isCustomAvatarSelected = viewModel.draftAvatar == .custom
+                    PhotosPicker(
+                        selection: $selectedPhotoItem,
+                        matching: .images,
+                        preferredItemEncoding: .current
+                    ) {
+                        ZStack(alignment: .bottomTrailing) {
+                            avatarTile(
+                                .custom,
+                                customImageData: customAvatarImageData,
+                                isSelected: isCustomAvatarSelected
+                            )
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title3)
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, Color.accentColor)
+                                .background(.background, in: Circle())
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Choose Memoji or photo")
+                    .accessibilityHint("Opens your photo library")
+                    .accessibilityIdentifier("profile-avatar-custom")
+                    .accessibilityValue(
+                        viewModel.draftAvatar == .custom ? "Selected" : "Not selected"
+                    )
+#endif
                 }
+
+                avatarImportFeedback
             }
 
             VStack(alignment: .leading, spacing: 10) {
@@ -312,7 +363,9 @@ struct LearnerProfileView: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(achievement.definition.title)
+            .accessibilityLabel(
+                LearnerProfileViewModel.achievementAccessibilityLabel(for: achievement)
+            )
             .accessibilityIdentifier("achievement-card-\(achievement.id)")
             .accessibilityValue(
                 LearnerProfileViewModel.achievementAccessibilityValue(for: achievement)
@@ -321,31 +374,58 @@ struct LearnerProfileView: View {
         }
     }
 
-    private func avatarSymbol(_ avatar: LearnerAvatar) -> String {
-        switch avatar {
-        case .code:
-            "chevron.left.forwardslash.chevron.right"
-        case .terminal:
-            "terminal.fill"
-        case .book:
-            "book.fill"
-        case .star:
-            "star.fill"
+    private nonisolated func avatarTile(
+        _ avatar: LearnerAvatar,
+        customImageData: Data?,
+        isSelected: Bool
+    ) -> some View {
+        CircularLearnerAvatar(
+            avatar: avatar,
+            customImageData: customImageData,
+            size: 64
+        )
+        .padding(4)
+        .overlay {
+            Circle()
+                .stroke(
+                    isSelected ? Color.accentColor : .clear,
+                    lineWidth: 4
+                )
         }
     }
 
-    private func avatarLabel(_ avatar: LearnerAvatar) -> String {
-        switch avatar {
-        case .code:
-            "Code avatar"
-        case .terminal:
-            "Terminal avatar"
-        case .book:
-            "Book avatar"
-        case .star:
-            "Star avatar"
+    @ViewBuilder
+    private var avatarImportFeedback: some View {
+        switch viewModel.avatarImportState {
+        case .idle:
+            EmptyView()
+        case .importing:
+            ProgressView("Loading avatar…")
+                .accessibilityIdentifier("profile-avatar-importing")
+        case let .failed(message):
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.red)
+                .accessibilityIdentifier("profile-avatar-import-error")
         }
     }
+
+#if !os(tvOS)
+    private func importSelectedAvatar() async {
+        guard let selectedPhotoItem else { return }
+        viewModel.beginAvatarImport()
+
+        do {
+            guard let data = try await selectedPhotoItem.loadTransferable(type: Data.self) else {
+                viewModel.failAvatarImport("The selected image could not be loaded.")
+                return
+            }
+            viewModel.selectCustomAvatar(imageData: data)
+        } catch {
+            viewModel.failAvatarImport(error.localizedDescription)
+        }
+    }
+#endif
 
     private func appearanceLabel(_ appearance: LearnerAppearance) -> String {
         switch appearance {
@@ -364,6 +444,94 @@ struct LearnerProfileView: View {
             "System Motion"
         case .reduced:
             "Reduced Motion"
+        }
+    }
+}
+
+private struct CircularLearnerAvatar: View {
+    let avatar: LearnerAvatar
+    let customImageData: Data?
+    let size: CGFloat
+
+    var body: some View {
+        avatarImage
+            .resizable()
+            .scaledToFill()
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+            .overlay {
+                Circle()
+                    .stroke(.white.opacity(0.7), lineWidth: 1)
+            }
+            .contentShape(Circle())
+    }
+
+    private var avatarImage: Image {
+        if avatar == .custom,
+           let customImageData,
+           let image = Self.thumbnail(from: customImageData) {
+            return Image(decorative: image, scale: 1)
+        }
+        if let assetName = avatar.assetName {
+            return Image(assetName)
+        }
+        return Image(systemName: "person.crop.circle.fill")
+    }
+
+    private static func thumbnail(from data: Data) -> CGImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+            return nil
+        }
+        let options: CFDictionary = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: 512,
+            kCGImageSourceShouldCacheImmediately: true
+        ] as CFDictionary
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options)
+    }
+}
+
+private extension LearnerAvatar {
+    var assetName: String? {
+        switch self {
+        case .unknown:
+            "avatar_unknown"
+        case .boy:
+            "avatar_boy"
+        case .girl:
+            "avatar_girl"
+        case .man:
+            "avatar_man"
+        case .woman:
+            "avatar_woman"
+        case .grandfather:
+            "avatar_gf"
+        case .grandmother:
+            "avatar_gm"
+        case .custom:
+            nil
+        }
+    }
+
+    var accessibilityLabel: String {
+        switch self {
+        case .unknown:
+            "Mystery coder avatar"
+        case .boy:
+            "Boy coder avatar"
+        case .girl:
+            "Girl coder avatar"
+        case .man:
+            "Man coder avatar"
+        case .woman:
+            "Woman coder avatar"
+        case .grandfather:
+            "Grandfather coder avatar"
+        case .grandmother:
+            "Grandmother coder avatar"
+        case .custom:
+            "Custom Memoji or photo avatar"
         }
     }
 }
