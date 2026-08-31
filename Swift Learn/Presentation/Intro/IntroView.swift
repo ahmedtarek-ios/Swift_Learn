@@ -283,8 +283,11 @@ private struct IntroNavigation: View {
             .accessibilityIdentifier(
                 viewModel.isLastStep
                     ? "intro-start-learning"
-                    : "intro-next"
+                    : "intro-next-\(viewModel.currentStep.number)"
             )
+#if os(macOS)
+            .id(viewModel.currentStep)
+#endif
 #if os(tvOS)
             .focused($isPrimaryFocused)
 #endif

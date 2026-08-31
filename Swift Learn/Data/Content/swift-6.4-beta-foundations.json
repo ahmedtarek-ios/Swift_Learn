@@ -87,20 +87,24 @@
           "id": "swift.output.string-interpolation",
           "title": "Printing Constants and Variables",
           "objective": "Insert a stored value into printed text with string interpolation.",
-          "instruction": "Print the current welcome message inside a longer sentence. Choose the expression that inserts the stored value.",
-          "codePrefix": "let welcome = \"Hello\"\nprint(\"Message: ",
-          "codeSuffix": "\")",
-          "choices": [
-            {
-              "id": "interpolation",
-              "code": "\\(welcome)"
-            },
-            {
-              "id": "literal",
-              "code": "welcome"
-            }
-          ],
-          "correctChoiceID": "interpolation",
+          "instruction": "Read the interpolation and predict the exact line printed by Swift.",
+          "activity": {
+            "schemaVersion": 1,
+            "type": "outputPrediction",
+            "prompt": "What does this code print?",
+            "code": "let welcome = \"Hello\"\nprint(\"Message: \\(welcome)\")",
+            "choices": [
+              {
+                "id": "message-hello",
+                "code": "Message: Hello"
+              },
+              {
+                "id": "message-welcome",
+                "code": "Message: welcome"
+              }
+            ],
+            "correctChoiceID": "message-hello"
+          },
           "correctFeedback": "Correct. \\(welcome) replaces the placeholder with the stored value when Swift builds the string.",
           "incorrectFeedback": "welcome without interpolation prints those letters as fixed text. Wrap the name in \\( and ).",
           "sourceTitle": "The Basics · Printing Constants and Variables",

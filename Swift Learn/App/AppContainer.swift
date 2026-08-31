@@ -24,6 +24,7 @@ final class AppContainer {
         storageURL: URL? = nil,
         resetsStoredData: Bool = false,
         seedsReviewFixture: Bool = false,
+        seedsActivityFixture: Bool = false,
         clock: any LearningClock = SystemLearningClock(),
         idGenerator: any LearningAttemptIDGenerating = SystemLearningAttemptIDGenerator()
     ) throws {
@@ -67,6 +68,17 @@ final class AppContainer {
         let attemptRepository = SwiftDataLearningAttemptRepository(
             modelContext: modelContainer.mainContext
         )
+        if seedsActivityFixture {
+            let lessons = try contentRepository.loadCatalog().lessons
+            guard let activityIndex = lessons.firstIndex(where: {
+                $0.activity.kind == .outputPrediction
+            }) else {
+                throw AppContainerError.activityFixtureUnavailable
+            }
+            for prerequisite in lessons[..<activityIndex] {
+                try progressRepository.markCompleted(lessonID: prerequisite.id)
+            }
+        }
         let loadCanonicalSkills = LoadCanonicalSkillsUseCase(
             contentRepository: contentRepository,
             skillRepository: skillRepository
@@ -153,5 +165,13 @@ final class AppContainer {
             modelContext.delete(record)
         }
         try modelContext.save()
+    }
+}
+
+private enum AppContainerError: LocalizedError {
+    case activityFixtureUnavailable
+
+    var errorDescription: String? {
+        "The UI-test activity fixture has no output-prediction lesson."
     }
 }

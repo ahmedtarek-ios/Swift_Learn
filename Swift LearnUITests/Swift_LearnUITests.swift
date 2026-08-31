@@ -24,7 +24,7 @@ final class Swift_LearnUITests: XCTestCase {
                 .waitForExistence(timeout: 5)
         )
 
-        let next = app.buttons["intro-next"].firstMatch
+        let next = app.buttons["intro-next-1"].firstMatch
         XCTAssertTrue(next.waitForExistence(timeout: 5))
         activate(next)
         XCTAssertTrue(
@@ -32,7 +32,7 @@ final class Swift_LearnUITests: XCTestCase {
                 .waitForExistence(timeout: 5)
         )
 
-        let secondNext = app.buttons["intro-next"].firstMatch
+        let secondNext = app.buttons["intro-next-2"].firstMatch
         XCTAssertTrue(secondNext.waitForExistence(timeout: 5))
         activate(secondNext)
         XCTAssertTrue(
@@ -57,6 +57,7 @@ final class Swift_LearnUITests: XCTestCase {
         let firstLesson = try XCTUnwrap(lessonExpectations.first)
         let secondLesson = try XCTUnwrap(lessonExpectations.dropFirst().first)
         let app = launchApp()
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
 
         let firstStart = app.buttons[
             "start-lesson-\(firstLesson.id)"
@@ -104,11 +105,54 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
+    func testOutputPredictionActivityCompletes() throws {
+        let lesson = try XCTUnwrap(
+            loadLessonExpectations().first {
+                $0.activityType == "outputPrediction"
+            }
+        )
+        let firstChoice = try XCTUnwrap(lesson.choices.first)
+        let app = launchApp(activityFixture: true)
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+
+        let startLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
+        reveal(startLesson, in: app)
+        activate(startLesson)
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["activity-kind-outputPrediction"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+        let prompt = app.staticTexts["activity-prompt"].firstMatch
+        XCTAssertTrue(prompt.waitForExistence(timeout: 5))
+        XCTAssertEqual(prompt.label, "What does this code print?")
+
+        let correctChoice = app.buttons[
+            "choice-\(lesson.correctChoiceID)"
+        ].firstMatch
+        XCTAssertTrue(correctChoice.waitForExistence(timeout: 5))
+        select(
+            correctChoice,
+            firstChoice: app.buttons["choice-\(firstChoice.id)"],
+            choiceIndex: lesson.correctChoiceIndex
+        )
+
+        let submit = app.buttons["submit-answer"].firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout: 5))
+        activate(submit)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["lesson-complete-feedback"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
     func testCompletionRestoresAfterRelaunch() throws {
         let lessons = try loadLessonExpectations()
         let firstLesson = try XCTUnwrap(lessons.first)
         let secondLesson = try XCTUnwrap(lessons.dropFirst().first)
         let app = launchApp(persistsData: true)
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
 
         let firstStart = app.buttons["start-lesson-\(firstLesson.id)"].firstMatch
         XCTAssertTrue(firstStart.waitForExistence(timeout: 15))
@@ -135,6 +179,7 @@ final class Swift_LearnUITests: XCTestCase {
         app.launchArguments.removeAll { $0 == "--reset-ui-testing-data" }
         app.launch()
         prepareAfterLaunch(app)
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
 
         let restoredFirstLesson = app.buttons[
             "start-lesson-\(firstLesson.id)"
@@ -153,6 +198,7 @@ final class Swift_LearnUITests: XCTestCase {
     func testReviewQueueCompletesAndRestoresMistakeNotebook() throws {
         let firstLesson = try XCTUnwrap(loadLessonExpectations().first)
         let app = launchApp(persistsData: true, reviewFixture: true)
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
 
         let reviewSummary = app.descendants(matching: .any)[
             "journey-review-summary"
@@ -197,6 +243,7 @@ final class Swift_LearnUITests: XCTestCase {
         app.launchArguments.removeAll { $0 == "--reset-ui-testing-data" }
         app.launch()
         prepareAfterLaunch(app)
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
 
         let restoredSummary = app.descendants(matching: .any)[
             "journey-review-summary"
@@ -304,14 +351,18 @@ final class Swift_LearnUITests: XCTestCase {
             "profile-avatar-custom"
         ].firstMatch
         XCTAssertTrue(customAvatar.waitForExistence(timeout: 5))
+#if os(macOS)
+        XCTAssertEqual(customAvatar.label, "Choose Memoji or photo")
+#else
         XCTAssertEqual(customAvatar.value as? String, "Not selected")
+#endif
 #endif
 
         focusAndActivate(boyAvatar, tvPath: [.right])
         XCTAssertEqual(boyAvatar.value as? String, "Selected")
 
         let saveProfile = app.buttons["save-profile"].firstMatch
-        reveal(saveProfile, in: app)
+        revealInteractive(saveProfile, in: app)
         activate(saveProfile)
         XCTAssertTrue(
             app.descendants(matching: .any)["profile-save-success"]
@@ -331,7 +382,8 @@ final class Swift_LearnUITests: XCTestCase {
     private func launchApp(
         skipIntro: Bool = true,
         persistsData: Bool = false,
-        reviewFixture: Bool = false
+        reviewFixture: Bool = false,
+        activityFixture: Bool = false
     ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments.append("--ui-testing")
@@ -344,6 +396,9 @@ final class Swift_LearnUITests: XCTestCase {
         }
         if reviewFixture {
             app.launchArguments.append("--ui-testing-review-fixture")
+        }
+        if activityFixture {
+            app.launchArguments.append("--ui-testing-activity-fixture")
         }
 
 #if os(macOS)
@@ -450,7 +505,9 @@ final class Swift_LearnUITests: XCTestCase {
             return
         }
 
-#if os(tvOS)
+#if os(macOS)
+        scrollDown(until: element, in: app, requiresHittable: false)
+#elseif os(tvOS)
         let remote = XCUIRemote.shared
         for _ in 0..<20 where !element.exists {
             remote.press(.down)
@@ -466,7 +523,9 @@ final class Swift_LearnUITests: XCTestCase {
 
     @MainActor
     private func revealInteractive(_ element: XCUIElement, in app: XCUIApplication) {
-#if os(tvOS)
+#if os(macOS)
+        scrollDown(until: element, in: app, requiresHittable: true)
+#elseif os(tvOS)
         reveal(element, in: app)
 #else
         _ = element.waitForExistence(timeout: 2)
@@ -479,6 +538,36 @@ final class Swift_LearnUITests: XCTestCase {
         XCTAssertTrue(element.isHittable)
 #endif
     }
+
+#if os(macOS)
+    @MainActor
+    private func scrollDown(
+        until element: XCUIElement,
+        in app: XCUIApplication,
+        requiresHittable: Bool
+    ) {
+        guard app.scrollViews.firstMatch.waitForExistence(timeout: 5) else {
+            XCTFail("Expected a scroll view while revealing \(element)")
+            return
+        }
+
+        app.activate()
+        let scrollCoordinate = app.windows.firstMatch.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75)
+        )
+        for _ in 0..<12 {
+            if element.exists && (!requiresHittable || element.isHittable) {
+                break
+            }
+            scrollCoordinate.scroll(byDeltaX: 0, deltaY: -300)
+        }
+
+        XCTAssertTrue(element.waitForExistence(timeout: 5))
+        if requiresHittable {
+            XCTAssertTrue(element.isHittable)
+        }
+    }
+#endif
 
     @MainActor
     private func assertAchievement(
@@ -642,6 +731,7 @@ private struct LearningCatalogExpectation: Decodable {
 private struct LessonExpectation: Decodable {
     let id: String
     let title: String
+    let activityType: String
     let correctChoiceID: String
     let choices: [Choice]
 
@@ -651,5 +741,49 @@ private struct LessonExpectation: Decodable {
 
     struct Choice: Decodable {
         let id: String
+    }
+
+    private struct Activity: Decodable {
+        let type: String
+        let correctChoiceID: String
+        let choices: [Choice]
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case correctChoiceID
+        case choices
+        case activity
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        if let activity = try container.decodeIfPresent(
+            Activity.self,
+            forKey: .activity
+        ) {
+            activityType = activity.type
+            correctChoiceID = activity.correctChoiceID
+            choices = activity.choices
+        } else {
+            activityType = "missingCode"
+            correctChoiceID = try container.decode(
+                String.self,
+                forKey: .correctChoiceID
+            )
+            choices = try container.decode([Choice].self, forKey: .choices)
+        }
+
+        guard !choices.isEmpty,
+              choices.contains(where: { $0.id == correctChoiceID }) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .choices,
+                in: container,
+                debugDescription: "Lesson activity choices are invalid."
+            )
+        }
     }
 }

@@ -7,8 +7,48 @@
 
 import SwiftUI
 
+struct LearningActivityRenderer: View {
+    let activity: LearningActivity
+    let selectedChoiceID: String?
+    let codeIdentifier: String
+    let choiceIdentifierPrefix: String
+    let selectChoice: (String) -> Void
+    let reduceMotion: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(activityKindLabel)
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("activity-kind-\(activity.kind.rawValue)")
+
+            CodeChoiceActivityView(
+                prompt: activity.prompt,
+                code: activity.code(selectedChoiceID: selectedChoiceID),
+                choices: activity.choices,
+                selectedChoiceID: selectedChoiceID,
+                codeIdentifier: codeIdentifier,
+                choiceIdentifierPrefix: choiceIdentifierPrefix,
+                selectChoice: selectChoice,
+                reduceMotion: reduceMotion
+            )
+        }
+    }
+
+    private var activityKindLabel: String {
+        switch activity.kind {
+        case .missingCode:
+            "Missing Code"
+        case .outputPrediction:
+            "Output Prediction"
+        }
+    }
+}
+
 struct CodeChoiceActivityView: View {
-    let lesson: LearningLesson
+    let prompt: String
+    let code: String
+    let choices: [LearningChoice]
     let selectedChoiceID: String?
     let codeIdentifier: String
     let choiceIdentifierPrefix: String
@@ -21,7 +61,7 @@ struct CodeChoiceActivityView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(lesson.code(selectedChoiceID: selectedChoiceID))
+            Text(code)
                 .font(.system(.title3, design: .monospaced, weight: .semibold))
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -37,11 +77,12 @@ struct CodeChoiceActivityView: View {
                 )
                 .accessibilityIdentifier(codeIdentifier)
 
-            Text("Choose the missing Swift code")
+            Text(prompt)
                 .font(.headline)
+                .accessibilityIdentifier("activity-prompt")
 
             HStack(spacing: 12) {
-                ForEach(lesson.choices) { choice in
+                ForEach(choices) { choice in
                     Button {
                         selectChoice(choice.id)
                     } label: {
@@ -80,7 +121,7 @@ struct CodeChoiceActivityView: View {
         }
 #if os(tvOS)
         .onAppear {
-            focusedChoiceID = lesson.choices.first?.id
+            focusedChoiceID = choices.first?.id
         }
 #endif
     }

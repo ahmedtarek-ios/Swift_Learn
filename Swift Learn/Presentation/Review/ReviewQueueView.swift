@@ -102,8 +102,8 @@ struct ReviewQueueView: View {
             Text(item.lesson.instruction)
                 .font(.title3)
 
-            CodeChoiceActivityView(
-                lesson: item.lesson,
+            LearningActivityRenderer(
+                activity: item.lesson.activity,
                 selectedChoiceID: viewModel.selectedChoiceID,
                 codeIdentifier: "review-code",
                 choiceIdentifierPrefix: "review-choice-",

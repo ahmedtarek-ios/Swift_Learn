@@ -22,9 +22,15 @@ struct Swift_LearnApp: App {
         let seedsReviewFixture = processInfo.arguments.contains(
             "--ui-testing-review-fixture"
         )
+        let seedsActivityFixture = processInfo.arguments.contains(
+            "--ui-testing-activity-fixture"
+        )
         let clock: any LearningClock = seedsReviewFixture
             ? UITestReviewClock()
             : SystemLearningClock()
+        let idGenerator: any LearningAttemptIDGenerating = seedsReviewFixture
+            ? UITestLearningAttemptIDGenerator()
+            : SystemLearningAttemptIDGenerator()
 
         do {
             container = try AppContainer(
@@ -35,7 +41,9 @@ struct Swift_LearnApp: App {
                     "--reset-ui-testing-data"
                 ),
                 seedsReviewFixture: seedsReviewFixture,
-                clock: clock
+                seedsActivityFixture: seedsActivityFixture,
+                clock: clock,
+                idGenerator: idGenerator
             )
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
@@ -58,4 +66,15 @@ struct Swift_LearnApp: App {
 @MainActor
 private struct UITestReviewClock: LearningClock {
     let now = Date(timeIntervalSince1970: 2_000_000_000)
+}
+
+@MainActor
+private final class UITestLearningAttemptIDGenerator: LearningAttemptIDGenerating {
+    private var sequence: UInt64 = 1
+
+    func next() -> UUID {
+        defer { sequence += 1 }
+        let suffix = String(format: "%012llx", sequence)
+        return UUID(uuidString: "00000000-0000-0000-0000-\(suffix)")!
+    }
 }

@@ -234,13 +234,13 @@ struct Swift_LearnTests {
         #expect(throws: LearningDomainError.lessonLocked) {
             try submitAnswer.execute(
                 lessonID: "swift.output.string-interpolation",
-                choiceID: "interpolation"
+                choiceID: "message-hello"
             )
         }
     }
 
     @Test
-    func stringInterpolationCompletesUnlockedFourthLesson() throws {
+    func outputPredictionCompletesUnlockedFourthLesson() throws {
         let content = InMemoryLearningContentRepository(catalog: try bundledCatalog())
         let progress = InMemoryLearningProgressRepository(
             completedLessonIDs: [
@@ -256,7 +256,7 @@ struct Swift_LearnTests {
 
         let result = try useCase.execute(
             lessonID: "swift.output.string-interpolation",
-            choiceID: "interpolation"
+            choiceID: "message-hello"
         )
 
         #expect(result.isCorrect)
@@ -432,6 +432,98 @@ struct Swift_LearnTests {
                 "ReferenceManual/Attributes.xhtml#Declaration-Attributes-Used-by-Interface-Builder"
             ) == true
         )
+    }
+
+    @Test
+    func bundledActivitiesMigrateLegacyChoicesAndDecodeOutputPrediction() throws {
+        let catalog = try bundledCatalog()
+        let legacyLesson = try #require(catalog.lessons.first)
+        let predictionLesson = try #require(
+            catalog.lesson(id: "swift.output.string-interpolation")
+        )
+
+        #expect(legacyLesson.activity.kind == .missingCode)
+        #expect(legacyLesson.activity.schemaVersion == 1)
+        #expect(
+            legacyLesson.code(selectedChoiceID: nil)
+                == "___ dailyPracticeGoal = 20"
+        )
+
+        #expect(predictionLesson.activity.kind == .outputPrediction)
+        #expect(predictionLesson.activity.schemaVersion == 1)
+        #expect(predictionLesson.activity.prompt == "What does this code print?")
+        #expect(
+            predictionLesson.code(selectedChoiceID: "message-welcome")
+                == "let welcome = \"Hello\"\nprint(\"Message: \\(welcome)\")"
+        )
+        #expect(predictionLesson.correctChoiceID == "message-hello")
+        #expect(
+            catalog.lessons.filter { $0.activity.kind == .outputPrediction }.count == 1
+        )
+        #expect(
+            catalog.lessons.filter { $0.activity.kind == .missingCode }.count == 485
+        )
+    }
+
+    @Test
+    func activityFixtureUnlocksTheRepresentativeLessonOnlyThroughProgress() throws {
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            seedsActivityFixture: true
+        )
+        let viewModel = container.learningJourneyViewModel
+
+        viewModel.load()
+
+        let journey = try #require(viewModel.journey)
+        let predictionLesson = try #require(
+            journey.catalog.lessons.first {
+                $0.activity.kind == .outputPrediction
+            }
+        )
+        #expect(journey.completedLessonCount == 3)
+        #expect(journey.isUnlocked(lessonID: predictionLesson.id))
+        #expect(!journey.isCompleted(lessonID: predictionLesson.id))
+    }
+
+    @Test
+    func unsupportedActivitySchemaFailsWithoutInventingFallbackBehavior() {
+        let data = Data(
+            """
+            {
+              "sourceID": "fixture",
+              "editionTitle": "Fixture",
+              "levels": [{
+                "id": "level",
+                "title": "Level",
+                "summary": "Summary",
+                "lessons": [{
+                  "id": "lesson",
+                  "title": "Lesson",
+                  "objective": "Objective",
+                  "instruction": "Instruction",
+                  "activity": {
+                    "schemaVersion": 2,
+                    "type": "outputPrediction",
+                    "prompt": "Predict",
+                    "code": "print(1)",
+                    "choices": [{"id": "one", "code": "1"}],
+                    "correctChoiceID": "one"
+                  },
+                  "correctFeedback": "Correct",
+                  "incorrectFeedback": "Incorrect",
+                  "sourceTitle": "Source",
+                  "sourceReferences": ["source#lesson"]
+                }]
+              }]
+            }
+            """.utf8
+        )
+        let repository = BundledLearningContentRepository(data: data)
+
+        #expect(throws: LearningContentError.unsupportedActivitySchema(2)) {
+            try repository.loadCatalog()
+        }
     }
 
     @Test

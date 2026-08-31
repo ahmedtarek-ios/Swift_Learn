@@ -33,17 +33,80 @@ struct LearningLesson: Identifiable, Equatable, Sendable {
     let title: String
     let objective: String
     let instruction: String
-    let codePrefix: String
-    let codeSuffix: String
-    let choices: [LearningChoice]
-    let correctChoiceID: String
+    let activity: LearningActivity
     let correctFeedback: String
     let incorrectFeedback: String
     let sourceTitle: String
     let sourceReferences: [String]
 
+    init(
+        id: String,
+        title: String,
+        objective: String,
+        instruction: String,
+        activity: LearningActivity,
+        correctFeedback: String,
+        incorrectFeedback: String,
+        sourceTitle: String,
+        sourceReferences: [String]
+    ) {
+        self.id = id
+        self.title = title
+        self.objective = objective
+        self.instruction = instruction
+        self.activity = activity
+        self.correctFeedback = correctFeedback
+        self.incorrectFeedback = incorrectFeedback
+        self.sourceTitle = sourceTitle
+        self.sourceReferences = sourceReferences
+    }
+
+    init(
+        id: String,
+        title: String,
+        objective: String,
+        instruction: String,
+        codePrefix: String,
+        codeSuffix: String,
+        choices: [LearningChoice],
+        correctChoiceID: String,
+        correctFeedback: String,
+        incorrectFeedback: String,
+        sourceTitle: String,
+        sourceReferences: [String]
+    ) {
+        self.init(
+            id: id,
+            title: title,
+            objective: objective,
+            instruction: instruction,
+            activity: .missingCode(
+                MissingCodeActivity(
+                    schemaVersion: 1,
+                    prompt: "Choose the missing Swift code",
+                    codePrefix: codePrefix,
+                    codeSuffix: codeSuffix,
+                    choices: choices,
+                    correctChoiceID: correctChoiceID
+                )
+            ),
+            correctFeedback: correctFeedback,
+            incorrectFeedback: incorrectFeedback,
+            sourceTitle: sourceTitle,
+            sourceReferences: sourceReferences
+        )
+    }
+
     var activityID: LearningActivityID {
         LearningActivityID(rawValue: id)
+    }
+
+    var choices: [LearningChoice] {
+        activity.choices
+    }
+
+    var correctChoiceID: String {
+        activity.correctChoiceID
     }
 
     func choice(id: String) -> LearningChoice? {
@@ -51,9 +114,96 @@ struct LearningLesson: Identifiable, Equatable, Sendable {
     }
 
     func code(selectedChoiceID: String?) -> String {
-        let token = selectedChoiceID.flatMap(choice(id:))?.code ?? "___"
+        activity.code(selectedChoiceID: selectedChoiceID)
+    }
+}
+
+enum LearningActivityKind: String, Equatable, Sendable {
+    case missingCode
+    case outputPrediction
+}
+
+enum LearningActivity: Equatable, Sendable {
+    case missingCode(MissingCodeActivity)
+    case outputPrediction(OutputPredictionActivity)
+
+    var kind: LearningActivityKind {
+        switch self {
+        case .missingCode:
+            .missingCode
+        case .outputPrediction:
+            .outputPrediction
+        }
+    }
+
+    var schemaVersion: Int {
+        switch self {
+        case let .missingCode(activity):
+            activity.schemaVersion
+        case let .outputPrediction(activity):
+            activity.schemaVersion
+        }
+    }
+
+    var prompt: String {
+        switch self {
+        case let .missingCode(activity):
+            activity.prompt
+        case let .outputPrediction(activity):
+            activity.prompt
+        }
+    }
+
+    var choices: [LearningChoice] {
+        switch self {
+        case let .missingCode(activity):
+            activity.choices
+        case let .outputPrediction(activity):
+            activity.choices
+        }
+    }
+
+    var correctChoiceID: String {
+        switch self {
+        case let .missingCode(activity):
+            activity.correctChoiceID
+        case let .outputPrediction(activity):
+            activity.correctChoiceID
+        }
+    }
+
+    func code(selectedChoiceID: String?) -> String {
+        switch self {
+        case let .missingCode(activity):
+            activity.code(selectedChoiceID: selectedChoiceID)
+        case let .outputPrediction(activity):
+            activity.code
+        }
+    }
+}
+
+struct MissingCodeActivity: Equatable, Sendable {
+    let schemaVersion: Int
+    let prompt: String
+    let codePrefix: String
+    let codeSuffix: String
+    let choices: [LearningChoice]
+    let correctChoiceID: String
+
+    func code(selectedChoiceID: String?) -> String {
+        let token = selectedChoiceID.flatMap { selectedID in
+            choices.first { $0.id == selectedID }
+        }?.code ?? "___"
         return codePrefix + token + codeSuffix
     }
+}
+
+struct OutputPredictionActivity: Equatable, Sendable {
+    let schemaVersion: Int
+    let prompt: String
+    let code: String
+    let choices: [LearningChoice]
+    let correctChoiceID: String
 }
 
 struct LearningChoice: Identifiable, Equatable, Sendable {

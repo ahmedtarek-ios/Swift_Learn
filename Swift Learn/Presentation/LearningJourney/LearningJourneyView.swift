@@ -255,8 +255,8 @@ private struct LessonChallengeView: View {
                     .font(.title3)
                     .accessibilityIdentifier("lesson-instruction")
 
-                CodeChoiceActivityView(
-                    lesson: lesson,
+                LearningActivityRenderer(
+                    activity: lesson.activity,
                     selectedChoiceID: viewModel.selectedChoiceID,
                     codeIdentifier: "lesson-code",
                     choiceIdentifierPrefix: "choice-",
