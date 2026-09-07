@@ -14,6 +14,7 @@ import PhotosUI
 
 struct LearnerProfileView: View {
     @Bindable private var viewModel: LearnerProfileViewModel
+    @State private var isResetConfirmationPresented = false
 #if !os(tvOS)
     @State private var selectedPhotoItem: PhotosPickerItem?
 #endif
@@ -48,6 +49,22 @@ struct LearnerProfileView: View {
             .navigationTitle("Profile")
         }
         .onAppear(perform: viewModel.load)
+        .confirmationDialog(
+            "Start Learning from the Beginning?",
+            isPresented: $isResetConfirmationPresented,
+            titleVisibility: .visible
+        ) {
+            Button("Reset Learning Progress", role: .destructive) {
+                viewModel.resetLearningProgress()
+            }
+            .accessibilityIdentifier("confirm-reset-learning-progress")
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(
+                "This removes completed lessons, attempts, mastery, reviews, and mistakes. "
+                    + "Your name, avatar, appearance, and motion settings stay saved."
+            )
+        }
 #if !os(tvOS)
         .task(id: selectedPhotoItem) {
             await importSelectedAvatar()
@@ -62,7 +79,8 @@ struct LearnerProfileView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     profileEditor(snapshot)
                     progressSummary(snapshot)
-                    achievementGrid(snapshot.achievements)
+                    recentActivitySection
+                    achievementGrid(viewModel.achievements)
                 }
                 .frame(maxWidth: 1_000, alignment: .leading)
                 .padding()
@@ -239,22 +257,22 @@ struct LearnerProfileView: View {
                     .focused($focusedControlID, equals: "save-profile")
 #endif
 
-                switch viewModel.saveState {
-                case .idle:
-                    EmptyView()
-                case .saving:
-                    ProgressView()
-                        .accessibilityLabel("Saving profile")
-                case .saved:
-                    Label("Saved", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .accessibilityIdentifier("profile-save-success")
-                case let .failed(message):
-                    Text(message)
-                        .foregroundStyle(.red)
-                        .accessibilityIdentifier("profile-save-error")
+                Button(role: .destructive) {
+                    isResetConfirmationPresented = true
+                } label: {
+                    Label("Reset Progress", systemImage: "arrow.counterclockwise")
                 }
+                .buttonStyle(.bordered)
+                .disabled(viewModel.resetState == .resetting)
+                .accessibilityLabel("Reset Learning Progress")
+                .accessibilityIdentifier("reset-learning-progress")
+#if os(tvOS)
+                .focused($focusedControlID, equals: "reset-learning-progress")
+#endif
             }
+
+            profileSaveFeedback
+            learningResetFeedback
         }
         .padding()
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
@@ -277,7 +295,7 @@ struct LearnerProfileView: View {
                     label: "Levels"
                 )
                 stat(
-                    value: snapshot.earnedAchievementCount,
+                    value: viewModel.earnedAchievementCount,
                     label: "Badges"
                 )
             }
@@ -321,6 +339,83 @@ struct LearnerProfileView: View {
         }
     }
 
+    @ViewBuilder
+    private var recentActivitySection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Recent activity")
+                .font(.title2.bold())
+
+            switch viewModel.recentActivityState {
+            case .idle, .loading:
+                ProgressView("Loading recent activity…")
+                    .accessibilityIdentifier("profile-recent-activity-loading")
+            case .loaded where viewModel.recentActivities.isEmpty:
+                ContentUnavailableView(
+                    "No Learning Activity Yet",
+                    systemImage: "clock.arrow.circlepath",
+                    description: Text("Complete a lesson, review, challenge, or project to begin.")
+                )
+                .accessibilityIdentifier("profile-recent-activity-empty")
+            case .loaded:
+                VStack(spacing: 10) {
+                    ForEach(viewModel.recentActivities) { activity in
+                        RecentLearningActivityRow(activity: activity)
+                    }
+                }
+            case let .failed(message):
+                ContentUnavailableView {
+                    Label("Activity Unavailable", systemImage: "exclamationmark.arrow.triangle.2.circlepath")
+                } description: {
+                    Text(message)
+                } actions: {
+                    Button("Try Again", action: viewModel.loadRecentActivity)
+                        .accessibilityIdentifier("retry-profile-recent-activity")
+                }
+            }
+        }
+        .padding()
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .accessibilityIdentifier("profile-recent-activity-section")
+    }
+
+    @ViewBuilder
+    private var profileSaveFeedback: some View {
+        switch viewModel.saveState {
+        case .idle:
+            EmptyView()
+        case .saving:
+            ProgressView()
+                .accessibilityLabel("Saving profile")
+        case .saved:
+            Label("Saved", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .accessibilityIdentifier("profile-save-success")
+        case let .failed(message):
+            Text(message)
+                .foregroundStyle(.red)
+                .accessibilityIdentifier("profile-save-error")
+        }
+    }
+
+    @ViewBuilder
+    private var learningResetFeedback: some View {
+        switch viewModel.resetState {
+        case .idle:
+            EmptyView()
+        case .resetting:
+            ProgressView("Resetting learning progress…")
+                .accessibilityIdentifier("learning-progress-resetting")
+        case .reset:
+            Label("Learning progress reset", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .accessibilityIdentifier("learning-progress-reset-success")
+        case let .failed(message):
+            Text(message)
+                .foregroundStyle(.red)
+                .accessibilityIdentifier("learning-progress-reset-error")
+        }
+    }
+
     private func achievementGrid(_ achievements: [AchievementProgress]) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
@@ -334,6 +429,28 @@ struct LearnerProfileView: View {
             }
 
             achievementCollection(achievements)
+            experienceAchievementFeedback
+        }
+    }
+
+    @ViewBuilder
+    private var experienceAchievementFeedback: some View {
+        switch viewModel.experienceAchievementState {
+        case .idle, .loading:
+            ProgressView("Loading challenge badges…")
+                .accessibilityIdentifier("profile-experience-achievements-loading")
+        case .loaded:
+            EmptyView()
+        case let .failed(message):
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Challenge badges unavailable")
+                    .font(.headline)
+                Text(message)
+                    .foregroundStyle(.secondary)
+                Button("Try Again", action: viewModel.loadExperienceAchievements)
+                    .accessibilityIdentifier("retry-profile-experience-achievements")
+            }
+            .accessibilityIdentifier("profile-experience-achievements-error")
         }
     }
 
@@ -444,6 +561,60 @@ struct LearnerProfileView: View {
             "System Motion"
         case .reduced:
             "Reduced Motion"
+        }
+    }
+}
+
+private struct RecentLearningActivityRow: View {
+    let activity: RecentLearningActivity
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbolName)
+                .font(.title3.bold())
+                .foregroundStyle(activity.outcome == .correct ? Color.green : Color.orange)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(activity.skillTitle)
+                    .font(.headline)
+                Text(
+                    "\(LearnerProfileViewModel.recentActivityKindLabel(for: activity.kind)) · "
+                        + LearnerProfileViewModel.recentActivityOutcomeLabel(for: activity.outcome)
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                Text(
+                    activity.recordedAt,
+                    format: .dateTime.day().month(.abbreviated).hour().minute()
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(activity.skillTitle)
+        .accessibilityValue(
+            "\(LearnerProfileViewModel.recentActivityKindLabel(for: activity.kind)), "
+                + LearnerProfileViewModel.recentActivityOutcomeLabel(for: activity.outcome)
+        )
+        .accessibilityIdentifier("profile-recent-activity-\(activity.id.uuidString)")
+    }
+
+    private var symbolName: String {
+        switch activity.kind {
+        case .lesson:
+            "book.fill"
+        case .review:
+            "arrow.clockwise.circle.fill"
+        case .bossChallenge:
+            "crown.fill"
+        case .guidedProject:
+            "hammer.fill"
         }
     }
 }
@@ -591,6 +762,10 @@ private struct AchievementCard: View {
             "bolt.fill"
         case .level:
             "medal.fill"
+        case .bossChallenge:
+            "crown.fill"
+        case .guidedProject:
+            "hammer.fill"
         case .sourceCompletion:
             "trophy.fill"
         }

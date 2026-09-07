@@ -285,8 +285,13 @@ private struct IntroNavigation: View {
                     ? "intro-start-learning"
                     : "intro-next-\(viewModel.currentStep.number)"
             )
-#if os(macOS)
+#if !os(tvOS)
+            // Give each non-TV step a distinct accessibility node. tvOS keeps
+            // one stable focused control while the remote advances the intro.
             .id(viewModel.currentStep)
+#endif
+#if os(macOS)
+            .keyboardShortcut(.defaultAction)
 #endif
 #if os(tvOS)
             .focused($isPrimaryFocused)

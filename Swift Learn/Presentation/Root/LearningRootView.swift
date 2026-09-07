@@ -10,6 +10,8 @@ import SwiftUI
 struct LearningRootView: View {
     @State private var introViewModel: IntroViewModel
     private let learningJourneyViewModel: LearningJourneyViewModel
+    private let bossChallengeViewModel: BossChallengeViewModel
+    private let projectViewModel: LearningProjectViewModel
     @State private var learnerProfileViewModel: LearnerProfileViewModel
     private let reviewQueueViewModel: ReviewQueueViewModel
     private let mistakeNotebookViewModel: MistakeNotebookViewModel
@@ -17,12 +19,16 @@ struct LearningRootView: View {
     init(
         introViewModel: IntroViewModel,
         learningJourneyViewModel: LearningJourneyViewModel,
+        bossChallengeViewModel: BossChallengeViewModel,
+        projectViewModel: LearningProjectViewModel,
         learnerProfileViewModel: LearnerProfileViewModel,
         reviewQueueViewModel: ReviewQueueViewModel,
         mistakeNotebookViewModel: MistakeNotebookViewModel
     ) {
         _introViewModel = State(initialValue: introViewModel)
         self.learningJourneyViewModel = learningJourneyViewModel
+        self.bossChallengeViewModel = bossChallengeViewModel
+        self.projectViewModel = projectViewModel
         _learnerProfileViewModel = State(initialValue: learnerProfileViewModel)
         self.reviewQueueViewModel = reviewQueueViewModel
         self.mistakeNotebookViewModel = mistakeNotebookViewModel
@@ -39,6 +45,11 @@ struct LearningRootView: View {
                 if learnerProfileViewModel.loadState == .idle {
                     learnerProfileViewModel.load()
                 }
+            }
+            .onChange(of: learnerProfileViewModel.resetRevision) {
+                learningJourneyViewModel.reloadAtJourneyRoot()
+                reviewQueueViewModel.load()
+                mistakeNotebookViewModel.load()
             }
     }
 
@@ -57,6 +68,8 @@ struct LearningRootView: View {
         TabView {
             LearningJourneyView(
                 viewModel: learningJourneyViewModel,
+                bossChallengeViewModel: bossChallengeViewModel,
+                projectViewModel: projectViewModel,
                 reviewViewModel: reviewQueueViewModel,
                 mistakeViewModel: mistakeNotebookViewModel
             )

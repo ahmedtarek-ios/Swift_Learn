@@ -26,7 +26,7 @@ final class Swift_LearnUITests: XCTestCase {
 
         let next = app.buttons["intro-next-1"].firstMatch
         XCTAssertTrue(next.waitForExistence(timeout: 5))
-        activate(next)
+        activateIntroPrimary(next, in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)["intro-step-2"].firstMatch
                 .waitForExistence(timeout: 5)
@@ -34,7 +34,7 @@ final class Swift_LearnUITests: XCTestCase {
 
         let secondNext = app.buttons["intro-next-2"].firstMatch
         XCTAssertTrue(secondNext.waitForExistence(timeout: 5))
-        activate(secondNext)
+        activateIntroPrimary(secondNext, in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)["intro-step-3"].firstMatch
                 .waitForExistence(timeout: 5)
@@ -42,7 +42,7 @@ final class Swift_LearnUITests: XCTestCase {
 
         let startLearning = app.buttons["intro-start-learning"].firstMatch
         XCTAssertTrue(startLearning.waitForExistence(timeout: 5))
-        activate(startLearning)
+        activateIntroPrimary(startLearning, in: app)
 
         let firstLessonButton = app.buttons[
             "start-lesson-\(firstLesson.id)"
@@ -125,7 +125,11 @@ final class Swift_LearnUITests: XCTestCase {
         )
         let prompt = app.staticTexts["activity-prompt"].firstMatch
         XCTAssertTrue(prompt.waitForExistence(timeout: 5))
+#if os(macOS)
+        XCTAssertEqual(prompt.value as? String, "What does this code print?")
+#else
         XCTAssertEqual(prompt.label, "What does this code print?")
+#endif
 
         let correctChoice = app.buttons[
             "choice-\(lesson.correctChoiceID)"
@@ -143,6 +147,168 @@ final class Swift_LearnUITests: XCTestCase {
         XCTAssertTrue(
             app.descendants(matching: .any)["lesson-complete-feedback"]
                 .firstMatch.waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    func testLevelBossChallengeCombinesTwoSkills() throws {
+        let level = try XCTUnwrap(loadCatalogExpectation().levels.first)
+        let items = Array(level.lessons.prefix(2))
+        XCTAssertEqual(items.count, 2)
+        let app = launchApp(
+            bossFixture: true,
+            failsFirstBossCompletionSave: true
+        )
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+
+        let startBoss = app.buttons[
+            "start-boss-challenge-\(level.id)"
+        ].firstMatch
+        revealInteractive(startBoss, in: app)
+        XCTAssertEqual(startBoss.value as? String, "Available")
+        activate(startBoss)
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["boss-challenge-title"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+
+        for item in items {
+            let itemTitle = app.descendants(matching: .any)[
+                "boss-item-\(item.id)"
+            ].firstMatch
+            XCTAssertTrue(itemTitle.waitForExistence(timeout: 5))
+
+            let correctChoice = app.buttons[
+                "boss-choice-\(item.id)-\(item.correctChoiceID)"
+            ].firstMatch
+            let firstChoice = try XCTUnwrap(item.choices.first)
+            XCTAssertTrue(correctChoice.waitForExistence(timeout: 5))
+#if os(tvOS)
+            assertInitialChoiceFocus(
+                app.buttons["boss-choice-\(item.id)-\(firstChoice.id)"].firstMatch
+            )
+#endif
+            select(
+                correctChoice,
+                firstChoice: app.buttons[
+                    "boss-choice-\(item.id)-\(firstChoice.id)"
+                ],
+                choiceIndex: item.correctChoiceIndex
+            )
+
+            let submit = app.buttons["submit-boss-answer"].firstMatch
+            revealInteractive(submit, in: app)
+            activate(submit)
+        }
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["boss-challenge-passed"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+        assertSummary(
+            app.staticTexts["boss-challenge-result-summary"].firstMatch,
+            equals: "2 of 2 skills verified",
+            in: app
+        )
+
+        let completionError = app.descendants(matching: .any)[
+            "boss-completion-save-error"
+        ].firstMatch
+        XCTAssertTrue(completionError.waitForExistence(timeout: 5))
+        let retryCompletion = app.buttons[
+            "retry-boss-completion-save"
+        ].firstMatch
+        revealInteractive(retryCompletion, in: app)
+        activate(retryCompletion)
+        XCTAssertFalse(completionError.waitForExistence(timeout: 1))
+
+        openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
+        let bossAchievement = app.descendants(matching: .any)[
+            "achievement-card-achievement.boss.\(level.id)"
+        ].firstMatch
+        reveal(bossAchievement, in: app)
+        assertAchievement(
+            bossAchievement,
+            label: "\(level.title) Boss Challenge, Earned",
+            value: "Earned, 1 of 1"
+        )
+    }
+
+    @MainActor
+    func testGuidedProjectValidatesThreeSkills() throws {
+        let requirements = Array(try loadLessonExpectations().prefix(3))
+        XCTAssertEqual(requirements.count, 3)
+        let app = launchApp(projectFixture: true)
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+
+        let startProject = app.buttons[
+            "start-learning-project-swift-foundations"
+        ].firstMatch
+        revealInteractive(startProject, in: app)
+        XCTAssertEqual(startProject.value as? String, "Available")
+        activate(startProject)
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["learning-project-title"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+
+        for (index, lesson) in requirements.enumerated() {
+            let requirementID = "requirement.\(lesson.id)"
+            XCTAssertTrue(
+                app.descendants(matching: .any)[
+                    "project-requirement-\(requirementID)"
+                ].firstMatch.waitForExistence(timeout: 5)
+            )
+
+            let correctChoice = app.buttons[
+                "project-choice-\(requirementID)-\(lesson.correctChoiceID)"
+            ].firstMatch
+            let firstChoice = try XCTUnwrap(lesson.choices.first)
+            XCTAssertTrue(correctChoice.waitForExistence(timeout: 5))
+#if os(tvOS)
+            assertInitialChoiceFocus(
+                app.buttons["project-choice-\(requirementID)-\(firstChoice.id)"].firstMatch
+            )
+#else
+            revealInteractive(correctChoice, in: app)
+#endif
+            select(
+                correctChoice,
+                firstChoice: app.buttons[
+                    "project-choice-\(requirementID)-\(firstChoice.id)"
+                ],
+                choiceIndex: lesson.correctChoiceIndex
+            )
+
+            let actionID = index == requirements.count - 1
+                ? "submit-project"
+                : "save-project-requirement"
+            let action = app.buttons[actionID].firstMatch
+            revealInteractive(action, in: app)
+            activate(action)
+        }
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["learning-project-passed"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+        assertSummary(
+            app.staticTexts["learning-project-result-summary"].firstMatch,
+            equals: "3 of 3 requirements validated",
+            in: app
+        )
+
+        openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
+        let projectAchievement = app.descendants(matching: .any)[
+            "achievement-card-achievement.project.swift-foundations"
+        ].firstMatch
+        reveal(projectAchievement, in: app)
+        assertAchievement(
+            projectAchievement,
+            label: "Build a Practice Setup, Earned",
+            value: "Earned, 1 of 1"
         )
     }
 
@@ -308,7 +474,14 @@ final class Swift_LearnUITests: XCTestCase {
             "achievement-unlock-overlay"
         ].firstMatch
         XCTAssertTrue(achievementOverlay.waitForExistence(timeout: 5))
+#if os(macOS)
+        XCTAssertTrue(
+            app.staticTexts["First Lesson"].firstMatch
+                .waitForExistence(timeout: 5)
+        )
+#else
         XCTAssertEqual(achievementOverlay.value as? String, "achievement.first-lesson")
+#endif
         dismissAchievementOverlays(in: app)
 
         openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
@@ -328,6 +501,18 @@ final class Swift_LearnUITests: XCTestCase {
             label: "First Lesson, Earned",
             value: "Earned, 1 of 1"
         )
+
+        let recentActivity = app.descendants(matching: .any).matching(
+            NSPredicate(
+                format: "identifier BEGINSWITH %@",
+                "profile-recent-activity-"
+            )
+        ).firstMatch
+        reveal(recentActivity, in: app)
+        XCTAssertEqual(recentActivity.label, firstLesson.title)
+#if !os(macOS)
+        XCTAssertEqual(recentActivity.value as? String, "Lesson, Correct")
+#endif
     }
 
     @MainActor
@@ -374,8 +559,89 @@ final class Swift_LearnUITests: XCTestCase {
         let restoredBoyAvatar = app.descendants(matching: .any)[
             "profile-avatar-boy"
         ].firstMatch
-        XCTAssertTrue(restoredBoyAvatar.waitForExistence(timeout: 5))
+        revealInteractive(restoredBoyAvatar, in: app)
         XCTAssertEqual(restoredBoyAvatar.value as? String, "Selected")
+    }
+
+    @MainActor
+    func testProfileResetStartsLearningFromBeginning() throws {
+        let lessons = try loadLessonExpectations()
+        let firstLesson = try XCTUnwrap(lessons.first)
+        let secondLesson = try XCTUnwrap(lessons.dropFirst().first)
+        let firstChoice = try XCTUnwrap(firstLesson.choices.first)
+        let app = launchApp()
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+
+        let firstStart = app.buttons["start-lesson-\(firstLesson.id)"].firstMatch
+        revealInteractive(firstStart, in: app)
+        activate(firstStart)
+
+        let correctChoice = app.buttons[
+            "choice-\(firstLesson.correctChoiceID)"
+        ].firstMatch
+        revealInteractive(correctChoice, in: app)
+        select(
+            correctChoice,
+            firstChoice: app.buttons["choice-\(firstChoice.id)"],
+            choiceIndex: firstLesson.correctChoiceIndex
+        )
+        let submit = app.buttons["submit-answer"].firstMatch
+        revealInteractive(submit, in: app)
+        activate(submit)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["lesson-complete-feedback"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+        dismissAchievementOverlays(in: app)
+
+        openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
+        let completedSummary = app.staticTexts["profile-progress-summary"].firstMatch
+        reveal(completedSummary, in: app)
+        assertSummary(
+            completedSummary,
+            equals: "1 of \(lessons.count) lessons completed",
+            in: app
+        )
+
+        let reset = app.buttons["reset-learning-progress"].firstMatch
+        revealInteractive(reset, in: app)
+        focusAndActivate(
+            reset,
+            tvPath: [.down, .down, .down, .right]
+        )
+
+        let confirm = app.buttons["confirm-reset-learning-progress"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        activateResetConfirmation(confirm)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["learning-progress-reset-success"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+
+        let resetSummary = app.staticTexts["profile-progress-summary"].firstMatch
+        assertSummary(
+            resetSummary,
+            equals: "0 of \(lessons.count) lessons completed",
+            in: app
+        )
+        let emptyRecentActivity = app.descendants(matching: .any)[
+            "profile-recent-activity-empty"
+        ].firstMatch
+        reveal(emptyRecentActivity, in: app)
+
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+        let resetFirstLesson = app.buttons[
+            "start-lesson-\(firstLesson.id)"
+        ].firstMatch
+        XCTAssertTrue(resetFirstLesson.waitForExistence(timeout: 15))
+        XCTAssertEqual(resetFirstLesson.value as? String, "Available")
+
+        let resetSecondLesson = app.buttons[
+            "start-lesson-\(secondLesson.id)"
+        ].firstMatch
+        XCTAssertTrue(resetSecondLesson.waitForExistence(timeout: 5))
+        XCTAssertFalse(resetSecondLesson.isEnabled)
+        XCTAssertEqual(resetSecondLesson.value as? String, "Locked")
     }
 
     @MainActor
@@ -383,7 +649,10 @@ final class Swift_LearnUITests: XCTestCase {
         skipIntro: Bool = true,
         persistsData: Bool = false,
         reviewFixture: Bool = false,
-        activityFixture: Bool = false
+        activityFixture: Bool = false,
+        bossFixture: Bool = false,
+        projectFixture: Bool = false,
+        failsFirstBossCompletionSave: Bool = false
     ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments.append("--ui-testing")
@@ -399,6 +668,17 @@ final class Swift_LearnUITests: XCTestCase {
         }
         if activityFixture {
             app.launchArguments.append("--ui-testing-activity-fixture")
+        }
+        if bossFixture {
+            app.launchArguments.append("--ui-testing-boss-fixture")
+        }
+        if projectFixture {
+            app.launchArguments.append("--ui-testing-project-fixture")
+        }
+        if failsFirstBossCompletionSave {
+            app.launchArguments.append(
+                "--ui-testing-fail-first-boss-completion-save"
+            )
         }
 
 #if os(macOS)
@@ -562,6 +842,13 @@ final class Swift_LearnUITests: XCTestCase {
             scrollCoordinate.scroll(byDeltaX: 0, deltaY: -300)
         }
 
+        for _ in 0..<12 {
+            if element.exists && (!requiresHittable || element.isHittable) {
+                break
+            }
+            scrollCoordinate.scroll(byDeltaX: 0, deltaY: 300)
+        }
+
         XCTAssertTrue(element.waitForExistence(timeout: 5))
         if requiresHittable {
             XCTAssertTrue(element.isHittable)
@@ -629,20 +916,46 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     private func loadLessonExpectations() throws -> [LessonExpectation] {
+        let catalog = try loadCatalogExpectation()
+        let lessons = catalog.levels.flatMap(\.lessons)
+        XCTAssertEqual(lessons.count, 486)
+        return lessons
+    }
+
+    private func loadCatalogExpectation() throws -> LearningCatalogExpectation {
         let resourceURL = try XCTUnwrap(
             Bundle(for: Swift_LearnUITests.self).url(
                 forResource: "swift-6.4-beta-foundations",
                 withExtension: "json"
             )
         )
-        let catalog = try JSONDecoder().decode(
+        return try JSONDecoder().decode(
             LearningCatalogExpectation.self,
             from: Data(contentsOf: resourceURL)
         )
-        let lessons = catalog.levels.flatMap(\.lessons)
-        XCTAssertEqual(lessons.count, 486)
-        return lessons
     }
+
+#if os(tvOS)
+    @MainActor
+    private func assertInitialChoiceFocus(
+        _ choice: XCUIElement,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        // Observe app-driven step focus before the navigation helper can conceal a regression.
+        let focused = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "hasFocus == true"),
+            object: choice
+        )
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [focused], timeout: 5),
+            .completed,
+            "New activity must focus its first choice: \(choice.identifier)",
+            file: file,
+            line: line
+        )
+    }
+#endif
 
     @MainActor
     private func select(
@@ -690,6 +1003,31 @@ final class Swift_LearnUITests: XCTestCase {
         element.tap()
 #endif
     }
+
+    @MainActor
+    private func activateResetConfirmation(_ element: XCUIElement) {
+#if os(tvOS)
+        let remote = XCUIRemote.shared
+        remote.press(.up)
+        remote.press(.select)
+#else
+        element.tap()
+#endif
+    }
+
+    @MainActor
+    private func activateIntroPrimary(
+        _ element: XCUIElement,
+        in app: XCUIApplication
+    ) {
+#if os(macOS)
+        XCTAssertTrue(element.isHittable)
+        app.activate()
+        app.typeKey(.return, modifierFlags: [])
+#else
+        activate(element)
+#endif
+    }
 }
 
 private enum FocusDirection {
@@ -724,6 +1062,8 @@ private struct LearningCatalogExpectation: Decodable {
     let levels: [Level]
 
     struct Level: Decodable {
+        let id: String
+        let title: String
         let lessons: [LessonExpectation]
     }
 }

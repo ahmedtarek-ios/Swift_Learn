@@ -120,7 +120,11 @@ struct CodeChoiceActivityView: View {
             }
         }
 #if os(tvOS)
-        .onAppear {
+        .defaultFocus($focusedChoiceID, choices.first?.id)
+        .task(id: choiceIdentifierPrefix) {
+            // A new step can reuse the same first choice ID. Clear focus before requesting it.
+            focusedChoiceID = nil
+            await Task.yield()
             focusedChoiceID = choices.first?.id
         }
 #endif

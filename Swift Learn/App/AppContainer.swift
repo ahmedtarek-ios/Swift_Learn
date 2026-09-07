@@ -13,6 +13,8 @@ final class AppContainer {
     let modelContainer: ModelContainer
     let introViewModel: IntroViewModel
     let learningJourneyViewModel: LearningJourneyViewModel
+    let bossChallengeViewModel: BossChallengeViewModel
+    let projectViewModel: LearningProjectViewModel
     let learnerProfileViewModel: LearnerProfileViewModel
     let reviewQueueViewModel: ReviewQueueViewModel
     let mistakeNotebookViewModel: MistakeNotebookViewModel
@@ -25,10 +27,15 @@ final class AppContainer {
         resetsStoredData: Bool = false,
         seedsReviewFixture: Bool = false,
         seedsActivityFixture: Bool = false,
+        seedsBossFixture: Bool = false,
+        seedsProjectFixture: Bool = false,
+        failsFirstBossCompletionSave: Bool = false,
         clock: any LearningClock = SystemLearningClock(),
-        idGenerator: any LearningAttemptIDGenerating = SystemLearningAttemptIDGenerator()
+        idGenerator: any LearningAttemptIDGenerating = SystemLearningAttemptIDGenerator(),
+        projectSubmissionIDGenerator: any LearningProjectSubmissionIDGenerating
+            = SystemLearningProjectSubmissionIDGenerator()
     ) throws {
-        let schema = Schema(versionedSchema: SwiftLearnSchemaV3.self)
+        let schema = Schema(versionedSchema: SwiftLearnSchemaV5.self)
         let configuration: ModelConfiguration
         if let storageURL {
             configuration = ModelConfiguration(
@@ -62,14 +69,34 @@ final class AppContainer {
         let profileRepository = SwiftDataLearnerProfileRepository(
             modelContext: modelContainer.mainContext
         )
-        let skillRepository = ContentCanonicalSkillRepository(
+        let projectRepository = ContentLearningProjectRepository(
             contentRepository: contentRepository
+        )
+        let skillRepository = ContentCanonicalSkillRepository(
+            contentRepository: contentRepository,
+            projectRepository: projectRepository
         )
         let attemptRepository = SwiftDataLearningAttemptRepository(
             modelContext: modelContainer.mainContext
         )
+        let resetRepository = SwiftDataLearningResetRepository(
+            modelContext: modelContainer.mainContext
+        )
+        let projectSubmissionRepository = SwiftDataLearningProjectSubmissionRepository(
+            modelContext: modelContainer.mainContext
+        )
+        let storedBossCompletionRepository = SwiftDataBossChallengeCompletionRepository(
+            modelContext: modelContainer.mainContext
+        )
+        let bossCompletionRepository: any BossChallengeCompletionRepository =
+            failsFirstBossCompletionSave
+                ? FailFirstBossChallengeCompletionRepository(
+                    repository: storedBossCompletionRepository
+                )
+                : storedBossCompletionRepository
+        let catalog = try contentRepository.loadCatalog()
         if seedsActivityFixture {
-            let lessons = try contentRepository.loadCatalog().lessons
+            let lessons = catalog.lessons
             guard let activityIndex = lessons.firstIndex(where: {
                 $0.activity.kind == .outputPrediction
             }) else {
@@ -77,6 +104,23 @@ final class AppContainer {
             }
             for prerequisite in lessons[..<activityIndex] {
                 try progressRepository.markCompleted(lessonID: prerequisite.id)
+            }
+        }
+        if seedsBossFixture {
+            guard let firstLevel = catalog.levels.first else {
+                throw AppContainerError.bossFixtureUnavailable
+            }
+            for lesson in firstLevel.lessons {
+                try progressRepository.markCompleted(lessonID: lesson.id)
+            }
+        }
+        if seedsProjectFixture {
+            let project = try projectRepository.loadProjects().first
+            guard let project else {
+                throw AppContainerError.projectFixtureUnavailable
+            }
+            for requirement in project.requirements {
+                try progressRepository.markCompleted(lessonID: requirement.lesson.id)
             }
         }
         let loadCanonicalSkills = LoadCanonicalSkillsUseCase(
@@ -88,6 +132,19 @@ final class AppContainer {
             attemptRepository: attemptRepository,
             clock: clock,
             idGenerator: idGenerator
+        )
+        guard let firstLevelID = catalog.levels.first?.id else {
+            throw AppContainerError.bossFixtureUnavailable
+        }
+        let loadBossChallenge = LoadBossChallengeUseCase(
+            contentRepository: contentRepository,
+            progressRepository: progressRepository,
+            loadCanonicalSkills: loadCanonicalSkills
+        )
+        let loadProject = LoadLearningProjectUseCase(
+            projectRepository: projectRepository,
+            progressRepository: progressRepository,
+            submissionRepository: projectSubmissionRepository
         )
         if seedsReviewFixture && resetsStoredData,
            let lesson = try contentRepository.loadCatalog().lessons.first {
@@ -121,6 +178,31 @@ final class AppContainer {
                 calculateAchievements: CalculateAchievementsUseCase()
             )
         )
+        bossChallengeViewModel = BossChallengeViewModel(
+            levelID: firstLevelID,
+            loadChallenge: loadBossChallenge,
+            submitAnswer: SubmitBossChallengeAnswerUseCase(
+                loadChallenge: loadBossChallenge,
+                recordAttempt: recordAttempt
+            ),
+            completeChallenge: CompleteBossChallengeUseCase(
+                loadChallenge: loadBossChallenge,
+                completionRepository: bossCompletionRepository,
+                clock: clock
+            )
+        )
+        projectViewModel = LearningProjectViewModel(
+            projectID: ContentLearningProjectRepository.foundationsProjectID,
+            loadProject: loadProject,
+            submitProject: SubmitLearningProjectUseCase(
+                loadProject: loadProject,
+                loadCanonicalSkills: loadCanonicalSkills,
+                submissionRepository: projectSubmissionRepository,
+                clock: clock,
+                attemptIDGenerator: idGenerator,
+                submissionIDGenerator: projectSubmissionIDGenerator
+            )
+        )
         learnerProfileViewModel = LearnerProfileViewModel(
             loadProfile: LoadLearnerProfileUseCase(
                 contentRepository: contentRepository,
@@ -132,8 +214,22 @@ final class AppContainer {
                 attemptRepository: attemptRepository,
                 clock: clock
             ),
+            loadRecentActivity: LoadRecentLearningActivityUseCase(
+                loadCanonicalSkills: loadCanonicalSkills,
+                attemptRepository: attemptRepository
+            ),
+            loadExperienceAchievements: LoadExperienceAchievementsUseCase(
+                bossLevelIDs: [firstLevelID],
+                loadBossChallenge: loadBossChallenge,
+                bossCompletionRepository: bossCompletionRepository,
+                projectRepository: projectRepository,
+                projectSubmissionRepository: projectSubmissionRepository
+            ),
             updateProfile: UpdateLearnerProfileUseCase(
                 profileRepository: profileRepository
+            ),
+            resetLearningProgress: ResetLearningProgressUseCase(
+                resetRepository: resetRepository
             )
         )
         reviewQueueViewModel = ReviewQueueViewModel(
@@ -164,14 +260,59 @@ final class AppContainer {
         for record in try modelContext.fetch(FetchDescriptor<LearningAttemptRecord>()) {
             modelContext.delete(record)
         }
+        for record in try modelContext.fetch(
+            FetchDescriptor<LearningProjectSubmissionRecord>()
+        ) {
+            modelContext.delete(record)
+        }
+        for record in try modelContext.fetch(
+            FetchDescriptor<BossChallengeCompletionRecord>()
+        ) {
+            modelContext.delete(record)
+        }
         try modelContext.save()
     }
 }
 
 private enum AppContainerError: LocalizedError {
     case activityFixtureUnavailable
+    case bossFixtureUnavailable
+    case bossCompletionFixtureFailure
+    case projectFixtureUnavailable
 
     var errorDescription: String? {
-        "The UI-test activity fixture has no output-prediction lesson."
+        switch self {
+        case .activityFixtureUnavailable:
+            "The UI-test activity fixture has no output-prediction lesson."
+        case .bossFixtureUnavailable:
+            "The boss challenge fixture has no learning level."
+        case .bossCompletionFixtureFailure:
+            "The UI-test boss achievement could not be saved."
+        case .projectFixtureUnavailable:
+            "The guided project fixture is unavailable."
+        }
+    }
+}
+
+@MainActor
+private final class FailFirstBossChallengeCompletionRepository:
+    BossChallengeCompletionRepository {
+    private let repository: any BossChallengeCompletionRepository
+    private var shouldFail = true
+
+    init(repository: any BossChallengeCompletionRepository) {
+        self.repository = repository
+    }
+
+    func record(_ completion: BossChallengeCompletion) throws {
+        if shouldFail {
+            shouldFail = false
+            throw AppContainerError.bossCompletionFixtureFailure
+        }
+        try repository.record(completion)
+    }
+
+    func loadCompletions() throws -> [BossChallengeCompletion] {
+        try repository.loadCompletions()
     }
 }

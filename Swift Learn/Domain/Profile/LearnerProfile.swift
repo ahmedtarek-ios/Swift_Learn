@@ -74,6 +74,8 @@ enum AchievementKind: Equatable, Sendable {
     case firstLevel
     case lessonMilestone(Int)
     case level(String)
+    case bossChallenge(String)
+    case guidedProject(String)
     case sourceCompletion
 }
 

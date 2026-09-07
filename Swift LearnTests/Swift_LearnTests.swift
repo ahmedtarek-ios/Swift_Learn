@@ -58,6 +58,30 @@ struct Swift_LearnTests {
     }
 
     @Test
+    func journeyReloadAtRootResetsNavigationAndAttemptState() throws {
+        let catalog = try bundledCatalog()
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let progress = InMemoryLearningProgressRepository(
+            completedLessonIDs: ["swift.bindings.constants"]
+        )
+        let viewModel = makeViewModel(content: content, progress: progress)
+
+        viewModel.load()
+        viewModel.selectChoice("let")
+
+        #expect(viewModel.navigationRevision == 0)
+        #expect(viewModel.selectedChoiceID == "let")
+
+        viewModel.reloadAtJourneyRoot()
+
+        #expect(viewModel.navigationRevision == 1)
+        #expect(viewModel.loadState == .loaded)
+        #expect(viewModel.selectedChoiceID == nil)
+        #expect(viewModel.attemptResult == nil)
+        #expect(viewModel.journey?.completedLessonCount == 1)
+    }
+
+    @Test
     func loadJourneyCombinesCatalogAndProgress() throws {
         let catalog = try bundledCatalog()
         let content = InMemoryLearningContentRepository(catalog: catalog)
@@ -750,6 +774,86 @@ struct Swift_LearnTests {
     }
 
     @Test
+    func recentActivityUsesValidatedEvidenceAndReturnsNewestFive() throws {
+        let catalog = try bundledCatalog()
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let lesson = try #require(catalog.lessons.first)
+        let skillID = SkillID(rawValue: lesson.id)
+        let projectRepository = ContentLearningProjectRepository(
+            contentRepository: content
+        )
+        let loadSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content,
+                projectRepository: projectRepository
+            )
+        )
+        let activityIDs: [LearningActivityID] = [
+            lesson.activityID,
+            .review(skillID: skillID),
+            .challenge(skillID: skillID),
+            .project(
+                projectID: ContentLearningProjectRepository.foundationsProjectID,
+                skillID: skillID
+            ),
+            lesson.activityID,
+            .review(skillID: skillID)
+        ]
+        let identifiers = try (1...7).map { value in
+            try #require(
+                UUID(
+                    uuidString: String(
+                        format: "00000000-0000-0000-0000-%012d",
+                        value
+                    )
+                )
+            )
+        }
+        let validAttempts = activityIDs.enumerated().map { index, activityID in
+            LearningAttempt(
+                id: identifiers[index],
+                evidence: LearningEvidence(
+                    lessonID: lesson.id,
+                    skillID: skillID,
+                    activityID: activityID,
+                    outcome: index == 2 ? .incorrect : .correct,
+                    errorCategory: index == 2 ? .incorrectChoice : nil
+                ),
+                recordedAt: Date(timeIntervalSince1970: TimeInterval(index + 1))
+            )
+        }
+        let orphanedAttempt = LearningAttempt(
+            id: identifiers[6],
+            evidence: LearningEvidence(
+                lessonID: "unknown.lesson",
+                skillID: SkillID(rawValue: "unknown.skill"),
+                activityID: LearningActivityID(rawValue: "unknown.activity"),
+                outcome: .correct,
+                errorCategory: nil
+            ),
+            recordedAt: Date(timeIntervalSince1970: 100)
+        )
+        let useCase = LoadRecentLearningActivityUseCase(
+            loadCanonicalSkills: loadSkills,
+            attemptRepository: InMemoryLearningAttemptRepository(
+                attempts: validAttempts + [orphanedAttempt]
+            )
+        )
+
+        let activities = try useCase.execute()
+
+        #expect(activities.count == LoadRecentLearningActivityUseCase.maximumActivityCount)
+        #expect(activities.map(\.recordedAt.timeIntervalSince1970) == [6, 5, 4, 3, 2])
+        #expect(
+            activities.map(\.kind)
+                == [.review, .lesson, .guidedProject, .bossChallenge, .review]
+        )
+        #expect(activities.map(\.skillTitle) == Array(repeating: lesson.title, count: 5))
+        #expect(activities.contains { $0.skillID.rawValue == "unknown.skill" } == false)
+    }
+
+    @Test
     func progressEventsDescribeOnlyNewLearningTransitions() throws {
         let catalog = try bundledCatalog()
         let firstLesson = try #require(catalog.lessons.first)
@@ -889,6 +993,10 @@ struct Swift_LearnTests {
         #expect(viewModel.snapshot?.profile == .defaultProfile)
         #expect(viewModel.masteryOverview?.snapshots.count == catalog.lessons.count)
         #expect(viewModel.masteryOverview?.masteredCount == 0)
+        #expect(viewModel.recentActivityState == .loaded)
+        #expect(viewModel.recentActivities.isEmpty)
+        #expect(viewModel.experienceAchievementState == .loaded)
+        #expect(viewModel.experienceAchievements.count == 2)
         #expect(
             viewModel.progressSummary
                 == "0 of \(catalog.lessons.count) lessons completed"
@@ -931,6 +1039,32 @@ struct Swift_LearnTests {
         #expect(failingViewModel.loadState == .failed("Profile unavailable"))
         failingViewModel.save()
         #expect(failingViewModel.saveState == .failed("Profile unavailable"))
+
+        let recentFailureViewModel = makeProfileViewModel(
+            catalog: catalog,
+            profileRepository: InMemoryLearnerProfileRepository(),
+            recentAttemptRepository: FailingLearningAttemptRepository()
+        )
+        recentFailureViewModel.load()
+        #expect(recentFailureViewModel.loadState == .loaded)
+        #expect(
+            recentFailureViewModel.recentActivityState
+                == .failed("Attempts unavailable")
+        )
+
+        let achievementFailureViewModel = makeProfileViewModel(
+            catalog: catalog,
+            profileRepository: InMemoryLearnerProfileRepository(),
+            bossCompletionRepository: InMemoryBossChallengeCompletionRepository(
+                error: FixtureError.completionUnavailable
+            )
+        )
+        achievementFailureViewModel.load()
+        #expect(achievementFailureViewModel.loadState == .loaded)
+        #expect(
+            achievementFailureViewModel.experienceAchievementState
+                == .failed("Challenge completion unavailable")
+        )
     }
 
     @Test
@@ -990,6 +1124,777 @@ struct Swift_LearnTests {
         #expect(mappedProfile.motionPreference == .system)
     }
 
+    @Test
+    func resetLearningProgressUseCaseDelegatesAndPropagatesFailure() throws {
+        let repository = InMemoryLearningResetRepository()
+        let useCase = ResetLearningProgressUseCase(resetRepository: repository)
+
+        try useCase.execute()
+
+        #expect(repository.resetCallCount == 1)
+
+        let failingRepository = InMemoryLearningResetRepository(
+            resetError: FixtureError.resetUnavailable
+        )
+        #expect(throws: FixtureError.resetUnavailable) {
+            try ResetLearningProgressUseCase(
+                resetRepository: failingRepository
+            ).execute()
+        }
+    }
+
+    @Test
+    func swiftDataLearningResetClearsLearningButPreservesProfile() throws {
+        let container = try AppContainer(isStoredInMemoryOnly: true)
+        let context = container.modelContainer.mainContext
+        let profileRepository = SwiftDataLearnerProfileRepository(
+            modelContext: context
+        )
+        let customImageData = Data([0x89, 0x50, 0x4E, 0x47])
+        let attemptID = try #require(
+            UUID(uuidString: "00000000-0000-0000-0000-000000000001")
+        )
+        let profile = LearnerProfile(
+            displayName: "Grace",
+            avatar: .custom,
+            customAvatarImageData: customImageData,
+            appearance: .dark,
+            motionPreference: .reduced
+        )
+        try profileRepository.saveProfile(profile)
+        context.insert(
+            LessonProgressRecord(
+                lessonID: "swift.bindings.constants",
+                completedAt: Date(timeIntervalSince1970: 1_000)
+            )
+        )
+        context.insert(
+            LearningAttemptRecord(
+                id: attemptID,
+                lessonID: "swift.bindings.constants",
+                skillID: "swift.bindings.constants",
+                activityID: "swift.bindings.constants",
+                outcomeRawValue: AttemptOutcome.incorrect.rawValue,
+                errorCategoryRawValue: LearningErrorCategory.incorrectChoice.rawValue,
+                recordedAt: Date(timeIntervalSince1970: 1_000)
+            )
+        )
+        context.insert(
+            LearningProjectSubmissionRecord(
+                id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
+                projectID: ContentLearningProjectRepository.foundationsProjectID,
+                validationResultsData: try JSONEncoder().encode(
+                    [LearningProjectValidationResult]()
+                ),
+                submittedAt: Date(timeIntervalSince1970: 1_000)
+            )
+        )
+        context.insert(
+            BossChallengeCompletionRecord(
+                challengeID: "boss.level-1",
+                levelID: "level-1",
+                completedAt: Date(timeIntervalSince1970: 1_000)
+            )
+        )
+        try context.save()
+
+        try SwiftDataLearningResetRepository(
+            modelContext: context
+        ).resetLearningProgress()
+
+        #expect(try context.fetch(FetchDescriptor<LessonProgressRecord>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<LearningAttemptRecord>()).isEmpty)
+        #expect(
+            try context.fetch(FetchDescriptor<LearningProjectSubmissionRecord>()).isEmpty
+        )
+        #expect(
+            try context.fetch(FetchDescriptor<BossChallengeCompletionRecord>()).isEmpty
+        )
+        #expect(try profileRepository.loadProfile() == profile)
+        #expect(
+            try context.fetch(FetchDescriptor<LearnerAvatarImageRecord>())
+                .first?.imageData == customImageData
+        )
+    }
+
+    @Test
+    func profileViewModelResetsLearningAndKeepsProfile() throws {
+        let catalog = try bundledCatalog()
+        let firstLesson = try #require(catalog.lessons.first)
+        let progressRepository = InMemoryLearningProgressRepository(
+            completedLessonIDs: [firstLesson.id]
+        )
+        let attemptRepository = InMemoryLearningAttemptRepository()
+        let attemptID = try #require(
+            UUID(uuidString: "00000000-0000-0000-0000-000000000001")
+        )
+        attemptRepository.record(
+            LearningAttempt(
+                id: attemptID,
+                evidence: LearningEvidence(
+                    lessonID: firstLesson.id,
+                    skillID: SkillID(rawValue: firstLesson.id),
+                    activityID: firstLesson.activityID,
+                    outcome: .incorrect,
+                    errorCategory: .incorrectChoice
+                ),
+                recordedAt: Date(timeIntervalSince1970: 1_000)
+            )
+        )
+        let profile = LearnerProfile(
+            displayName: "Grace",
+            avatar: .girl,
+            appearance: .dark,
+            motionPreference: .reduced
+        )
+        let firstLevel = try #require(catalog.levels.first)
+        let bossCompletionRepository = InMemoryBossChallengeCompletionRepository(
+            completions: [
+                BossChallengeCompletion(
+                    challengeID: "boss.\(firstLevel.id)",
+                    levelID: firstLevel.id,
+                    completedAt: Date(timeIntervalSince1970: 1_000)
+                )
+            ]
+        )
+        let resetRepository = InMemoryLearningResetRepository {
+            progressRepository.completedLessonIDs.removeAll()
+            attemptRepository.removeAll()
+            bossCompletionRepository.removeAll()
+        }
+        let viewModel = makeProfileViewModel(
+            catalog: catalog,
+            profileRepository: InMemoryLearnerProfileRepository(profile: profile),
+            progressRepository: progressRepository,
+            attemptRepository: attemptRepository,
+            bossCompletionRepository: bossCompletionRepository,
+            resetRepository: resetRepository
+        )
+
+        viewModel.load()
+        #expect(viewModel.snapshot?.journey.completedLessonCount == 1)
+        #expect(viewModel.masteryOverview?.reviewDueCount == 1)
+        #expect(viewModel.recentActivities.count == 1)
+        #expect(
+            viewModel.experienceAchievements.first {
+                $0.id == "achievement.boss.\(firstLevel.id)"
+            }?.isEarned == true
+        )
+
+        viewModel.resetLearningProgress()
+
+        #expect(viewModel.resetState == .reset)
+        #expect(viewModel.resetRevision == 1)
+        #expect(viewModel.snapshot?.profile == profile)
+        #expect(viewModel.snapshot?.journey.completedLessonCount == 0)
+        #expect(viewModel.masteryOverview?.reviewDueCount == 0)
+        #expect(viewModel.recentActivityState == .loaded)
+        #expect(viewModel.recentActivities.isEmpty)
+        #expect(
+            viewModel.experienceAchievements.first {
+                $0.id == "achievement.boss.\(firstLevel.id)"
+            }?.isEarned == false
+        )
+        #expect(resetRepository.resetCallCount == 1)
+
+        let failingViewModel = makeProfileViewModel(
+            catalog: catalog,
+            profileRepository: InMemoryLearnerProfileRepository(profile: profile),
+            resetRepository: InMemoryLearningResetRepository(
+                resetError: FixtureError.resetUnavailable
+            )
+        )
+        failingViewModel.resetLearningProgress()
+        #expect(failingViewModel.resetState == .failed("Reset unavailable"))
+        #expect(failingViewModel.resetRevision == 0)
+    }
+
+    @Test
+    func bossChallengeUnlocksAfterItsLevelAndReusesCanonicalSkills() throws {
+        let catalog = try bundledCatalog()
+        let level = try #require(catalog.levels.first)
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let progress = InMemoryLearningProgressRepository()
+        let loadSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content
+            )
+        )
+        let loadChallenge = LoadBossChallengeUseCase(
+            contentRepository: content,
+            progressRepository: progress,
+            loadCanonicalSkills: loadSkills
+        )
+
+        let locked = try loadChallenge.execute(levelID: level.id)
+
+        #expect(!locked.isUnlocked)
+        #expect(locked.completedRequirementCount == 0)
+        #expect(locked.totalRequirementCount == level.lessons.count)
+        #expect(locked.challenge.items.map(\.id) == level.lessons.prefix(2).map(\.id))
+
+        for lesson in level.lessons {
+            progress.markCompleted(lessonID: lesson.id)
+        }
+        let unlocked = try loadChallenge.execute(levelID: level.id)
+        let canonicalSkills = try loadSkills.execute()
+
+        #expect(unlocked.isUnlocked)
+        #expect(unlocked.challenge.items.count == 2)
+        for item in unlocked.challenge.items {
+            let skill = try #require(
+                canonicalSkills.first(where: { $0.id == item.skillID })
+            )
+            #expect(skill.lessonIDs.contains(item.lesson.id))
+            #expect(skill.activityIDs.contains(.challenge(skillID: item.skillID)))
+        }
+    }
+
+    @Test
+    func bossChallengeRecordsEvidenceWithoutDuplicatingLessonProgress() throws {
+        let catalog = try bundledCatalog()
+        let level = try #require(catalog.levels.first)
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let completedLessonIDs = Set(level.lessons.map(\.id))
+        let progress = InMemoryLearningProgressRepository(
+            completedLessonIDs: completedLessonIDs
+        )
+        let attempts = InMemoryLearningAttemptRepository()
+        let clock = FixedLearningClock(now: Date(timeIntervalSince1970: 1_000))
+        let loadSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content
+            )
+        )
+        let loadChallenge = LoadBossChallengeUseCase(
+            contentRepository: content,
+            progressRepository: progress,
+            loadCanonicalSkills: loadSkills
+        )
+        let challenge = try loadChallenge.execute(levelID: level.id).challenge
+        let recordAttempt = RecordLearningAttemptUseCase(
+            loadCanonicalSkills: loadSkills,
+            attemptRepository: attempts,
+            clock: clock,
+            idGenerator: SystemLearningAttemptIDGenerator()
+        )
+        let submit = SubmitBossChallengeAnswerUseCase(
+            loadChallenge: loadChallenge,
+            recordAttempt: recordAttempt
+        )
+        let first = try #require(challenge.items.first)
+        let second = try #require(challenge.items.dropFirst().first)
+        let incorrectChoiceID = try #require(
+            second.lesson.choices.first { $0.id != second.lesson.correctChoiceID }?.id
+        )
+
+        let correct = try submit.execute(
+            levelID: level.id,
+            itemID: first.id,
+            choiceID: first.lesson.correctChoiceID
+        )
+        let incorrect = try submit.execute(
+            levelID: level.id,
+            itemID: second.id,
+            choiceID: incorrectChoiceID
+        )
+
+        #expect(correct.isCorrect)
+        #expect(!incorrect.isCorrect)
+        #expect(progress.completedLessonIDs == completedLessonIDs)
+        #expect(attempts.attempts.count == 2)
+        #expect(attempts.attempts.map(\.evidence.outcome) == [.correct, .incorrect])
+        #expect(
+            attempts.attempts.allSatisfy {
+                $0.evidence.activityID.difficulty == .challenge
+            }
+        )
+        #expect(attempts.attempts.last?.evidence.errorCategory == .incorrectChoice)
+
+        let mistakes = try LoadMistakeNotebookUseCase(
+            loadCanonicalSkills: loadSkills,
+            attemptRepository: attempts
+        ).execute()
+        #expect(mistakes.map(\.skillID) == [second.skillID])
+
+        let mastery = try LoadMasteryOverviewUseCase(
+            loadCanonicalSkills: loadSkills,
+            attemptRepository: attempts,
+            clock: clock
+        ).execute()
+        #expect(
+            mastery.snapshots.first(where: { $0.id == first.skillID })?
+                .correctAttemptCount == 1
+        )
+    }
+
+    @Test
+    func bossChallengeViewModelCompletesTwoSkillSession() throws {
+        let catalog = try bundledCatalog()
+        let level = try #require(catalog.levels.first)
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let progress = InMemoryLearningProgressRepository(
+            completedLessonIDs: Set(level.lessons.map(\.id))
+        )
+        let attempts = InMemoryLearningAttemptRepository()
+        let loadSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content
+            )
+        )
+        let loadChallenge = LoadBossChallengeUseCase(
+            contentRepository: content,
+            progressRepository: progress,
+            loadCanonicalSkills: loadSkills
+        )
+        let completions = InMemoryBossChallengeCompletionRepository()
+        let viewModel = BossChallengeViewModel(
+            levelID: level.id,
+            loadChallenge: loadChallenge,
+            submitAnswer: SubmitBossChallengeAnswerUseCase(
+                loadChallenge: loadChallenge,
+                recordAttempt: RecordLearningAttemptUseCase(
+                    loadCanonicalSkills: loadSkills,
+                    attemptRepository: attempts,
+                    clock: FixedLearningClock(now: Date(timeIntervalSince1970: 1_000)),
+                    idGenerator: SystemLearningAttemptIDGenerator()
+                )
+            ),
+            completeChallenge: CompleteBossChallengeUseCase(
+                loadChallenge: loadChallenge,
+                completionRepository: completions,
+                clock: FixedLearningClock(now: Date(timeIntervalSince1970: 1_000))
+            )
+        )
+
+        viewModel.load()
+        #expect(viewModel.loadState == .loaded)
+        #expect(viewModel.availability?.isUnlocked == true)
+
+        let first = try #require(viewModel.currentItem)
+        viewModel.selectChoice(first.lesson.correctChoiceID)
+        viewModel.submitCurrentAnswer()
+        #expect(viewModel.currentItemIndex == 1)
+        #expect(viewModel.attemptRevision == 1)
+        #expect(viewModel.selectedChoiceID == nil)
+
+        let second = try #require(viewModel.currentItem)
+        #expect(second.id != first.id)
+        #expect(viewModel.stepSummary == "Challenge 2 of 2")
+        viewModel.submitCurrentAnswer()
+        #expect(viewModel.currentItem?.id == second.id)
+        #expect(viewModel.attemptRevision == 1)
+        #expect(attempts.attempts.count == 1)
+        viewModel.selectChoice(second.lesson.correctChoiceID)
+        viewModel.submitCurrentAnswer()
+
+        #expect(viewModel.result?.isPassed == true)
+        #expect(viewModel.result?.correctAnswerCount == 2)
+        #expect(viewModel.attemptRevision == 2)
+        #expect(attempts.attempts.count == 2)
+        #expect(completions.completions.map(\.challengeID) == ["boss.\(level.id)"])
+        #expect(viewModel.completionSaveError == nil)
+    }
+
+    @Test
+    func bossCompletionRequiresWholePassedSessionAndIsIdempotent() throws {
+        let catalog = try bundledCatalog()
+        let level = try #require(catalog.levels.first)
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let progress = InMemoryLearningProgressRepository(
+            completedLessonIDs: Set(level.lessons.map(\.id))
+        )
+        let loadSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content
+            )
+        )
+        let loadChallenge = LoadBossChallengeUseCase(
+            contentRepository: content,
+            progressRepository: progress,
+            loadCanonicalSkills: loadSkills
+        )
+        let challenge = try loadChallenge.execute(levelID: level.id).challenge
+        let repository = InMemoryBossChallengeCompletionRepository()
+        let useCase = CompleteBossChallengeUseCase(
+            loadChallenge: loadChallenge,
+            completionRepository: repository,
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 4_000))
+        )
+        let correctAnswers = challenge.items.map {
+            BossChallengeAnswerResult(
+                itemID: $0.id,
+                isCorrect: true,
+                feedback: "Correct"
+            )
+        }
+
+        #expect(throws: BossChallengeDomainError.incompleteSession) {
+            try useCase.execute(
+                levelID: level.id,
+                answers: Array(correctAnswers.dropLast())
+            )
+        }
+
+        let duplicatedAnswer = try #require(correctAnswers.first)
+        #expect(
+            throws: BossChallengeDomainError.duplicateAnswer(
+                duplicatedAnswer.itemID
+            )
+        ) {
+            try useCase.execute(
+                levelID: level.id,
+                answers: correctAnswers + [duplicatedAnswer]
+            )
+        }
+
+        var failedAnswers = correctAnswers
+        let firstAnswer = try #require(failedAnswers.first)
+        failedAnswers[0] = BossChallengeAnswerResult(
+            itemID: firstAnswer.itemID,
+            isCorrect: false,
+            feedback: "Needs review"
+        )
+        #expect(try useCase.execute(levelID: level.id, answers: failedAnswers).isPassed == false)
+        #expect(repository.completions.isEmpty)
+
+        #expect(try useCase.execute(levelID: level.id, answers: correctAnswers).isPassed)
+        #expect(try useCase.execute(levelID: level.id, answers: correctAnswers).isPassed)
+        #expect(repository.completions.count == 1)
+        #expect(repository.completions.first?.challengeID == challenge.id)
+    }
+
+    @Test
+    func bossViewModelKeepsResultAndRetriesCompletionPersistence() throws {
+        let catalog = try bundledCatalog()
+        let level = try #require(catalog.levels.first)
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let progress = InMemoryLearningProgressRepository(
+            completedLessonIDs: Set(level.lessons.map(\.id))
+        )
+        let attempts = InMemoryLearningAttemptRepository()
+        let loadSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content
+            )
+        )
+        let loadChallenge = LoadBossChallengeUseCase(
+            contentRepository: content,
+            progressRepository: progress,
+            loadCanonicalSkills: loadSkills
+        )
+        let completions = InMemoryBossChallengeCompletionRepository(
+            error: FixtureError.completionUnavailable
+        )
+        let clock = FixedLearningClock(now: Date(timeIntervalSince1970: 5_000))
+        let viewModel = BossChallengeViewModel(
+            levelID: level.id,
+            loadChallenge: loadChallenge,
+            submitAnswer: SubmitBossChallengeAnswerUseCase(
+                loadChallenge: loadChallenge,
+                recordAttempt: RecordLearningAttemptUseCase(
+                    loadCanonicalSkills: loadSkills,
+                    attemptRepository: attempts,
+                    clock: clock,
+                    idGenerator: SystemLearningAttemptIDGenerator()
+                )
+            ),
+            completeChallenge: CompleteBossChallengeUseCase(
+                loadChallenge: loadChallenge,
+                completionRepository: completions,
+                clock: clock
+            )
+        )
+
+        viewModel.load()
+        for item in try #require(viewModel.availability?.challenge.items) {
+            viewModel.selectChoice(item.lesson.correctChoiceID)
+            viewModel.submitCurrentAnswer()
+        }
+
+        #expect(viewModel.result?.isPassed == true)
+        #expect(viewModel.completionSaveError == "Challenge completion unavailable")
+        #expect(completions.completions.isEmpty)
+
+        completions.error = nil
+        viewModel.retryCompletionSave()
+
+        #expect(viewModel.completionSaveError == nil)
+        #expect(completions.completions.count == 1)
+    }
+
+    @Test
+    func experienceAchievementsRemainEarnedAfterLaterFailures() throws {
+        let catalog = try bundledCatalog()
+        let level = try #require(catalog.levels.first)
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let progress = InMemoryLearningProgressRepository(
+            completedLessonIDs: Set(level.lessons.map(\.id))
+        )
+        let projects = ContentLearningProjectRepository(contentRepository: content)
+        let project = try #require(projects.loadProjects().first)
+        let loadSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content,
+                projectRepository: projects
+            )
+        )
+        let loadChallenge = LoadBossChallengeUseCase(
+            contentRepository: content,
+            progressRepository: progress,
+            loadCanonicalSkills: loadSkills
+        )
+        let challenge = try loadChallenge.execute(levelID: level.id).challenge
+        let bossCompletions = InMemoryBossChallengeCompletionRepository(
+            completions: [
+                BossChallengeCompletion(
+                    challengeID: challenge.id,
+                    levelID: level.id,
+                    completedAt: Date(timeIntervalSince1970: 1_000)
+                )
+            ]
+        )
+        let passedResults = project.requirements.map { requirement in
+            LearningProjectValidationResult(
+                requirementID: requirement.id,
+                lessonID: requirement.lesson.id,
+                skillID: requirement.skillID,
+                selectedChoiceID: requirement.lesson.correctChoiceID,
+                outcome: .correct,
+                feedback: requirement.lesson.correctFeedback
+            )
+        }
+        var failedResults = passedResults
+        let firstResult = try #require(failedResults.first)
+        failedResults[0] = LearningProjectValidationResult(
+            requirementID: firstResult.requirementID,
+            lessonID: firstResult.lessonID,
+            skillID: firstResult.skillID,
+            selectedChoiceID: "incorrect",
+            outcome: .incorrect,
+            feedback: "Needs review"
+        )
+        let submissions = InMemoryLearningProjectSubmissionRepository(
+            submissions: [
+                LearningProjectSubmission(
+                    id: UUID(uuidString: "00000000-0000-0000-0000-0000000000B1")!,
+                    projectID: project.id,
+                    results: passedResults,
+                    submittedAt: Date(timeIntervalSince1970: 1_000)
+                ),
+                LearningProjectSubmission(
+                    id: UUID(uuidString: "00000000-0000-0000-0000-0000000000B2")!,
+                    projectID: project.id,
+                    results: failedResults,
+                    submittedAt: Date(timeIntervalSince1970: 2_000)
+                )
+            ]
+        )
+
+        let achievements = try LoadExperienceAchievementsUseCase(
+            bossLevelIDs: [level.id],
+            loadBossChallenge: loadChallenge,
+            bossCompletionRepository: bossCompletions,
+            projectRepository: projects,
+            projectSubmissionRepository: submissions
+        ).execute()
+
+        #expect(
+            achievements.first { $0.id == "achievement.\(challenge.id)" }?.isEarned
+                == true
+        )
+        #expect(
+            achievements.first { $0.id == "achievement.project.\(project.id)" }?.isEarned
+                == true
+        )
+        #expect(submissions.loadLatestSubmission(projectID: project.id)?.isPassed == false)
+    }
+
+    @Test
+    func guidedProjectUnlocksAfterThreePrerequisitesAndMapsCanonicalEvidence() throws {
+        let catalog = try bundledCatalog()
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let projects = ContentLearningProjectRepository(contentRepository: content)
+        let project = try #require(projects.loadProjects().first)
+        let progress = InMemoryLearningProgressRepository()
+        let submissions = InMemoryLearningProjectSubmissionRepository()
+        let loadProject = LoadLearningProjectUseCase(
+            projectRepository: projects,
+            progressRepository: progress,
+            submissionRepository: submissions
+        )
+
+        let locked = try loadProject.execute(projectID: project.id)
+        #expect(!locked.isUnlocked)
+        #expect(locked.completedRequirementCount == 0)
+        #expect(locked.totalRequirementCount == 3)
+
+        for requirement in project.requirements {
+            progress.markCompleted(lessonID: requirement.lesson.id)
+        }
+        let unlocked = try loadProject.execute(projectID: project.id)
+        let skills = try LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content,
+                projectRepository: projects
+            )
+        ).execute()
+
+        #expect(unlocked.isUnlocked)
+        #expect(unlocked.completedRequirementCount == 3)
+        for requirement in project.requirements {
+            let skill = try #require(skills.first { $0.id == requirement.skillID })
+            #expect(
+                skill.activityIDs.contains(
+                    .project(projectID: project.id, skillID: requirement.skillID)
+                )
+            )
+        }
+    }
+
+    @Test
+    func guidedProjectPersistsValidationAndCanonicalAttemptsWithoutLessonProgress() throws {
+        let catalog = try bundledCatalog()
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let projects = ContentLearningProjectRepository(contentRepository: content)
+        let project = try #require(projects.loadProjects().first)
+        let completedLessonIDs = Set(project.requirements.map(\.lesson.id))
+        let progress = InMemoryLearningProgressRepository(
+            completedLessonIDs: completedLessonIDs
+        )
+        let attempts = InMemoryLearningAttemptRepository()
+        let submissions = InMemoryLearningProjectSubmissionRepository(
+            attemptRepository: attempts
+        )
+        let clock = FixedLearningClock(now: Date(timeIntervalSince1970: 2_000))
+        let loadSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content,
+                projectRepository: projects
+            )
+        )
+        let loadProject = LoadLearningProjectUseCase(
+            projectRepository: projects,
+            progressRepository: progress,
+            submissionRepository: submissions
+        )
+        let incorrectRequirement = try #require(project.requirements.dropFirst().first)
+        let incorrectChoice = try #require(
+            incorrectRequirement.lesson.choices.first {
+                $0.id != incorrectRequirement.lesson.correctChoiceID
+            }
+        )
+        let responses = project.requirements.map { requirement in
+            LearningProjectResponse(
+                requirementID: requirement.id,
+                choiceID: requirement.id == incorrectRequirement.id
+                    ? incorrectChoice.id
+                    : requirement.lesson.correctChoiceID
+            )
+        }
+
+        let submission = try SubmitLearningProjectUseCase(
+            loadProject: loadProject,
+            loadCanonicalSkills: loadSkills,
+            submissionRepository: submissions,
+            clock: clock,
+            attemptIDGenerator: SystemLearningAttemptIDGenerator(),
+            submissionIDGenerator: FixedLearningProjectSubmissionIDGenerator()
+        ).execute(projectID: project.id, responses: responses)
+
+        #expect(!submission.isPassed)
+        #expect(submission.correctRequirementCount == 2)
+        #expect(submissions.submissions == [submission])
+        #expect(attempts.attempts.count == 3)
+        #expect(progress.completedLessonIDs == completedLessonIDs)
+        #expect(attempts.attempts.allSatisfy { $0.evidence.activityID.difficulty == .challenge })
+        #expect(
+            attempts.attempts.first {
+                $0.evidence.skillID == incorrectRequirement.skillID
+            }?.evidence.errorCategory == .incorrectChoice
+        )
+
+        let mistakes = try LoadMistakeNotebookUseCase(
+            loadCanonicalSkills: loadSkills,
+            attemptRepository: attempts
+        ).execute()
+        #expect(mistakes.map(\.skillID) == [incorrectRequirement.skillID])
+        #expect(
+            try loadProject.execute(projectID: project.id).latestSubmission == submission
+        )
+    }
+
+    @Test
+    func guidedProjectViewModelSubmitsThreeResponsesAsOneRevision() throws {
+        let catalog = try bundledCatalog()
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let projects = ContentLearningProjectRepository(contentRepository: content)
+        let project = try #require(projects.loadProjects().first)
+        let progress = InMemoryLearningProgressRepository(
+            completedLessonIDs: Set(project.requirements.map(\.lesson.id))
+        )
+        let attempts = InMemoryLearningAttemptRepository()
+        let submissions = InMemoryLearningProjectSubmissionRepository(
+            attemptRepository: attempts
+        )
+        let loadProject = LoadLearningProjectUseCase(
+            projectRepository: projects,
+            progressRepository: progress,
+            submissionRepository: submissions
+        )
+        let loadSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: content,
+                projectRepository: projects
+            )
+        )
+        let viewModel = LearningProjectViewModel(
+            projectID: project.id,
+            loadProject: loadProject,
+            submitProject: SubmitLearningProjectUseCase(
+                loadProject: loadProject,
+                loadCanonicalSkills: loadSkills,
+                submissionRepository: submissions,
+                clock: FixedLearningClock(now: Date(timeIntervalSince1970: 3_000)),
+                attemptIDGenerator: SystemLearningAttemptIDGenerator(),
+                submissionIDGenerator: FixedLearningProjectSubmissionIDGenerator()
+            )
+        )
+
+        viewModel.load()
+        viewModel.startSession()
+        #expect(viewModel.availability?.isUnlocked == true)
+
+        for (index, requirement) in project.requirements.enumerated() {
+            #expect(viewModel.currentRequirement?.id == requirement.id)
+            #expect(viewModel.selectedChoiceID == nil)
+            #expect(viewModel.responses.count == index)
+            viewModel.continueProject()
+            #expect(viewModel.currentRequirement?.id == requirement.id)
+            #expect(viewModel.responses.count == index)
+            viewModel.selectChoice(requirement.lesson.correctChoiceID)
+            viewModel.continueProject()
+            if index < project.requirements.count - 1 {
+                #expect(viewModel.currentRequirementIndex == index + 1)
+                #expect(viewModel.attemptRevision == 0)
+            }
+        }
+
+        #expect(viewModel.submission?.isPassed == true)
+        #expect(viewModel.attemptRevision == 1)
+        #expect(attempts.attempts.count == 3)
+        #expect(submissions.submissions.count == 1)
+    }
+
     private func makeViewModel(
         content: InMemoryLearningContentRepository,
         progress: any LearningProgressRepository
@@ -1029,28 +1934,58 @@ struct Swift_LearnTests {
 
     private func makeProfileViewModel(
         catalog: LearningCatalog,
-        profileRepository: any LearnerProfileRepository
+        profileRepository: any LearnerProfileRepository,
+        progressRepository: InMemoryLearningProgressRepository = .init(),
+        attemptRepository: InMemoryLearningAttemptRepository = .init(),
+        recentAttemptRepository: (any LearningAttemptRepository)? = nil,
+        bossCompletionRepository: any BossChallengeCompletionRepository
+            = InMemoryBossChallengeCompletionRepository(),
+        projectSubmissionRepository: InMemoryLearningProjectSubmissionRepository = .init(),
+        resetRepository: any LearningResetRepository = InMemoryLearningResetRepository()
     ) -> LearnerProfileViewModel {
         let contentRepository = InMemoryLearningContentRepository(catalog: catalog)
-        let attemptRepository = InMemoryLearningAttemptRepository()
+        let projectRepository = ContentLearningProjectRepository(
+            contentRepository: contentRepository
+        )
+        let loadCanonicalSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: contentRepository,
+            skillRepository: ContentCanonicalSkillRepository(
+                contentRepository: contentRepository,
+                projectRepository: projectRepository
+            )
+        )
+        let loadBossChallenge = LoadBossChallengeUseCase(
+            contentRepository: contentRepository,
+            progressRepository: progressRepository,
+            loadCanonicalSkills: loadCanonicalSkills
+        )
         return LearnerProfileViewModel(
             loadProfile: LoadLearnerProfileUseCase(
                 contentRepository: contentRepository,
-                progressRepository: InMemoryLearningProgressRepository(),
+                progressRepository: progressRepository,
                 profileRepository: profileRepository
             ),
             loadMasteryOverview: LoadMasteryOverviewUseCase(
-                loadCanonicalSkills: LoadCanonicalSkillsUseCase(
-                    contentRepository: contentRepository,
-                    skillRepository: ContentCanonicalSkillRepository(
-                        contentRepository: contentRepository
-                    )
-                ),
+                loadCanonicalSkills: loadCanonicalSkills,
                 attemptRepository: attemptRepository,
                 clock: FixedLearningClock(now: Date(timeIntervalSince1970: 1_000))
             ),
+            loadRecentActivity: LoadRecentLearningActivityUseCase(
+                loadCanonicalSkills: loadCanonicalSkills,
+                attemptRepository: recentAttemptRepository ?? attemptRepository
+            ),
+            loadExperienceAchievements: LoadExperienceAchievementsUseCase(
+                bossLevelIDs: catalog.levels.first.map { [$0.id] } ?? [],
+                loadBossChallenge: loadBossChallenge,
+                bossCompletionRepository: bossCompletionRepository,
+                projectRepository: projectRepository,
+                projectSubmissionRepository: projectSubmissionRepository
+            ),
             updateProfile: UpdateLearnerProfileUseCase(
                 profileRepository: profileRepository
+            ),
+            resetLearningProgress: ResetLearningProgressUseCase(
+                resetRepository: resetRepository
             )
         )
     }
@@ -1101,6 +2036,10 @@ private final class FailingLearningProgressRepository: LearningProgressRepositor
 private final class InMemoryLearningAttemptRepository: LearningAttemptRepository {
     private(set) var attempts: [LearningAttempt] = []
 
+    init(attempts: [LearningAttempt] = []) {
+        self.attempts = attempts
+    }
+
     func record(_ attempt: LearningAttempt) {
         attempts.append(attempt)
     }
@@ -1111,6 +2050,131 @@ private final class InMemoryLearningAttemptRepository: LearningAttemptRepository
 
     func loadAllAttempts() -> [LearningAttempt] {
         attempts
+    }
+
+    func removeAll() {
+        attempts.removeAll()
+    }
+}
+
+@MainActor
+private final class FailingLearningAttemptRepository: LearningAttemptRepository {
+    func record(_ attempt: LearningAttempt) throws {
+        throw FixtureError.attemptsUnavailable
+    }
+
+    func loadAttempts(skillID: SkillID) throws -> [LearningAttempt] {
+        throw FixtureError.attemptsUnavailable
+    }
+
+    func loadAllAttempts() throws -> [LearningAttempt] {
+        throw FixtureError.attemptsUnavailable
+    }
+}
+
+@MainActor
+private final class InMemoryLearningProjectSubmissionRepository:
+    LearningProjectSubmissionRepository {
+    private(set) var submissions: [LearningProjectSubmission] = []
+    private let attemptRepository: InMemoryLearningAttemptRepository?
+
+    init(
+        submissions: [LearningProjectSubmission] = [],
+        attemptRepository: InMemoryLearningAttemptRepository? = nil
+    ) {
+        self.submissions = submissions
+        self.attemptRepository = attemptRepository
+    }
+
+    func record(
+        _ submission: LearningProjectSubmission,
+        attempts: [LearningAttempt]
+    ) {
+        submissions.append(submission)
+        for attempt in attempts {
+            attemptRepository?.record(attempt)
+        }
+    }
+
+    func loadLatestSubmission(
+        projectID: String
+    ) -> LearningProjectSubmission? {
+        loadSubmissions(projectID: projectID).first
+    }
+
+    func loadSubmissions(
+        projectID: String
+    ) -> [LearningProjectSubmission] {
+        submissions
+            .filter { $0.projectID == projectID }
+            .sorted { $0.submittedAt > $1.submittedAt }
+    }
+
+    func removeAll() {
+        submissions.removeAll()
+    }
+}
+
+@MainActor
+private final class InMemoryBossChallengeCompletionRepository:
+    BossChallengeCompletionRepository {
+    private(set) var completions: [BossChallengeCompletion]
+    var error: (any Error)?
+
+    init(
+        completions: [BossChallengeCompletion] = [],
+        error: (any Error)? = nil
+    ) {
+        self.completions = completions
+        self.error = error
+    }
+
+    func record(_ completion: BossChallengeCompletion) throws {
+        if let error { throw error }
+        guard completions.contains(where: { $0.challengeID == completion.challengeID }) == false else {
+            return
+        }
+        completions.append(completion)
+    }
+
+    func loadCompletions() throws -> [BossChallengeCompletion] {
+        if let error { throw error }
+        return completions
+    }
+
+    func removeAll() {
+        completions.removeAll()
+    }
+}
+
+@MainActor
+private struct FixedLearningProjectSubmissionIDGenerator:
+    LearningProjectSubmissionIDGenerating {
+    func next() -> UUID {
+        UUID(uuidString: "00000000-0000-0000-0000-0000000000AA")!
+    }
+}
+
+@MainActor
+private final class InMemoryLearningResetRepository: LearningResetRepository {
+    private let resetError: (any Error)?
+    private let onReset: @MainActor () throws -> Void
+    private(set) var resetCallCount = 0
+
+    init(
+        resetError: (any Error)? = nil,
+        onReset: @escaping @MainActor () throws -> Void = {}
+    ) {
+        self.resetError = resetError
+        self.onReset = onReset
+    }
+
+    func resetLearningProgress() throws {
+        resetCallCount += 1
+        if let resetError {
+            throw resetError
+        }
+        try onReset()
     }
 }
 
@@ -1147,9 +2211,12 @@ private final class FailingLearnerProfileRepository: LearnerProfileRepository {
     }
 }
 
-private enum FixtureError: LocalizedError {
+private enum FixtureError: LocalizedError, Equatable {
     case progressUnavailable
     case profileUnavailable
+    case resetUnavailable
+    case attemptsUnavailable
+    case completionUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -1157,6 +2224,12 @@ private enum FixtureError: LocalizedError {
             "Progress unavailable"
         case .profileUnavailable:
             "Profile unavailable"
+        case .resetUnavailable:
+            "Reset unavailable"
+        case .attemptsUnavailable:
+            "Attempts unavailable"
+        case .completionUnavailable:
+            "Challenge completion unavailable"
         }
     }
 }

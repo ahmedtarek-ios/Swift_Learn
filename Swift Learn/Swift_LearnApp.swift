@@ -25,6 +25,15 @@ struct Swift_LearnApp: App {
         let seedsActivityFixture = processInfo.arguments.contains(
             "--ui-testing-activity-fixture"
         )
+        let seedsBossFixture = processInfo.arguments.contains(
+            "--ui-testing-boss-fixture"
+        )
+        let seedsProjectFixture = processInfo.arguments.contains(
+            "--ui-testing-project-fixture"
+        )
+        let failsFirstBossCompletionSave = processInfo.arguments.contains(
+            "--ui-testing-fail-first-boss-completion-save"
+        )
         let clock: any LearningClock = seedsReviewFixture
             ? UITestReviewClock()
             : SystemLearningClock()
@@ -42,6 +51,9 @@ struct Swift_LearnApp: App {
                 ),
                 seedsReviewFixture: seedsReviewFixture,
                 seedsActivityFixture: seedsActivityFixture,
+                seedsBossFixture: seedsBossFixture,
+                seedsProjectFixture: seedsProjectFixture,
+                failsFirstBossCompletionSave: failsFirstBossCompletionSave,
                 clock: clock,
                 idGenerator: idGenerator
             )
@@ -55,6 +67,8 @@ struct Swift_LearnApp: App {
             LearningRootView(
                 introViewModel: container.introViewModel,
                 learningJourneyViewModel: container.learningJourneyViewModel,
+                bossChallengeViewModel: container.bossChallengeViewModel,
+                projectViewModel: container.projectViewModel,
                 learnerProfileViewModel: container.learnerProfileViewModel,
                 reviewQueueViewModel: container.reviewQueueViewModel,
                 mistakeNotebookViewModel: container.mistakeNotebookViewModel

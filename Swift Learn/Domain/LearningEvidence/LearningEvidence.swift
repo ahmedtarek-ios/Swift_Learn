@@ -22,8 +22,17 @@ struct LearningActivityID: RawRepresentable, Hashable, Codable, Sendable {
         Self(rawValue: "challenge.\(skillID.rawValue)")
     }
 
+    static func project(projectID: String, skillID: SkillID) -> Self {
+        Self(rawValue: "project.\(projectID).\(skillID.rawValue)")
+    }
+
+    func isProjectActivity(for skillID: SkillID) -> Bool {
+        rawValue.hasPrefix("project.")
+            && rawValue.hasSuffix(".\(skillID.rawValue)")
+    }
+
     var difficulty: LearningActivityDifficulty {
-        if rawValue.hasPrefix("challenge.") {
+        if rawValue.hasPrefix("challenge.") || rawValue.hasPrefix("project.") {
             .challenge
         } else if rawValue.hasPrefix("review.") {
             .recall

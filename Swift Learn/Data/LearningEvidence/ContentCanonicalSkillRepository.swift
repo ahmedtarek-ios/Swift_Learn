@@ -5,24 +5,43 @@
 //  Created by Codex on 25/08/2026.
 //
 
+import Foundation
+
 @MainActor
 final class ContentCanonicalSkillRepository: CanonicalSkillRepository {
     private let contentRepository: any LearningContentRepository
+    private let projectRepository: (any LearningProjectRepository)?
 
-    init(contentRepository: any LearningContentRepository) {
+    init(
+        contentRepository: any LearningContentRepository,
+        projectRepository: (any LearningProjectRepository)? = nil
+    ) {
         self.contentRepository = contentRepository
+        self.projectRepository = projectRepository
     }
 
     func loadCanonicalSkills() throws -> [CanonicalSkill] {
-        try contentRepository.loadCatalog().lessons.map { lesson in
-            CanonicalSkill(
-                id: SkillID(rawValue: lesson.id),
+        let projects = try projectRepository?.loadProjects() ?? []
+        return try contentRepository.loadCatalog().lessons.map { lesson in
+            let skillID = SkillID(rawValue: lesson.id)
+            let projectActivities: [LearningActivityID] = projects.flatMap { project in
+                project.requirements.compactMap { requirement -> LearningActivityID? in
+                    guard requirement.skillID == skillID else { return nil }
+                    return LearningActivityID.project(
+                        projectID: project.id,
+                        skillID: skillID
+                    )
+                }
+            }
+            return CanonicalSkill(
+                id: skillID,
                 title: lesson.title,
                 lessonIDs: [lesson.id],
-                activityIDs: [
+                activityIDs: Set([
                     lesson.activityID,
-                    .review(skillID: SkillID(rawValue: lesson.id))
-                ]
+                    .review(skillID: skillID),
+                    .challenge(skillID: skillID)
+                ] + projectActivities)
             )
         }
     }

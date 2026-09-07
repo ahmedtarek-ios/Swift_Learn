@@ -25,6 +25,7 @@ final class LearningJourneyViewModel {
     private(set) var progressEvents: [LearningProgressEvent] = []
     private(set) var recentlyUnlockedLessonID: String?
     private(set) var attemptRevision = 0
+    private(set) var navigationRevision = 0
 
     private let loadJourney: LoadLearningJourneyUseCase
     private let submitAnswer: SubmitLessonAnswerUseCase
@@ -45,6 +46,10 @@ final class LearningJourneyViewModel {
 
     func load() {
         loadState = .loading
+        selectedChoiceID = nil
+        attemptResult = nil
+        progressEvents = []
+        recentlyUnlockedLessonID = nil
 
         do {
             journey = try loadJourney.execute()
@@ -52,6 +57,11 @@ final class LearningJourneyViewModel {
         } catch {
             loadState = .failed(error.localizedDescription)
         }
+    }
+
+    func reloadAtJourneyRoot() {
+        navigationRevision += 1
+        load()
     }
 
     func selectChoice(_ choiceID: String) {

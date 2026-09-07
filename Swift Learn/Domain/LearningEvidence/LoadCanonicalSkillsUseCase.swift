@@ -44,9 +44,11 @@ struct LoadCanonicalSkillsUseCase {
             for activityID in skill.activityIDs {
                 let isOwnedReviewActivity = activityID == .review(skillID: skill.id)
                 let isOwnedChallengeActivity = activityID == .challenge(skillID: skill.id)
+                let isOwnedProjectActivity = activityID.isProjectActivity(for: skill.id)
                 guard catalogActivityIDs.contains(activityID)
                         || isOwnedReviewActivity
-                        || isOwnedChallengeActivity else {
+                        || isOwnedChallengeActivity
+                        || isOwnedProjectActivity else {
                     throw LearningEvidenceDomainError.unknownMappedActivity(
                         activityID.rawValue
                     )

@@ -9,6 +9,8 @@ import SwiftUI
 
 struct LearningJourneyView: View {
     @State private var viewModel: LearningJourneyViewModel
+    @State private var bossChallengeViewModel: BossChallengeViewModel
+    private let projectViewModel: LearningProjectViewModel
     private let reviewViewModel: ReviewQueueViewModel
     private let mistakeViewModel: MistakeNotebookViewModel
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
@@ -16,10 +18,14 @@ struct LearningJourneyView: View {
 
     init(
         viewModel: LearningJourneyViewModel,
+        bossChallengeViewModel: BossChallengeViewModel,
+        projectViewModel: LearningProjectViewModel,
         reviewViewModel: ReviewQueueViewModel,
         mistakeViewModel: MistakeNotebookViewModel
     ) {
         _viewModel = State(initialValue: viewModel)
+        _bossChallengeViewModel = State(initialValue: bossChallengeViewModel)
+        self.projectViewModel = projectViewModel
         self.reviewViewModel = reviewViewModel
         self.mistakeViewModel = mistakeViewModel
     }
@@ -46,6 +52,7 @@ struct LearningJourneyView: View {
             }
             .navigationTitle("Swift Learn")
         }
+        .id(viewModel.navigationRevision)
         .overlay {
             if let achievement = viewModel.currentAchievement {
                 AchievementUnlockOverlay(
@@ -69,6 +76,16 @@ struct LearningJourneyView: View {
             if viewModel.loadState == .idle {
                 viewModel.load()
             }
+            reviewViewModel.load()
+            mistakeViewModel.load()
+            bossChallengeViewModel.load()
+            projectViewModel.load()
+        }
+        .onChange(of: bossChallengeViewModel.attemptRevision) {
+            reviewViewModel.load()
+            mistakeViewModel.load()
+        }
+        .onChange(of: projectViewModel.attemptRevision) {
             reviewViewModel.load()
             mistakeViewModel.load()
         }
@@ -169,6 +186,11 @@ struct LearningJourneyView: View {
             Text(level.summary)
                 .foregroundStyle(.secondary)
 
+            if level.id == bossChallengeViewModel.levelID {
+                bossChallengeCard
+                learningProjectCard
+            }
+
             ForEach(level.lessons) { lesson in
                 let isUnlocked = journey.isUnlocked(lessonID: lesson.id)
                 let isRecentlyUnlocked = viewModel.recentlyUnlockedLessonID == lesson.id
@@ -230,6 +252,112 @@ struct LearningJourneyView: View {
                     LearningMotion.feedback(reduceMotion: reduceMotion),
                     value: isRecentlyUnlocked
                 )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var bossChallengeCard: some View {
+        switch bossChallengeViewModel.loadState {
+        case .idle, .loading:
+            ProgressView("Preparing boss challenge…")
+                .accessibilityIdentifier("boss-challenge-loading")
+        case .loaded:
+            if let availability = bossChallengeViewModel.availability {
+                NavigationLink {
+                    BossChallengeView(viewModel: bossChallengeViewModel)
+                } label: {
+                    HStack(spacing: 14) {
+                        Image(systemName: availability.isUnlocked ? "crown.fill" : "lock.fill")
+                            .font(.title2)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Level Boss")
+                                .font(.headline)
+                            Text(
+                                availability.isUnlocked
+                                    ? "Combine two skills in one challenge"
+                                    : "\(availability.completedRequirementCount) of "
+                                        + "\(availability.totalRequirementCount) lessons complete"
+                            )
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding()
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!availability.isUnlocked)
+                .accessibilityIdentifier(
+                    "start-boss-challenge-\(availability.challenge.levelID)"
+                )
+                .accessibilityValue(availability.isUnlocked ? "Available" : "Locked")
+            }
+        case let .failed(message):
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Boss challenge unavailable")
+                    .font(.headline)
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("Try Again", action: bossChallengeViewModel.load)
+                    .accessibilityIdentifier("retry-boss-challenge")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var learningProjectCard: some View {
+        switch projectViewModel.loadState {
+        case .idle, .loading:
+            ProgressView("Preparing guided project…")
+                .accessibilityIdentifier("learning-project-loading")
+        case .loaded:
+            if let availability = projectViewModel.availability {
+                NavigationLink {
+                    LearningProjectView(viewModel: projectViewModel)
+                } label: {
+                    HStack(spacing: 14) {
+                        Image(
+                            systemName: availability.isUnlocked
+                                ? "hammer.fill"
+                                : "lock.fill"
+                        )
+                        .font(.title2)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Guided Project")
+                                .font(.headline)
+                            Text(
+                                availability.isUnlocked
+                                    ? availability.latestSubmission?.isPassed == true
+                                        ? "Passed · Build it again to reinforce the skills"
+                                        : "Apply three skills in one structured build"
+                                    : "\(availability.completedRequirementCount) of "
+                                        + "\(availability.totalRequirementCount) prerequisites complete"
+                            )
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding()
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!availability.isUnlocked)
+                .accessibilityIdentifier("start-learning-project-\(projectViewModel.projectID)")
+                .accessibilityValue(availability.isUnlocked ? "Available" : "Locked")
+            }
+        case let .failed(message):
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Guided project unavailable")
+                    .font(.headline)
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("Try Again", action: projectViewModel.load)
+                    .accessibilityIdentifier("retry-learning-project")
             }
         }
     }
@@ -354,6 +482,8 @@ private struct LessonChallengeView: View {
     let container = try! AppContainer(isStoredInMemoryOnly: true)
     LearningJourneyView(
         viewModel: container.learningJourneyViewModel,
+        bossChallengeViewModel: container.bossChallengeViewModel,
+        projectViewModel: container.projectViewModel,
         reviewViewModel: container.reviewQueueViewModel,
         mistakeViewModel: container.mistakeNotebookViewModel
     )
