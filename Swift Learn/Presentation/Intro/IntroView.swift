@@ -23,6 +23,7 @@ struct IntroView: View {
 
                     IntroStepContent(
                         step: viewModel.currentStep,
+                        sourceDisclosure: viewModel.sourceDisclosure,
                         hasAppeared: hasAppeared,
                         reduceMotion: systemReduceMotion
                     )
@@ -105,6 +106,7 @@ private struct IntroProgressHeader: View {
 
 private struct IntroStepContent: View {
     let step: IntroStep
+    let sourceDisclosure: LearningSourceDisclosure
     let hasAppeared: Bool
     let reduceMotion: Bool
 
@@ -118,7 +120,10 @@ private struct IntroStepContent: View {
                     size: 310
                 )
 
-                IntroStepMessage(step: step)
+                IntroStepMessage(
+                    step: step,
+                    sourceDisclosure: sourceDisclosure
+                )
                     .frame(maxWidth: 500, alignment: .leading)
             }
             .frame(minWidth: 800)
@@ -131,7 +136,10 @@ private struct IntroStepContent: View {
                     size: 180
                 )
 
-                IntroStepMessage(step: step)
+                IntroStepMessage(
+                    step: step,
+                    sourceDisclosure: sourceDisclosure
+                )
                     .frame(maxWidth: 620)
             }
         }
@@ -183,6 +191,11 @@ private struct IntroStepArtwork: View {
                 symbol: "chart.line.uptrend.xyaxis",
                 colors: [.red, .orange]
             )
+        case .source:
+            IntroSymbolArtwork(
+                symbol: "book.closed.fill",
+                colors: [.orange, .yellow]
+            )
         }
     }
 }
@@ -220,6 +233,7 @@ private struct IntroSymbolArtwork: View {
 
 private struct IntroStepMessage: View {
     let step: IntroStep
+    let sourceDisclosure: LearningSourceDisclosure
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -233,11 +247,11 @@ private struct IntroStepMessage: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("intro-title")
 
-            Text(step.subtitle)
+            Text(step.subtitle(sourceDisclosure: sourceDisclosure))
                 .font(.title2.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(step.detail)
+            Text(step.detail(sourceDisclosure: sourceDisclosure))
                 .font(.body)
                 .foregroundStyle(.white.opacity(0.72))
                 .fixedSize(horizontal: false, vertical: true)
@@ -368,6 +382,8 @@ private extension IntroStep {
             "LEARN BY BUILDING"
         case .progress:
             "BUILD MOMENTUM"
+        case .source:
+            "SOURCE TRANSPARENCY"
         }
     }
 
@@ -379,10 +395,12 @@ private extension IntroStep {
             "Write code. See why it works."
         case .progress:
             "Turn practice into progress."
+        case .source:
+            "Know the source edition."
         }
     }
 
-    var subtitle: LocalizedStringKey {
+    func subtitle(sourceDisclosure: LearningSourceDisclosure) -> LocalizedStringKey {
         switch self {
         case .welcome:
             "Rise through Swift one challenge at a time."
@@ -390,10 +408,12 @@ private extension IntroStep {
             "Practice Swift in focused challenges."
         case .progress:
             "Complete lessons, unlock the path, and celebrate every milestone."
+        case .source:
+            LocalizedStringKey(sourceDisclosure.editionTitle)
         }
     }
 
-    var detail: LocalizedStringKey {
+    func detail(sourceDisclosure: LearningSourceDisclosure) -> LocalizedStringKey {
         switch self {
         case .welcome:
             "A focused path that turns Swift study into short, practical wins."
@@ -401,10 +421,23 @@ private extension IntroStep {
             "Choose an answer, get immediate feedback, and understand the idea before moving forward."
         case .progress:
             "Your journey and profile make growth visible so the next challenge always feels within reach."
+        case .source:
+            LocalizedStringKey(
+                "Learning activities are adapted from this catalog edition. "
+                    + "Source ID: \(sourceDisclosure.sourceID). "
+                    + "Supplemental topics are identified separately."
+            )
         }
     }
 }
 
 #Preview {
-    IntroView(viewModel: IntroViewModel())
+    IntroView(
+        viewModel: IntroViewModel(
+            sourceDisclosure: LearningSourceDisclosure(
+                sourceID: "swift-preview",
+                editionTitle: "The Swift Programming Language — Preview"
+            )
+        )
+    )
 }

@@ -35,7 +35,7 @@ final class AppContainer {
         projectSubmissionIDGenerator: any LearningProjectSubmissionIDGenerating
             = SystemLearningProjectSubmissionIDGenerator()
     ) throws {
-        let schema = Schema(versionedSchema: SwiftLearnSchemaV5.self)
+        let schema = Schema(versionedSchema: SwiftLearnSchemaV6.self)
         let configuration: ModelConfiguration
         if let storageURL {
             configuration = ModelConfiguration(
@@ -163,7 +163,10 @@ final class AppContainer {
         )
 
         self.modelContainer = modelContainer
-        introViewModel = IntroViewModel(isPresented: showsIntro)
+        introViewModel = IntroViewModel(
+            isPresented: showsIntro,
+            sourceDisclosure: LearningSourceDisclosure(catalog: catalog)
+        )
         learningJourneyViewModel = LearningJourneyViewModel(
             loadJourney: LoadLearningJourneyUseCase(
                 contentRepository: contentRepository,
@@ -228,6 +231,9 @@ final class AppContainer {
             updateProfile: UpdateLearnerProfileUseCase(
                 profileRepository: profileRepository
             ),
+            updateBadgeShowcase: UpdateLearnerBadgeShowcaseUseCase(
+                profileRepository: profileRepository
+            ),
             resetLearningProgress: ResetLearningProgressUseCase(
                 resetRepository: resetRepository
             )
@@ -255,6 +261,11 @@ final class AppContainer {
             modelContext.delete(record)
         }
         for record in try modelContext.fetch(FetchDescriptor<LearnerAvatarImageRecord>()) {
+            modelContext.delete(record)
+        }
+        for record in try modelContext.fetch(
+            FetchDescriptor<LearnerBadgeShowcaseRecord>()
+        ) {
             modelContext.delete(record)
         }
         for record in try modelContext.fetch(FetchDescriptor<LearningAttemptRecord>()) {

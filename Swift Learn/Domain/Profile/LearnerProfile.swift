@@ -13,7 +13,8 @@ struct LearnerProfile: Equatable, Sendable {
         avatar: .unknown,
         customAvatarImageData: nil,
         appearance: .system,
-        motionPreference: .system
+        motionPreference: .system,
+        showcasedAchievementID: nil
     )
 
     let displayName: String
@@ -21,19 +22,22 @@ struct LearnerProfile: Equatable, Sendable {
     let customAvatarImageData: Data?
     let appearance: LearnerAppearance
     let motionPreference: LearnerMotionPreference
+    let showcasedAchievementID: String?
 
     init(
         displayName: String,
         avatar: LearnerAvatar,
         customAvatarImageData: Data? = nil,
         appearance: LearnerAppearance,
-        motionPreference: LearnerMotionPreference = .system
+        motionPreference: LearnerMotionPreference = .system,
+        showcasedAchievementID: String? = nil
     ) {
         self.displayName = displayName
         self.avatar = avatar
         self.customAvatarImageData = customAvatarImageData
         self.appearance = appearance
         self.motionPreference = motionPreference
+        self.showcasedAchievementID = showcasedAchievementID
     }
 }
 
@@ -130,6 +134,7 @@ enum LearnerProfileError: LocalizedError, Equatable {
     case emptyDisplayName
     case displayNameTooLong
     case missingCustomAvatarImage
+    case achievementNotEarned
 
     var errorDescription: String? {
         switch self {
@@ -139,6 +144,8 @@ enum LearnerProfileError: LocalizedError, Equatable {
             "Display name must contain 40 characters or fewer."
         case .missingCustomAvatarImage:
             "Choose a Memoji or photo before saving this avatar."
+        case .achievementNotEarned:
+            "Only earned achievements can be showcased."
         }
     }
 }

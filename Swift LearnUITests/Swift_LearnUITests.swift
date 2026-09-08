@@ -40,6 +40,28 @@ final class Swift_LearnUITests: XCTestCase {
                 .waitForExistence(timeout: 5)
         )
 
+        let thirdNext = app.buttons["intro-next-3"].firstMatch
+        XCTAssertTrue(thirdNext.waitForExistence(timeout: 5))
+        activateIntroPrimary(thirdNext, in: app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["intro-step-4"].firstMatch
+                .waitForExistence(timeout: 5)
+        )
+        XCTAssertTrue(
+            app.staticTexts[
+                "The Swift Programming Language — Swift 6.4 beta"
+            ].firstMatch.waitForExistence(timeout: 5)
+        )
+        let sourceDetail = app.staticTexts.matching(
+            NSPredicate(
+                format: "label == %@",
+                "Learning activities are adapted from this catalog edition. "
+                    + "Source ID: swift-6.4-beta-2026-07-31. "
+                    + "Supplemental topics are identified separately."
+            )
+        ).firstMatch
+        XCTAssertTrue(sourceDetail.waitForExistence(timeout: 5))
+
         let startLearning = app.buttons["intro-start-learning"].firstMatch
         XCTAssertTrue(startLearning.waitForExistence(timeout: 5))
         activateIntroPrimary(startLearning, in: app)
@@ -430,7 +452,7 @@ final class Swift_LearnUITests: XCTestCase {
     @MainActor
     func testProfileBadgeUnlocksAfterCompletingFirstLesson() throws {
         let firstLesson = try XCTUnwrap(loadLessonExpectations().first)
-        let app = launchApp()
+        let app = launchApp(persistsData: true)
 
         openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
         let progressSummary = app.staticTexts["profile-progress-summary"].firstMatch
@@ -502,10 +524,39 @@ final class Swift_LearnUITests: XCTestCase {
             value: "Earned, 1 of 1"
         )
 
+        let showcaseButton = app.buttons[
+            "showcase-achievement-achievement.first-lesson"
+        ].firstMatch
+        revealInteractive(showcaseButton, in: app)
+        activate(showcaseButton)
+#if os(macOS)
+        XCTAssertEqual(showcaseButton.label, "Remove from Showcase")
+#else
+        XCTAssertEqual(showcaseButton.value as? String, "Selected")
+#endif
+
+        let showcasedBadge = app.descendants(matching: .any)[
+            "profile-badge-showcase-achievement.first-lesson"
+        ].firstMatch
+        reveal(showcasedBadge, in: app)
+        XCTAssertEqual(showcasedBadge.label, "First Lesson, Showcased")
+
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "--reset-ui-testing-data" }
+        app.launch()
+        prepareAfterLaunch(app)
+        openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
+        let restoredShowcase = app.descendants(matching: .any)[
+            "profile-badge-showcase-achievement.first-lesson"
+        ].firstMatch
+        reveal(restoredShowcase, in: app)
+        XCTAssertEqual(restoredShowcase.label, "First Lesson, Showcased")
+
         let recentActivity = app.descendants(matching: .any).matching(
             NSPredicate(
-                format: "identifier BEGINSWITH %@",
-                "profile-recent-activity-"
+                format: "identifier BEGINSWITH %@ AND identifier != %@",
+                "profile-recent-activity-",
+                "profile-recent-activity-section"
             )
         ).firstMatch
         reveal(recentActivity, in: app)
@@ -603,6 +654,20 @@ final class Swift_LearnUITests: XCTestCase {
             in: app
         )
 
+        let showcaseButton = app.buttons[
+            "showcase-achievement-achievement.first-lesson"
+        ].firstMatch
+        revealInteractive(showcaseButton, in: app)
+        activate(showcaseButton)
+        XCTAssertTrue(
+            app.descendants(matching: .any)[
+                "profile-badge-showcase-achievement.first-lesson"
+            ].firstMatch.waitForExistence(timeout: 5)
+        )
+
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+        openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
+
         let reset = app.buttons["reset-learning-progress"].firstMatch
         revealInteractive(reset, in: app)
         focusAndActivate(
@@ -624,10 +689,20 @@ final class Swift_LearnUITests: XCTestCase {
             equals: "0 of \(lessons.count) lessons completed",
             in: app
         )
-        let emptyRecentActivity = app.descendants(matching: .any)[
-            "profile-recent-activity-empty"
+        let recentActivitySection = app.descendants(matching: .any)[
+            "profile-recent-activity-section"
         ].firstMatch
-        reveal(emptyRecentActivity, in: app)
+        XCTAssertTrue(recentActivitySection.waitForExistence(timeout: 5))
+        assertValue(
+            recentActivitySection,
+            equals: "No Learning Activity Yet",
+            in: app
+        )
+        let emptyShowcase = app.descendants(matching: .any)[
+            "profile-badge-showcase-empty"
+        ].firstMatch
+        reveal(emptyShowcase, in: app)
+        XCTAssertTrue(emptyShowcase.exists)
 
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
         let resetFirstLesson = app.buttons[
@@ -736,8 +811,14 @@ final class Swift_LearnUITests: XCTestCase {
         if !tab.hasFocus {
             remote.press(tvDirection == .left ? .left : .right)
         }
-        waitForFocus(on: tab)
-        remote.press(.select)
+        if tab.hasFocus {
+            remote.press(.select)
+        } else {
+            XCTAssertTrue(
+                selectedTabContent(identifier: identifier, in: app)
+                    .waitForExistence(timeout: 5)
+            )
+        }
 #else
         tab.tap()
 #endif
@@ -792,9 +873,18 @@ final class Swift_LearnUITests: XCTestCase {
         for _ in 0..<20 where !element.exists {
             remote.press(.down)
         }
+        for _ in 0..<20 where !element.exists {
+            remote.press(.up)
+        }
 #else
+        XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 5))
+
         for _ in 0..<12 where !element.exists {
             app.swipeUp()
+        }
+
+        for _ in 0..<12 where !element.exists {
+            app.swipeDown()
         }
 #endif
 
@@ -809,9 +899,14 @@ final class Swift_LearnUITests: XCTestCase {
         reveal(element, in: app)
 #else
         _ = element.waitForExistence(timeout: 2)
+        XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 5))
 
         for _ in 0..<12 where !element.isHittable {
             app.swipeUp()
+        }
+
+        for _ in 0..<12 where !element.isHittable {
+            app.swipeDown()
         }
 
         XCTAssertTrue(element.waitForExistence(timeout: 5))
@@ -893,6 +988,23 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
 #if os(tvOS)
+    @MainActor
+    private func selectedTabContent(
+        identifier: String,
+        in app: XCUIApplication
+    ) -> XCUIElement {
+        if identifier == "profile-tab" {
+            return app.descendants(matching: .any)["profile-screen"].firstMatch
+        }
+
+        return app.navigationBars.matching(
+            NSPredicate(
+                format: "identifier IN %@",
+                ["Swift Learn", "Practice", "Boss Challenge", "Guided Project"]
+            )
+        ).firstMatch
+    }
+
     @MainActor
     private func waitForFocus(on element: XCUIElement) {
         let focused = XCTNSPredicateExpectation(

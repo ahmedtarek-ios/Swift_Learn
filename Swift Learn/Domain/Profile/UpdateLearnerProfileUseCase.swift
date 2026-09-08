@@ -20,7 +20,8 @@ struct UpdateLearnerProfileUseCase {
         avatar: LearnerAvatar,
         customAvatarImageData: Data? = nil,
         appearance: LearnerAppearance,
-        motionPreference: LearnerMotionPreference = .system
+        motionPreference: LearnerMotionPreference = .system,
+        showcasedAchievementID: String? = nil
     ) throws -> LearnerProfile {
         let normalizedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedName.isEmpty else {
@@ -39,7 +40,8 @@ struct UpdateLearnerProfileUseCase {
             avatar: avatar,
             customAvatarImageData: avatar == .custom ? customAvatarImageData : nil,
             appearance: appearance,
-            motionPreference: motionPreference
+            motionPreference: motionPreference,
+            showcasedAchievementID: showcasedAchievementID
         )
         try profileRepository.saveProfile(profile)
         return profile

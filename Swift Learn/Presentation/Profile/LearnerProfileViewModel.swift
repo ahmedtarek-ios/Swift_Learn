@@ -52,6 +52,13 @@ final class LearnerProfileViewModel {
         case failed(String)
     }
 
+    enum BadgeShowcaseState: Equatable {
+        case idle
+        case saving
+        case saved
+        case failed(String)
+    }
+
     private(set) var loadState: LoadState = .idle
     private(set) var saveState: SaveState = .idle
     private(set) var snapshot: LearnerProfileSnapshot?
@@ -63,6 +70,7 @@ final class LearnerProfileViewModel {
     private(set) var recentActivities: [RecentLearningActivity] = []
     private(set) var experienceAchievementState: ExperienceAchievementState = .idle
     private(set) var experienceAchievements: [AchievementProgress] = []
+    private(set) var badgeShowcaseState: BadgeShowcaseState = .idle
 
     var draftDisplayName = LearnerProfile.defaultProfile.displayName
     var draftAvatar = LearnerProfile.defaultProfile.avatar
@@ -82,6 +90,29 @@ final class LearnerProfileViewModel {
 
     var earnedAchievementCount: Int {
         achievements.count(where: \.isEarned)
+    }
+
+    var showcasedAchievement: AchievementProgress? {
+        guard let achievementID = snapshot?.profile.showcasedAchievementID else {
+            return nil
+        }
+        return achievements.first {
+            $0.id == achievementID && $0.isEarned
+        }
+    }
+
+    var recentActivityAccessibilityValue: String {
+        switch recentActivityState {
+        case .idle, .loading:
+            "Loading recent activity"
+        case .loaded where recentActivities.isEmpty:
+            "No Learning Activity Yet"
+        case .loaded:
+            "\(recentActivities.count) recent "
+                + (recentActivities.count == 1 ? "activity" : "activities")
+        case .failed:
+            "Recent activity unavailable"
+        }
     }
 
     static func achievementAccessibilityValue(
@@ -104,6 +135,7 @@ final class LearnerProfileViewModel {
     private let loadRecentActivityUseCase: LoadRecentLearningActivityUseCase
     private let loadExperienceAchievementsUseCase: LoadExperienceAchievementsUseCase
     private let updateProfile: UpdateLearnerProfileUseCase
+    private let updateBadgeShowcaseUseCase: UpdateLearnerBadgeShowcaseUseCase
     private let resetLearningProgressUseCase: ResetLearningProgressUseCase
 
     init(
@@ -112,6 +144,7 @@ final class LearnerProfileViewModel {
         loadRecentActivity: LoadRecentLearningActivityUseCase,
         loadExperienceAchievements: LoadExperienceAchievementsUseCase,
         updateProfile: UpdateLearnerProfileUseCase,
+        updateBadgeShowcase: UpdateLearnerBadgeShowcaseUseCase,
         resetLearningProgress: ResetLearningProgressUseCase
     ) {
         self.loadProfile = loadProfile
@@ -119,6 +152,7 @@ final class LearnerProfileViewModel {
         loadRecentActivityUseCase = loadRecentActivity
         loadExperienceAchievementsUseCase = loadExperienceAchievements
         self.updateProfile = updateProfile
+        updateBadgeShowcaseUseCase = updateBadgeShowcase
         resetLearningProgressUseCase = resetLearningProgress
     }
 
@@ -155,6 +189,7 @@ final class LearnerProfileViewModel {
         do {
             experienceAchievements = try loadExperienceAchievementsUseCase.execute()
             experienceAchievementState = .loaded
+            reconcileBadgeShowcase()
         } catch {
             experienceAchievements = []
             experienceAchievementState = .failed(error.localizedDescription)
@@ -170,7 +205,8 @@ final class LearnerProfileViewModel {
                 avatar: draftAvatar,
                 customAvatarImageData: draftCustomAvatarImageData,
                 appearance: draftAppearance,
-                motionPreference: draftMotionPreference
+                motionPreference: draftMotionPreference,
+                showcasedAchievementID: snapshot?.profile.showcasedAchievementID
             )
             let snapshot = try loadProfile.execute()
             apply(snapshot)
@@ -206,6 +242,24 @@ final class LearnerProfileViewModel {
         avatarImportState = .failed(message)
     }
 
+    func toggleBadgeShowcase(_ achievement: AchievementProgress) {
+        badgeShowcaseState = .saving
+
+        do {
+            let selectedID = snapshot?.profile.showcasedAchievementID == achievement.id
+                ? nil
+                : achievement.id
+            let profile = try updateBadgeShowcaseUseCase.execute(
+                achievementID: selectedID,
+                achievements: achievements
+            )
+            applyProfile(profile)
+            badgeShowcaseState = .saved
+        } catch {
+            badgeShowcaseState = .failed(error.localizedDescription)
+        }
+    }
+
     func resetLearningProgress() {
         resetState = .resetting
 
@@ -226,11 +280,33 @@ final class LearnerProfileViewModel {
 
     private func apply(_ snapshot: LearnerProfileSnapshot) {
         self.snapshot = snapshot
-        draftDisplayName = snapshot.profile.displayName
-        draftAvatar = snapshot.profile.avatar
-        draftCustomAvatarImageData = snapshot.profile.customAvatarImageData
-        draftAppearance = snapshot.profile.appearance
-        draftMotionPreference = snapshot.profile.motionPreference
+        applyProfile(snapshot.profile)
+    }
+
+    private func applyProfile(_ profile: LearnerProfile) {
+        if let snapshot {
+            self.snapshot = LearnerProfileSnapshot(
+                profile: profile,
+                journey: snapshot.journey,
+                achievements: snapshot.achievements
+            )
+        }
+        draftDisplayName = profile.displayName
+        draftAvatar = profile.avatar
+        draftCustomAvatarImageData = profile.customAvatarImageData
+        draftAppearance = profile.appearance
+        draftMotionPreference = profile.motionPreference
+    }
+
+    private func reconcileBadgeShowcase() {
+        do {
+            let profile = try updateBadgeShowcaseUseCase.reconcile(
+                achievements: achievements
+            )
+            applyProfile(profile)
+        } catch {
+            badgeShowcaseState = .failed(error.localizedDescription)
+        }
     }
 
     static func recentActivityKindLabel(

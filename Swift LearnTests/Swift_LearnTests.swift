@@ -12,9 +12,14 @@ import Testing
 
 @MainActor
 struct Swift_LearnTests {
+    private let sourceDisclosure = LearningSourceDisclosure(
+        sourceID: "swift-6.4-beta-fixture",
+        editionTitle: "The Swift Programming Language — Swift 6.4 beta"
+    )
+
     @Test
-    func introMovesThroughThreeStepsAndStartsLearning() {
-        let viewModel = IntroViewModel()
+    func introMovesThroughFourStepsAndStartsLearning() {
+        let viewModel = IntroViewModel(sourceDisclosure: sourceDisclosure)
 
         #expect(viewModel.isPresented)
         #expect(viewModel.currentStep == .welcome)
@@ -23,22 +28,34 @@ struct Swift_LearnTests {
         viewModel.showNextStep()
 
         #expect(viewModel.currentStep == .practice)
-        #expect(!viewModel.isFirstStep)
-        #expect(!viewModel.isLastStep)
+        #expect(viewModel.isFirstStep == false)
+        #expect(viewModel.isLastStep == false)
 
         viewModel.showNextStep()
 
         #expect(viewModel.currentStep == .progress)
+        #expect(viewModel.isLastStep == false)
+
+        viewModel.showNextStep()
+
+        #expect(viewModel.currentStep == .source)
         #expect(viewModel.isLastStep)
+        #expect(viewModel.sourceDisclosure == sourceDisclosure)
 
         viewModel.startLearning()
 
-        #expect(!viewModel.isPresented)
+        #expect(viewModel.isPresented == false)
     }
 
     @Test
     func introBackNavigationStopsAtFirstStep() {
-        let viewModel = IntroViewModel(currentStep: .progress)
+        let viewModel = IntroViewModel(
+            currentStep: .source,
+            sourceDisclosure: sourceDisclosure
+        )
+
+        viewModel.showPreviousStep()
+        #expect(viewModel.currentStep == .progress)
 
         viewModel.showPreviousStep()
         #expect(viewModel.currentStep == .practice)
@@ -52,9 +69,12 @@ struct Swift_LearnTests {
 
     @Test
     func introCanStartDismissedForDeterministicLaunches() {
-        let viewModel = IntroViewModel(isPresented: false)
+        let viewModel = IntroViewModel(
+            isPresented: false,
+            sourceDisclosure: sourceDisclosure
+        )
 
-        #expect(!viewModel.isPresented)
+        #expect(viewModel.isPresented == false)
     }
 
     @Test
@@ -980,6 +1000,90 @@ struct Swift_LearnTests {
     }
 
     @Test
+    func badgeShowcaseAcceptsOnlyEarnedAchievements() throws {
+        let repository = InMemoryLearnerProfileRepository()
+        let useCase = UpdateLearnerBadgeShowcaseUseCase(
+            profileRepository: repository
+        )
+        let earned = AchievementProgress(
+            definition: AchievementDefinition(
+                id: "achievement.earned",
+                title: "Earned",
+                summary: "Earned fixture",
+                kind: .firstLesson
+            ),
+            completedRequirementCount: 1,
+            totalRequirementCount: 1
+        )
+        let locked = AchievementProgress(
+            definition: AchievementDefinition(
+                id: "achievement.locked",
+                title: "Locked",
+                summary: "Locked fixture",
+                kind: .firstLevel
+            ),
+            completedRequirementCount: 0,
+            totalRequirementCount: 1
+        )
+
+        let selected = try useCase.execute(
+            achievementID: earned.id,
+            achievements: [earned, locked]
+        )
+        #expect(selected.showcasedAchievementID == earned.id)
+        #expect(repository.profile == selected)
+
+        #expect(throws: LearnerProfileError.achievementNotEarned) {
+            try useCase.execute(
+                achievementID: locked.id,
+                achievements: [earned, locked]
+            )
+        }
+        #expect(repository.profile.showcasedAchievementID == earned.id)
+
+        let cleared = try useCase.reconcile(achievements: [locked])
+        #expect(cleared.showcasedAchievementID == nil)
+    }
+
+    @Test
+    func profileViewModelPersistsAndReconcilesBadgeShowcase() throws {
+        let catalog = try bundledCatalog()
+        let firstLesson = try #require(catalog.lessons.first)
+        let profileRepository = InMemoryLearnerProfileRepository()
+        let progressRepository = InMemoryLearningProgressRepository(
+            completedLessonIDs: [firstLesson.id]
+        )
+        let resetRepository = InMemoryLearningResetRepository {
+            progressRepository.completedLessonIDs.removeAll()
+        }
+        let viewModel = makeProfileViewModel(
+            catalog: catalog,
+            profileRepository: profileRepository,
+            progressRepository: progressRepository,
+            resetRepository: resetRepository
+        )
+
+        viewModel.load()
+        let earned = try #require(
+            viewModel.achievements.first { $0.id == "achievement.first-lesson" }
+        )
+        #expect(earned.isEarned)
+
+        viewModel.toggleBadgeShowcase(earned)
+        #expect(viewModel.badgeShowcaseState == .saved)
+        #expect(viewModel.showcasedAchievement?.id == earned.id)
+        #expect(profileRepository.profile.showcasedAchievementID == earned.id)
+
+        viewModel.draftDisplayName = "Showcase Learner"
+        viewModel.save()
+        #expect(viewModel.snapshot?.profile.showcasedAchievementID == earned.id)
+
+        viewModel.resetLearningProgress()
+        #expect(viewModel.showcasedAchievement == nil)
+        #expect(profileRepository.profile.showcasedAchievementID == nil)
+    }
+
+    @Test
     func profileViewModelLoadsSavesAndExposesFailures() throws {
         let catalog = try bundledCatalog()
         let profileRepository = InMemoryLearnerProfileRepository()
@@ -995,6 +1099,10 @@ struct Swift_LearnTests {
         #expect(viewModel.masteryOverview?.masteredCount == 0)
         #expect(viewModel.recentActivityState == .loaded)
         #expect(viewModel.recentActivities.isEmpty)
+        #expect(
+            viewModel.recentActivityAccessibilityValue
+                == "No Learning Activity Yet"
+        )
         #expect(viewModel.experienceAchievementState == .loaded)
         #expect(viewModel.experienceAchievements.count == 2)
         #expect(
@@ -1051,6 +1159,10 @@ struct Swift_LearnTests {
             recentFailureViewModel.recentActivityState
                 == .failed("Attempts unavailable")
         )
+        #expect(
+            recentFailureViewModel.recentActivityAccessibilityValue
+                == "Recent activity unavailable"
+        )
 
         let achievementFailureViewModel = makeProfileViewModel(
             catalog: catalog,
@@ -1080,10 +1192,16 @@ struct Swift_LearnTests {
             displayName: "Chris",
             avatar: .man,
             appearance: .dark,
-            motionPreference: .reduced
+            motionPreference: .reduced,
+            showcasedAchievementID: "achievement.first-lesson"
         )
         try repository.saveProfile(profile)
         #expect(try repository.loadProfile() == profile)
+        #expect(
+            try container.modelContainer.mainContext.fetch(
+                FetchDescriptor<LearnerBadgeShowcaseRecord>()
+            ).first?.achievementID == "achievement.first-lesson"
+        )
 
         let customImageData = Data([0x89, 0x50, 0x4E, 0x47])
         let customProfile = LearnerProfile(
@@ -1091,7 +1209,8 @@ struct Swift_LearnTests {
             avatar: .custom,
             customAvatarImageData: customImageData,
             appearance: .dark,
-            motionPreference: .reduced
+            motionPreference: .reduced,
+            showcasedAchievementID: "achievement.first-lesson"
         )
         try repository.saveProfile(customProfile)
         #expect(try repository.loadProfile() == customProfile)
@@ -1101,10 +1220,21 @@ struct Swift_LearnTests {
             ).first?.imageData == customImageData
         )
 
-        try repository.saveProfile(profile)
+        let profileWithoutShowcase = LearnerProfile(
+            displayName: profile.displayName,
+            avatar: profile.avatar,
+            appearance: profile.appearance,
+            motionPreference: profile.motionPreference
+        )
+        try repository.saveProfile(profileWithoutShowcase)
         #expect(
             try container.modelContainer.mainContext.fetch(
                 FetchDescriptor<LearnerAvatarImageRecord>()
+            ).isEmpty
+        )
+        #expect(
+            try container.modelContainer.mainContext.fetch(
+                FetchDescriptor<LearnerBadgeShowcaseRecord>()
             ).isEmpty
         )
 
@@ -1982,6 +2112,9 @@ struct Swift_LearnTests {
                 projectSubmissionRepository: projectSubmissionRepository
             ),
             updateProfile: UpdateLearnerProfileUseCase(
+                profileRepository: profileRepository
+            ),
+            updateBadgeShowcase: UpdateLearnerBadgeShowcaseUseCase(
                 profileRepository: profileRepository
             ),
             resetLearningProgress: ResetLearningProgressUseCase(

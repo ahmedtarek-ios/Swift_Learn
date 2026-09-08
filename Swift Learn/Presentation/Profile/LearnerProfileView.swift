@@ -79,6 +79,7 @@ struct LearnerProfileView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     profileEditor(snapshot)
                     progressSummary(snapshot)
+                    badgeShowcaseSection
                     recentActivitySection
                     achievementGrid(viewModel.achievements)
                 }
@@ -339,6 +340,63 @@ struct LearnerProfileView: View {
         }
     }
 
+    private var badgeShowcaseSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Badge showcase")
+                .font(.title2.bold())
+
+            if let achievement = viewModel.showcasedAchievement {
+                AchievementCard(achievement: achievement)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        "\(achievement.definition.title), Showcased"
+                    )
+                    .accessibilityIdentifier(
+                        "profile-badge-showcase-\(achievement.id)"
+                    )
+                    .accessibilityValue("Earned")
+            } else {
+                ContentUnavailableView(
+                    "No Showcased Badge",
+                    systemImage: "medal",
+                    description: Text(
+                        "Earn a badge, then choose Showcase on Profile."
+                    )
+                )
+                .accessibilityIdentifier("profile-badge-showcase-empty")
+            }
+
+            badgeShowcaseFeedback
+        }
+        .padding()
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Badge showcase")
+        .accessibilityIdentifier("profile-badge-showcase-section")
+        .accessibilityValue(
+            viewModel.showcasedAchievement?.definition.title ?? "No badge selected"
+        )
+    }
+
+    @ViewBuilder
+    private var badgeShowcaseFeedback: some View {
+        switch viewModel.badgeShowcaseState {
+        case .idle:
+            EmptyView()
+        case .saving:
+            ProgressView("Saving badge showcase…")
+                .accessibilityIdentifier("profile-badge-showcase-saving")
+        case .saved:
+            Label("Badge showcase saved", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .accessibilityIdentifier("profile-badge-showcase-saved")
+        case let .failed(message):
+            Text(message)
+                .foregroundStyle(.red)
+                .accessibilityIdentifier("profile-badge-showcase-error")
+        }
+    }
+
     @ViewBuilder
     private var recentActivitySection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -375,7 +433,10 @@ struct LearnerProfileView: View {
         }
         .padding()
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Recent activity")
         .accessibilityIdentifier("profile-recent-activity-section")
+        .accessibilityValue(viewModel.recentActivityAccessibilityValue)
     }
 
     @ViewBuilder
@@ -473,21 +534,35 @@ struct LearnerProfileView: View {
     @ViewBuilder
     private func achievementLinks(_ achievements: [AchievementProgress]) -> some View {
         ForEach(achievements) { achievement in
-            NavigationLink {
-                AchievementDetailView(achievement: achievement)
-            } label: {
-                AchievementCard(achievement: achievement)
+            VStack(spacing: 8) {
+                NavigationLink {
+                    AchievementDetailView(achievement: achievement)
+                } label: {
+                    AchievementCard(achievement: achievement)
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(
+                    LearnerProfileViewModel.achievementAccessibilityLabel(for: achievement)
+                )
+                .accessibilityIdentifier("achievement-card-\(achievement.id)")
+                .accessibilityValue(
+                    LearnerProfileViewModel.achievementAccessibilityValue(for: achievement)
+                )
+                .accessibilityHint(achievement.definition.summary)
+
+                if achievement.isEarned {
+                    let isShowcased = viewModel.showcasedAchievement?.id == achievement.id
+                    Button(
+                        isShowcased ? "Remove from Showcase" : "Showcase on Profile"
+                    ) {
+                        viewModel.toggleBadgeShowcase(achievement)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("showcase-achievement-\(achievement.id)")
+                    .accessibilityValue(isShowcased ? "Selected" : "Not selected")
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(
-                LearnerProfileViewModel.achievementAccessibilityLabel(for: achievement)
-            )
-            .accessibilityIdentifier("achievement-card-\(achievement.id)")
-            .accessibilityValue(
-                LearnerProfileViewModel.achievementAccessibilityValue(for: achievement)
-            )
-            .accessibilityHint(achievement.definition.summary)
         }
     }
 

@@ -11,6 +11,7 @@ enum IntroStep: Int, CaseIterable, Sendable {
     case welcome
     case practice
     case progress
+    case source
 
     var number: Int { rawValue + 1 }
 }
@@ -20,13 +21,16 @@ enum IntroStep: Int, CaseIterable, Sendable {
 final class IntroViewModel {
     private(set) var isPresented: Bool
     private(set) var currentStep: IntroStep
+    let sourceDisclosure: LearningSourceDisclosure
 
     init(
         isPresented: Bool = true,
-        currentStep: IntroStep = .welcome
+        currentStep: IntroStep = .welcome,
+        sourceDisclosure: LearningSourceDisclosure
     ) {
         self.isPresented = isPresented
         self.currentStep = currentStep
+        self.sourceDisclosure = sourceDisclosure
     }
 
     var isFirstStep: Bool {
@@ -34,7 +38,7 @@ final class IntroViewModel {
     }
 
     var isLastStep: Bool {
-        currentStep == .progress
+        currentStep == .source
     }
 
     func showNextStep() {

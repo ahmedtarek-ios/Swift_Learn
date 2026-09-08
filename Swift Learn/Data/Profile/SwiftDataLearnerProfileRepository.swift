@@ -30,7 +30,8 @@ final class SwiftDataLearnerProfileRepository: LearnerProfileRepository {
             appearance: LearnerAppearance(rawValue: record.appearanceRawValue) ?? .system,
             motionPreference: LearnerMotionPreference(
                 rawValue: record.motionPreferenceRawValue
-            ) ?? .system
+            ) ?? .system,
+            showcasedAchievementID: try badgeShowcaseRecord()?.achievementID
         )
     }
 
@@ -49,6 +50,18 @@ final class SwiftDataLearnerProfileRepository: LearnerProfileRepository {
                     motionPreferenceRawValue: profile.motionPreference.rawValue
                 )
             )
+        }
+
+        if let achievementID = profile.showcasedAchievementID {
+            if let showcaseRecord = try badgeShowcaseRecord() {
+                showcaseRecord.achievementID = achievementID
+            } else {
+                modelContext.insert(
+                    LearnerBadgeShowcaseRecord(achievementID: achievementID)
+                )
+            }
+        } else if let showcaseRecord = try badgeShowcaseRecord() {
+            modelContext.delete(showcaseRecord)
         }
 
         if profile.avatar == .custom,
@@ -75,6 +88,14 @@ final class SwiftDataLearnerProfileRepository: LearnerProfileRepository {
 
     private func avatarImageRecord() throws -> LearnerAvatarImageRecord? {
         try modelContext.fetch(FetchDescriptor<LearnerAvatarImageRecord>()).first {
+            $0.profileID == "local-learner"
+        }
+    }
+
+    private func badgeShowcaseRecord() throws -> LearnerBadgeShowcaseRecord? {
+        try modelContext.fetch(
+            FetchDescriptor<LearnerBadgeShowcaseRecord>()
+        ).first {
             $0.profileID == "local-learner"
         }
     }
