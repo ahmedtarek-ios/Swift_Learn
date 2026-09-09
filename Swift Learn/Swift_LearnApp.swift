@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct Swift_LearnApp: App {
     private let container: AppContainer
+    private let forcesRightToLeftLayout: Bool
 
     init() {
         let processInfo = ProcessInfo.processInfo
@@ -34,6 +35,12 @@ struct Swift_LearnApp: App {
         let failsFirstBossCompletionSave = processInfo.arguments.contains(
             "--ui-testing-fail-first-boss-completion-save"
         )
+        let initialDiscoveryQuery = processInfo.arguments.first {
+            $0.hasPrefix("--ui-testing-discovery-query=")
+        }?.split(separator: "=", maxSplits: 1).last.map(String.init) ?? ""
+        forcesRightToLeftLayout = processInfo.arguments.contains(
+            "--ui-testing-rtl"
+        )
         let clock: any LearningClock = seedsReviewFixture
             ? UITestReviewClock()
             : SystemLearningClock()
@@ -54,6 +61,7 @@ struct Swift_LearnApp: App {
                 seedsBossFixture: seedsBossFixture,
                 seedsProjectFixture: seedsProjectFixture,
                 failsFirstBossCompletionSave: failsFirstBossCompletionSave,
+                initialDiscoveryQuery: initialDiscoveryQuery,
                 clock: clock,
                 idGenerator: idGenerator
             )
@@ -71,7 +79,10 @@ struct Swift_LearnApp: App {
                 projectViewModel: container.projectViewModel,
                 learnerProfileViewModel: container.learnerProfileViewModel,
                 reviewQueueViewModel: container.reviewQueueViewModel,
-                mistakeNotebookViewModel: container.mistakeNotebookViewModel
+                mistakeNotebookViewModel: container.mistakeNotebookViewModel,
+                learningDiscoveryViewModel: container.learningDiscoveryViewModel,
+                supplementalTracksViewModel: container.supplementalTracksViewModel,
+                forcesRightToLeftLayout: forcesRightToLeftLayout
             )
         }
     }

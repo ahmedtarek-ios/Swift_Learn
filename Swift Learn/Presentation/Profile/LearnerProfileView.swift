@@ -272,6 +272,19 @@ struct LearnerProfileView: View {
 #endif
             }
 
+            if let report = viewModel.dataReport {
+                NavigationLink {
+                    LearnerDataReportView(report: report)
+                } label: {
+                    Label("Data & Diagnostics", systemImage: "externaldrive.badge.checkmark")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("profile-data-diagnostics")
+#if os(tvOS)
+                .focused($focusedControlID, equals: "profile-data-diagnostics")
+#endif
+            }
+
             profileSaveFeedback
             learningResetFeedback
         }
@@ -637,6 +650,62 @@ struct LearnerProfileView: View {
         case .reduced:
             "Reduced Motion"
         }
+    }
+}
+
+private struct LearnerDataReportView: View {
+    let report: LearnerDataReport
+
+    var body: some View {
+        List {
+            Section("Storage") {
+                Label("Stored on this device", systemImage: "externaldrive.fill")
+                Text("Core study works offline. This report contains progress totals only and excludes avatar image data.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Diagnostics") {
+                diagnostic("Source", value: report.sourceID)
+                diagnostic(
+                    "Lessons",
+                    value: "\(report.completedLessonCount) of \(report.totalLessonCount)"
+                )
+                diagnostic("Levels completed", value: "\(report.completedLevelCount)")
+                diagnostic("Skills mastered", value: "\(report.masteredSkillCount)")
+                diagnostic("Reviews due", value: "\(report.reviewDueCount)")
+                diagnostic("Recent activities", value: "\(report.recentActivityCount)")
+                diagnostic("Achievements earned", value: "\(report.earnedAchievementCount)")
+            }
+
+            Section("Export") {
+#if os(tvOS)
+                Label(
+                    "Export preview only on Apple TV",
+                    systemImage: "tv.badge.exclamationmark"
+                )
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("export-learning-summary")
+#else
+                ShareLink(item: report.exportText) {
+                    Label("Export Learning Summary", systemImage: "square.and.arrow.up")
+                }
+                .accessibilityIdentifier("export-learning-summary")
+#endif
+
+                Text(report.exportText)
+                    .font(.caption.monospaced())
+#if !os(tvOS)
+                    .textSelection(.enabled)
+#endif
+                    .accessibilityIdentifier("learning-data-export-preview")
+            }
+        }
+        .navigationTitle("Data & Diagnostics")
+        .accessibilityIdentifier("learning-data-diagnostics-screen")
+    }
+
+    private func diagnostic(_ title: String, value: String) -> some View {
+        LabeledContent(title, value: value)
     }
 }
 

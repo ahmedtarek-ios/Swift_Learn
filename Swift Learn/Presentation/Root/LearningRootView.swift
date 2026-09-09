@@ -15,6 +15,9 @@ struct LearningRootView: View {
     @State private var learnerProfileViewModel: LearnerProfileViewModel
     private let reviewQueueViewModel: ReviewQueueViewModel
     private let mistakeNotebookViewModel: MistakeNotebookViewModel
+    private let learningDiscoveryViewModel: LearningDiscoveryViewModel
+    private let supplementalTracksViewModel: SupplementalTracksViewModel
+    private let forcesRightToLeftLayout: Bool
 
     init(
         introViewModel: IntroViewModel,
@@ -23,7 +26,10 @@ struct LearningRootView: View {
         projectViewModel: LearningProjectViewModel,
         learnerProfileViewModel: LearnerProfileViewModel,
         reviewQueueViewModel: ReviewQueueViewModel,
-        mistakeNotebookViewModel: MistakeNotebookViewModel
+        mistakeNotebookViewModel: MistakeNotebookViewModel,
+        learningDiscoveryViewModel: LearningDiscoveryViewModel,
+        supplementalTracksViewModel: SupplementalTracksViewModel,
+        forcesRightToLeftLayout: Bool = false
     ) {
         _introViewModel = State(initialValue: introViewModel)
         self.learningJourneyViewModel = learningJourneyViewModel
@@ -32,10 +38,26 @@ struct LearningRootView: View {
         _learnerProfileViewModel = State(initialValue: learnerProfileViewModel)
         self.reviewQueueViewModel = reviewQueueViewModel
         self.mistakeNotebookViewModel = mistakeNotebookViewModel
+        self.learningDiscoveryViewModel = learningDiscoveryViewModel
+        self.supplementalTracksViewModel = supplementalTracksViewModel
+        self.forcesRightToLeftLayout = forcesRightToLeftLayout
     }
 
     var body: some View {
-        rootContent
+        configuredRootContent
+    }
+
+    @ViewBuilder
+    private var configuredRootContent: some View {
+        if forcesRightToLeftLayout {
+            rootContent.environment(\.layoutDirection, .rightToLeft)
+        } else {
+            rootContent
+        }
+    }
+
+    private var rootContent: some View {
+        content
             .preferredColorScheme(preferredColorScheme)
             .environment(
                 \.learnerMotionPreference,
@@ -54,7 +76,7 @@ struct LearningRootView: View {
     }
 
     @ViewBuilder
-    private var rootContent: some View {
+    private var content: some View {
         if introViewModel.isPresented {
             IntroView(viewModel: introViewModel)
                 .transition(.opacity)
@@ -71,7 +93,9 @@ struct LearningRootView: View {
                 bossChallengeViewModel: bossChallengeViewModel,
                 projectViewModel: projectViewModel,
                 reviewViewModel: reviewQueueViewModel,
-                mistakeViewModel: mistakeNotebookViewModel
+                mistakeViewModel: mistakeNotebookViewModel,
+                discoveryViewModel: learningDiscoveryViewModel,
+                supplementalViewModel: supplementalTracksViewModel
             )
                 .tabItem {
                     Label("Journey", systemImage: "map.fill")

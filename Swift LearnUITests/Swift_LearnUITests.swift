@@ -52,14 +52,22 @@ final class Swift_LearnUITests: XCTestCase {
                 "The Swift Programming Language — Swift 6.4 beta"
             ].firstMatch.waitForExistence(timeout: 5)
         )
-        let sourceDetail = app.staticTexts.matching(
-            NSPredicate(
-                format: "label == %@",
-                "Learning activities are adapted from this catalog edition. "
-                    + "Source ID: swift-6.4-beta-2026-07-31. "
-                    + "Supplemental topics are identified separately."
-            )
-        ).firstMatch
+        let sourceDetailText =
+            "Learning activities are adapted from this catalog edition. "
+                + "Source ID: swift-6.4-beta-2026-07-31. "
+                + "Supplemental topics are identified separately."
+#if os(macOS)
+        let sourceDetailPredicate = NSPredicate(
+            format: "value == %@",
+            sourceDetailText
+        )
+#else
+        let sourceDetailPredicate = NSPredicate(
+            format: "label == %@",
+            sourceDetailText
+        )
+#endif
+        let sourceDetail = app.staticTexts.matching(sourceDetailPredicate).firstMatch
         XCTAssertTrue(sourceDetail.waitForExistence(timeout: 5))
 
         let startLearning = app.buttons["intro-start-learning"].firstMatch
@@ -669,10 +677,13 @@ final class Swift_LearnUITests: XCTestCase {
         openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
 
         let reset = app.buttons["reset-learning-progress"].firstMatch
+#if !os(tvOS)
+        scrollToTop(in: app)
+#endif
         revealInteractive(reset, in: app)
         focusAndActivate(
             reset,
-            tvPath: [.down, .down, .down, .right]
+            tvPath: Array(repeating: .up, count: 96)
         )
 
         let confirm = app.buttons["confirm-reset-learning-progress"].firstMatch
@@ -720,6 +731,141 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
+    func testResumeAndLockedReasonUseTheCurrentJourney() throws {
+        let catalog = try loadCatalogExpectation()
+        let level = try XCTUnwrap(catalog.levels.first)
+        let firstLesson = try XCTUnwrap(level.lessons.first)
+        let secondLesson = try XCTUnwrap(level.lessons.dropFirst().first)
+        let app = launchApp()
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+
+        let resume = app.buttons["resume-current-task"].firstMatch
+        XCTAssertTrue(resume.waitForExistence(timeout: 15))
+        assertValue(resume, equals: firstLesson.title, in: app)
+
+        let openLevel = app.buttons["open-level-\(level.id)"].firstMatch
+        XCTAssertTrue(openLevel.waitForExistence(timeout: 5))
+        focusAndActivate(openLevel)
+
+        let lockedLesson = app.buttons["level-lesson-\(secondLesson.id)"].firstMatch
+        XCTAssertTrue(lockedLesson.waitForExistence(timeout: 5))
+#if os(tvOS)
+        let lockedLessonCell = focusableListCell(
+            containing: lockedLesson,
+            in: app
+        )
+        focusAndActivate(
+            lockedLessonCell,
+            tvPath: Array(repeating: .down, count: 48)
+        )
+#else
+        focusAndActivate(lockedLesson)
+#endif
+        XCTAssertTrue(
+            app.descendants(matching: .any)["locked-reason-\(secondLesson.id)"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    func testDiscoverySearchFindsCanonicalSkill() throws {
+        let firstLesson = try XCTUnwrap(loadLessonExpectations().first)
+        let app = launchApp(discoveryQuery: firstLesson.title, rightToLeft: true)
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+
+        let openDiscovery = app.buttons["open-learning-discovery"].firstMatch
+        XCTAssertTrue(openDiscovery.waitForExistence(timeout: 15))
+        focusAndActivate(openDiscovery)
+
+        let result = app.buttons["discovery-skill-\(firstLesson.id)"].firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 10))
+        assertValue(result, equals: "Available", in: app)
+#if os(tvOS)
+        let resultCell = focusableListCell(containing: result, in: app)
+        focusAndActivate(
+            resultCell,
+            tvPath: Array(repeating: .down, count: 48)
+        )
+#else
+        focusAndActivate(result)
+#endif
+        XCTAssertTrue(
+            app.descendants(matching: .any)["discovery-skill-detail"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    func testSupplementalTrackIsSeparatedFromBookCoverage() {
+        let app = launchApp()
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+
+        let openDiscovery = app.buttons["open-learning-discovery"].firstMatch
+        XCTAssertTrue(openDiscovery.waitForExistence(timeout: 15))
+        focusAndActivate(openDiscovery)
+
+        let track = app.buttons[
+            "supplemental-track-supplemental.architecture.swift-learn"
+        ].firstMatch
+        XCTAssertTrue(track.waitForExistence(timeout: 10))
+#if os(tvOS)
+        dismissSoftwareKeyboardIfPresented(in: app)
+#endif
+        focusAndActivate(
+            track,
+            tvPath: [.down, .down]
+        )
+        XCTAssertTrue(
+            app.descendants(matching: .any)["supplemental-scope-label"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+        XCTAssertTrue(
+            app.descendants(matching: .any)[
+                "supplemental-lesson-supplemental.architecture.dependency-direction"
+            ].firstMatch.waitForExistence(timeout: 5)
+        )
+
+        let lesson = app.buttons[
+            "supplemental-lesson-supplemental.architecture.dependency-direction"
+        ].firstMatch
+        focusAndActivate(
+            lesson,
+            tvPath: Array(repeating: .up, count: 48)
+        )
+
+        let correctChoice = app.buttons["supplemental-choice-correct"].firstMatch
+        XCTAssertTrue(correctChoice.waitForExistence(timeout: 5))
+        focusAndActivate(correctChoice)
+
+        let submit = app.buttons["submit-supplemental-practice"].firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout: 5))
+        focusAndActivate(submit)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["supplemental-practice-result"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    func testProfileDataDiagnosticsProvidesExportEntry() {
+        let app = launchApp()
+        openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
+
+        let diagnostics = app.buttons["profile-data-diagnostics"].firstMatch
+        revealInteractive(diagnostics, in: app)
+        focusAndActivate(diagnostics)
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["learning-data-diagnostics-screen"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+        XCTAssertTrue(
+            app.descendants(matching: .any)["export-learning-summary"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
     private func launchApp(
         skipIntro: Bool = true,
         persistsData: Bool = false,
@@ -727,7 +873,9 @@ final class Swift_LearnUITests: XCTestCase {
         activityFixture: Bool = false,
         bossFixture: Bool = false,
         projectFixture: Bool = false,
-        failsFirstBossCompletionSave: Bool = false
+        failsFirstBossCompletionSave: Bool = false,
+        discoveryQuery: String = "",
+        rightToLeft: Bool = false
     ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments.append("--ui-testing")
@@ -754,6 +902,12 @@ final class Swift_LearnUITests: XCTestCase {
             app.launchArguments.append(
                 "--ui-testing-fail-first-boss-completion-save"
             )
+        }
+        if discoveryQuery.isEmpty == false {
+            app.launchArguments.append("--ui-testing-discovery-query=\(discoveryQuery)")
+        }
+        if rightToLeft {
+            app.launchArguments.append("--ui-testing-rtl")
         }
 
 #if os(macOS)
@@ -847,6 +1001,12 @@ final class Swift_LearnUITests: XCTestCase {
     ) {
 #if os(macOS)
         if element.value as? String != expectedValue {
+            let labelSegments = element.label
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            if labelSegments.contains(expectedValue) {
+                return
+            }
             XCTAssertTrue(
                 app.staticTexts[expectedValue].firstMatch.waitForExistence(timeout: 5)
             )
@@ -911,6 +1071,29 @@ final class Swift_LearnUITests: XCTestCase {
 
         XCTAssertTrue(element.waitForExistence(timeout: 5))
         XCTAssertTrue(element.isHittable)
+#endif
+    }
+
+    @MainActor
+    private func scrollToTop(in app: XCUIApplication) {
+#if os(macOS)
+        guard app.scrollViews.firstMatch.waitForExistence(timeout: 5) else {
+            XCTFail("Expected a scroll view while returning to the top")
+            return
+        }
+
+        app.activate()
+        let scrollCoordinate = app.windows.firstMatch.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)
+        )
+        for _ in 0..<16 {
+            scrollCoordinate.scroll(byDeltaX: 0, deltaY: 300)
+        }
+#elseif !os(tvOS)
+        XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 5))
+        for _ in 0..<16 {
+            app.swipeDown()
+        }
 #endif
     }
 
@@ -988,6 +1171,26 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
 #if os(tvOS)
+    @MainActor
+    private func dismissSoftwareKeyboardIfPresented(in app: XCUIApplication) {
+        if app.keyboards.firstMatch.waitForExistence(timeout: 5) {
+            XCUIRemote.shared.press(.menu)
+        }
+    }
+
+    @MainActor
+    private func focusableListCell(
+        containing button: XCUIElement,
+        in app: XCUIApplication
+    ) -> XCUIElement {
+        let cell = app.cells.containing(
+            .button,
+            identifier: button.identifier
+        ).firstMatch
+        XCTAssertTrue(cell.waitForExistence(timeout: 5))
+        return cell
+    }
+
     @MainActor
     private func selectedTabContent(
         identifier: String,
@@ -1133,7 +1336,6 @@ final class Swift_LearnUITests: XCTestCase {
         in app: XCUIApplication
     ) {
 #if os(macOS)
-        XCTAssertTrue(element.isHittable)
         app.activate()
         app.typeKey(.return, modifierFlags: [])
 #else

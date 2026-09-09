@@ -198,18 +198,17 @@ The project currently targets platform version 26.0 for iOS/iPadOS, macOS, and t
 
 ## Roadmap
 
-Planned product direction includes:
+Current product capabilities include:
 
-- richer activity types for writing, prediction, repair, debugging, and refactoring;
+- typed missing-code and output-prediction activities;
 - spaced review based on attempts and mistakes;
 - mastery tracking separate from lesson completion;
 - boss challenges that combine skills from completed levels;
 - guided projects that turn individual concepts into practical work;
-- deeper editors and platform-adaptive workspaces;
-- supplemental tracks for architecture, persistence, testing, security, accessibility, and professional practice;
-- stronger runtime verification and interaction coverage on every supported platform.
+- resume, level detail, canonical skill discovery, and adaptive supplemental practice;
+- seven offline supplemental tracks for testing, architecture, persistence, security, professional practice, and release readiness.
 
-Roadmap items describe the product vision and are not claims of completed functionality.
+Richer free-form editors and additional activity renderers remain future work. Current-build runtime verification is reported separately from implemented source.
 
 ## Code Ascension Identity
 
@@ -225,9 +224,9 @@ Senior iOS Developer<br>
 
 ## Copyright and Branding
 
-Except for third-party marks and source material, original project content is copyright © 2026 Ahmed Tarek. All rights reserved.
+Except for third-party marks and source material, original project content is copyright © 2026 Ahmed Tarek and distributed under the repository's MIT License.
 
-No open-source license is currently included. Permission to reuse or redistribute the source code, original writing, Code Ascension composition, AT signature, application icons, or project artwork is not granted unless a future repository license or explicit permission states otherwise.
+Third-party source material keeps its original license and attribution. See `THIRD_PARTY_NOTICES.txt`.
 
 The Swift name and Swift bird mark remain subject to the [Swift project trademark guidelines](https://www.swift.org/policies/).
 

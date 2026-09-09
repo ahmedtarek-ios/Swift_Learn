@@ -13,6 +13,8 @@ struct LearningJourneyView: View {
     private let projectViewModel: LearningProjectViewModel
     private let reviewViewModel: ReviewQueueViewModel
     private let mistakeViewModel: MistakeNotebookViewModel
+    private let discoveryViewModel: LearningDiscoveryViewModel
+    private let supplementalViewModel: SupplementalTracksViewModel
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.learnerMotionPreference) private var motionPreference
 
@@ -21,13 +23,17 @@ struct LearningJourneyView: View {
         bossChallengeViewModel: BossChallengeViewModel,
         projectViewModel: LearningProjectViewModel,
         reviewViewModel: ReviewQueueViewModel,
-        mistakeViewModel: MistakeNotebookViewModel
+        mistakeViewModel: MistakeNotebookViewModel,
+        discoveryViewModel: LearningDiscoveryViewModel,
+        supplementalViewModel: SupplementalTracksViewModel
     ) {
         _viewModel = State(initialValue: viewModel)
         _bossChallengeViewModel = State(initialValue: bossChallengeViewModel)
         self.projectViewModel = projectViewModel
         self.reviewViewModel = reviewViewModel
         self.mistakeViewModel = mistakeViewModel
+        self.discoveryViewModel = discoveryViewModel
+        self.supplementalViewModel = supplementalViewModel
     }
 
     var body: some View {
@@ -171,6 +177,36 @@ struct LearningJourneyView: View {
             .buttonStyle(.bordered)
             .accessibilityIdentifier("journey-review-summary")
             .accessibilityValue(reviewViewModel.summary)
+
+            if let resumeLesson = journey.resumeLesson {
+                NavigationLink {
+                    LessonChallengeView(lesson: resumeLesson, viewModel: viewModel)
+                } label: {
+                    Label(
+                        journey.completedLessonCount == 0
+                            ? "Start with \(resumeLesson.title)"
+                            : "Resume \(resumeLesson.title)",
+                        systemImage: "play.circle.fill"
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("resume-current-task")
+                .accessibilityValue(resumeLesson.title)
+            }
+
+            NavigationLink {
+                LearningDiscoveryView(
+                    viewModel: discoveryViewModel,
+                    supplementalViewModel: supplementalViewModel,
+                    journeyViewModel: viewModel
+                )
+            } label: {
+                Label("Discover Skills", systemImage: "magnifyingglass")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("open-learning-discovery")
         }
         .padding()
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
@@ -181,8 +217,22 @@ struct LearningJourneyView: View {
         journey: LearningJourney
     ) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(level.title)
-                .font(.title2.bold())
+            NavigationLink {
+                LearningLevelDetailView(
+                    level: level,
+                    journeyViewModel: viewModel
+                )
+            } label: {
+                HStack {
+                    Text(level.title)
+                        .font(.title2.bold())
+                    Spacer()
+                    Image(systemName: "chevron.forward")
+                        .accessibilityHidden(true)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("open-level-\(level.id)")
             Text(level.summary)
                 .foregroundStyle(.secondary)
 
@@ -200,45 +250,11 @@ struct LearningJourneyView: View {
                         viewModel: viewModel
                     )
                 } label: {
-                    HStack(spacing: 14) {
-                        Image(
-                            systemName: journey.isCompleted(lessonID: lesson.id)
-                                ? "checkmark.circle.fill"
-                                : isUnlocked
-                                    ? "chevron.left.forwardslash.chevron.right"
-                                    : "lock.fill"
-                        )
-                        .font(.title2)
-                        .foregroundStyle(
-                            journey.isCompleted(lessonID: lesson.id)
-                                ? Color.green
-                                : Color.accentColor
-                        )
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(lesson.title)
-                                .font(.headline)
-                            Text(lesson.objective)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                    }
-                    .padding()
-                    .contentShape(Rectangle())
-                    .background(
-                        isRecentlyUnlocked
-                            ? Color.accentColor.opacity(0.12)
-                            : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 12)
+                    LearningLessonSummaryRow(
+                        lesson: lesson,
+                        availability: journey.availability(for: lesson.id),
+                        isHighlighted: isRecentlyUnlocked
                     )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(
-                                isRecentlyUnlocked ? Color.accentColor : Color.clear,
-                                lineWidth: 2
-                            )
-                    }
                 }
                 .buttonStyle(.bordered)
                 .disabled(!isUnlocked)
@@ -363,7 +379,120 @@ struct LearningJourneyView: View {
     }
 }
 
-private struct LessonChallengeView: View {
+private struct LearningLevelDetailView: View {
+    let level: LearningLevel
+    let journeyViewModel: LearningJourneyViewModel
+
+    @ViewBuilder
+    var body: some View {
+        if let journey = journeyViewModel.journey {
+            List {
+                Section {
+                    Text(level.summary)
+                    let progress = journey.progress(for: level)
+                    ProgressView(value: progress.progress)
+                    Text("\(progress.completedLessonCount) of \(progress.totalLessonCount) lessons completed")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("level-progress-\(level.id)")
+                }
+
+                Section("Lessons") {
+                    ForEach(level.lessons) { lesson in
+                        NavigationLink {
+                            LearningLessonAvailabilityView(
+                                lesson: lesson,
+                                journeyViewModel: journeyViewModel
+                            )
+                        } label: {
+                            LearningLessonSummaryRow(
+                                lesson: lesson,
+                                availability: journey.availability(for: lesson.id),
+                                isHighlighted: false
+                            )
+                        }
+                        .accessibilityIdentifier("level-lesson-\(lesson.id)")
+                    }
+                }
+            }
+            .navigationTitle(level.title)
+            .accessibilityIdentifier("level-detail-\(level.id)")
+        } else {
+            ContentUnavailableView("Level Unavailable", systemImage: "exclamationmark.triangle")
+        }
+    }
+}
+
+private struct LearningLessonAvailabilityView: View {
+    let lesson: LearningLesson
+    let journeyViewModel: LearningJourneyViewModel
+
+    @ViewBuilder
+    var body: some View {
+        switch journeyViewModel.journey?.availability(for: lesson.id) {
+        case .available, .completed:
+            LessonChallengeView(lesson: lesson, viewModel: journeyViewModel)
+        case let .locked(_, prerequisiteTitle):
+            ContentUnavailableView {
+                Label("Lesson Locked", systemImage: "lock.fill")
+            } description: {
+                Text("Complete “\(prerequisiteTitle)” first.")
+            }
+            .navigationTitle(lesson.title)
+            .accessibilityIdentifier("locked-reason-\(lesson.id)")
+        case .unavailable, nil:
+            ContentUnavailableView("Lesson Unavailable", systemImage: "exclamationmark.triangle")
+        }
+    }
+}
+
+private struct LearningLessonSummaryRow: View {
+    let lesson: LearningLesson
+    let availability: LearningLessonAvailability
+    let isHighlighted: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: symbolName)
+                .font(.title2)
+                .foregroundStyle(availability == .completed ? Color.green : Color.accentColor)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(lesson.title)
+                    .font(.headline)
+                Text(lesson.objective)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding()
+        .contentShape(Rectangle())
+        .background(
+            isHighlighted ? Color.accentColor.opacity(0.12) : Color.clear,
+            in: RoundedRectangle(cornerRadius: 12)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isHighlighted ? Color.accentColor : Color.clear, lineWidth: 2)
+        }
+    }
+
+    private var symbolName: String {
+        switch availability {
+        case .completed:
+            "checkmark.circle.fill"
+        case .available:
+            "chevron.left.forwardslash.chevron.right"
+        case .locked:
+            "lock.fill"
+        case .unavailable:
+            "exclamationmark.triangle"
+        }
+    }
+}
+
+struct LessonChallengeView: View {
     let lesson: LearningLesson
     let viewModel: LearningJourneyViewModel
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
@@ -485,6 +614,8 @@ private struct LessonChallengeView: View {
         bossChallengeViewModel: container.bossChallengeViewModel,
         projectViewModel: container.projectViewModel,
         reviewViewModel: container.reviewQueueViewModel,
-        mistakeViewModel: container.mistakeNotebookViewModel
+        mistakeViewModel: container.mistakeNotebookViewModel,
+        discoveryViewModel: container.learningDiscoveryViewModel,
+        supplementalViewModel: container.supplementalTracksViewModel
     )
 }

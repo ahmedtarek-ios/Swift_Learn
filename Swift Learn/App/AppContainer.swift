@@ -18,6 +18,8 @@ final class AppContainer {
     let learnerProfileViewModel: LearnerProfileViewModel
     let reviewQueueViewModel: ReviewQueueViewModel
     let mistakeNotebookViewModel: MistakeNotebookViewModel
+    let learningDiscoveryViewModel: LearningDiscoveryViewModel
+    let supplementalTracksViewModel: SupplementalTracksViewModel
 
     init(
         isStoredInMemoryOnly: Bool = false,
@@ -30,6 +32,7 @@ final class AppContainer {
         seedsBossFixture: Bool = false,
         seedsProjectFixture: Bool = false,
         failsFirstBossCompletionSave: Bool = false,
+        initialDiscoveryQuery: String = "",
         clock: any LearningClock = SystemLearningClock(),
         idGenerator: any LearningAttemptIDGenerating = SystemLearningAttemptIDGenerator(),
         projectSubmissionIDGenerator: any LearningProjectSubmissionIDGenerating
@@ -236,7 +239,8 @@ final class AppContainer {
             ),
             resetLearningProgress: ResetLearningProgressUseCase(
                 resetRepository: resetRepository
-            )
+            ),
+            createDataReport: CreateLearnerDataReportUseCase()
         )
         reviewQueueViewModel = ReviewQueueViewModel(
             loadReviewQueue: loadReviewQueue,
@@ -250,6 +254,21 @@ final class AppContainer {
                 loadCanonicalSkills: loadCanonicalSkills,
                 attemptRepository: attemptRepository
             )
+        )
+        let learningDiscoveryViewModel = LearningDiscoveryViewModel(
+            loadDiscovery: LoadLearningDiscoveryUseCase(
+                contentRepository: contentRepository,
+                loadCanonicalSkills: loadCanonicalSkills
+            ),
+            searchDiscovery: SearchLearningDiscoveryUseCase()
+        )
+        learningDiscoveryViewModel.query = initialDiscoveryQuery
+        self.learningDiscoveryViewModel = learningDiscoveryViewModel
+        supplementalTracksViewModel = SupplementalTracksViewModel(
+            loadTracks: LoadSupplementalTracksUseCase(
+                repository: BundledSupplementalTrackRepository()
+            ),
+            evaluatePractice: EvaluateSupplementalPracticeUseCase()
         )
     }
 

@@ -1,0 +1,15 @@
+Swift Learn Privacy Summary
+Updated: 2026-09-08
+
+Swift Learn is an offline-first learning app. Current source contains no account system, advertising SDK, analytics SDK, tracking code, or network client.
+
+Stored locally:
+- learner display name and selected bundled avatar or user-selected image;
+- appearance and motion preferences;
+- lesson progress, learning attempts, review evidence, project submissions, boss completions, and selected badge showcase.
+
+The learning-data export contains aggregate learning counts. It excludes the learner display name and avatar. Sharing begins only after the user activates the system share control.
+
+Reset Learning Data removes progress, attempts, project submissions, and boss completions. It preserves the learner profile, avatar, appearance, and motion preferences. The app explains this scope before confirmation.
+
+No data is transmitted by the current app source. Future network, account, analytics, or synchronization features require a new privacy review and an updated disclosure before release.

@@ -228,6 +228,12 @@ struct LearningJourney: Equatable, Sendable {
         return Double(completedLessonCount) / Double(totalLessonCount)
     }
 
+    var resumeLesson: LearningLesson? {
+        catalog.lessons.first { lesson in
+            isUnlocked(lessonID: lesson.id) && !isCompleted(lessonID: lesson.id)
+        }
+    }
+
     func isCompleted(lessonID: String) -> Bool {
         completedLessonIDs.contains(lessonID)
     }
@@ -254,6 +260,59 @@ struct LearningJourney: Equatable, Sendable {
         }
 
         return catalog.lessons[nextIndex]
+    }
+
+    func availability(for lessonID: String) -> LearningLessonAvailability {
+        guard let lessonIndex = catalog.lessons.firstIndex(where: { $0.id == lessonID }) else {
+            return .unavailable
+        }
+        if isCompleted(lessonID: lessonID) {
+            return .completed
+        }
+        guard lessonIndex > 0 else {
+            return .available
+        }
+
+        let prerequisite = catalog.lessons[lessonIndex - 1]
+        if completedLessonIDs.contains(prerequisite.id) {
+            return .available
+        }
+        return .locked(
+            prerequisiteLessonID: prerequisite.id,
+            prerequisiteTitle: prerequisite.title
+        )
+    }
+
+    func progress(for level: LearningLevel) -> LearningLevelProgress {
+        LearningLevelProgress(
+            levelID: level.id,
+            completedLessonCount: level.lessons.count {
+                completedLessonIDs.contains($0.id)
+            },
+            totalLessonCount: level.lessons.count
+        )
+    }
+}
+
+enum LearningLessonAvailability: Equatable, Sendable {
+    case unavailable
+    case locked(prerequisiteLessonID: String, prerequisiteTitle: String)
+    case available
+    case completed
+
+    var canPractice: Bool {
+        self == .available || self == .completed
+    }
+}
+
+struct LearningLevelProgress: Equatable, Sendable {
+    let levelID: String
+    let completedLessonCount: Int
+    let totalLessonCount: Int
+
+    var progress: Double {
+        guard totalLessonCount > 0 else { return 0 }
+        return Double(completedLessonCount) / Double(totalLessonCount)
     }
 }
 

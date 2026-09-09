@@ -137,6 +137,7 @@ final class LearnerProfileViewModel {
     private let updateProfile: UpdateLearnerProfileUseCase
     private let updateBadgeShowcaseUseCase: UpdateLearnerBadgeShowcaseUseCase
     private let resetLearningProgressUseCase: ResetLearningProgressUseCase
+    private let createDataReport: CreateLearnerDataReportUseCase
 
     init(
         loadProfile: LoadLearnerProfileUseCase,
@@ -145,7 +146,8 @@ final class LearnerProfileViewModel {
         loadExperienceAchievements: LoadExperienceAchievementsUseCase,
         updateProfile: UpdateLearnerProfileUseCase,
         updateBadgeShowcase: UpdateLearnerBadgeShowcaseUseCase,
-        resetLearningProgress: ResetLearningProgressUseCase
+        resetLearningProgress: ResetLearningProgressUseCase,
+        createDataReport: CreateLearnerDataReportUseCase
     ) {
         self.loadProfile = loadProfile
         self.loadMasteryOverview = loadMasteryOverview
@@ -154,6 +156,17 @@ final class LearnerProfileViewModel {
         self.updateProfile = updateProfile
         updateBadgeShowcaseUseCase = updateBadgeShowcase
         resetLearningProgressUseCase = resetLearningProgress
+        self.createDataReport = createDataReport
+    }
+
+    var dataReport: LearnerDataReport? {
+        guard let snapshot else { return nil }
+        return createDataReport.execute(
+            snapshot: snapshot,
+            mastery: masteryOverview,
+            recentActivities: recentActivities,
+            achievements: achievements
+        )
     }
 
     func load() {

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "verifiedDate": "2026-09-08",
+  "contentStatus": "supplemental-not-swift-book-coverage",
+  "networkDependency": false,
+  "tracks": [
+    {
+      "id": "supplemental.testing.automation",
+      "references": ["AGENTS.md §2", "Swift LearnTests", "Swift LearnUITests/Swift_LearnUITests.swift"]
+    },
+    {
+      "id": "supplemental.architecture.swift-learn",
+      "references": ["AGENTS.md §1", "docs/ARCHITECTURE.md"]
+    },
+    {
+      "id": "supplemental.persistence.apple",
+      "references": ["Swift Learn/Data/Persistence/SwiftLearnSchemaMigrationPlan.swift", "Xcode 26.6 SwiftData and CoreData SDK interfaces"]
+    },
+    {
+      "id": "supplemental.architecture.patterns",
+      "references": ["docs/ARCHITECTURE.md", "AGENTS.md §1"]
+    },
+    {
+      "id": "supplemental.security.privacy",
+      "references": ["AGENTS.md confidentiality rule", "PRIVACY.txt", "Swift Learn/Domain/Profile/CreateLearnerDataReportUseCase.swift"]
+    },
+    {
+      "id": "supplemental.professional.practice",
+      "references": ["AGENTS.md §§3, 6, and 7", "docs/ARCHITECTURE.md"]
+    },
+    {
+      "id": "supplemental.release.readiness",
+      "references": ["LICENSE", "THIRD_PARTY_NOTICES.txt", "PRIVACY.txt", "docs/RELEASE_READINESS.md"]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+Swift Learn Third-Party Notices
+Updated: 2026-09-08
+
+The Swift Programming Language source
+
+Curriculum material is derived from the swift-book source, part of the Swift.org open source project. The original work is Copyright 2014-2026 Apple Inc. and the Swift project authors. The swift-book source is licensed under the Apache License, Version 2.0 with Runtime Library Exception.
+
+Source: https://github.com/swiftlang/swift-book
+License: https://swift.org/LICENSE.txt
+Contributors: https://swift.org/CONTRIBUTORS.txt
+
+Supplied EPUB edition
+
+The supplied edition was generated using swift-book-pdf. Its styling and supporting assets are Copyright 2026 Evangelos Kassos and licensed under the Apache License, Version 2.0.
+
+Source: https://github.com/ekassos/swift-book-pdf
+Apache License 2.0: APACHE-2.0.txt
+
+Trademarks
+
+Swift and the Swift logo are trademarks of Apple Inc. Swift Learn is not published by, endorsed by, or affiliated with Apple Inc. or the Swift.org open source project.
+
+The complete Apache License 2.0 and Swift Runtime Library Exception text is included in APACHE-2.0.txt and preserved in the approved source EPUB at OEBPS/Trademarks.xhtml.

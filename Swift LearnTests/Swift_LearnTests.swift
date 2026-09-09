@@ -2119,7 +2119,8 @@ struct Swift_LearnTests {
             ),
             resetLearningProgress: ResetLearningProgressUseCase(
                 resetRepository: resetRepository
-            )
+            ),
+            createDataReport: CreateLearnerDataReportUseCase()
         )
     }
 }

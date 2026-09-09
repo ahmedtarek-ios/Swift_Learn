@@ -153,7 +153,6 @@ private struct IntroStepContent: View {
                 .stroke(.white.opacity(0.12), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.18), radius: 30, y: 16)
-        .accessibilityIdentifier("intro-step-\(step.number)")
     }
 }
 
@@ -241,6 +240,7 @@ private struct IntroStepMessage: View {
                 .font(.caption.weight(.heavy))
                 .tracking(2.4)
                 .foregroundStyle(.orange)
+                .accessibilityIdentifier("intro-step-\(step.number)")
 
             Text(step.title)
                 .font(.largeTitle.bold())
