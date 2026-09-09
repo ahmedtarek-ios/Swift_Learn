@@ -9,6 +9,9 @@ import SwiftUI
 
 @main
 struct Swift_LearnApp: App {
+#if os(iOS)
+    @Environment(\.scenePhase) private var scenePhase
+#endif
     private let container: AppContainer
     private let forcesRightToLeftLayout: Bool
 
@@ -72,19 +75,34 @@ struct Swift_LearnApp: App {
 
     var body: some Scene {
         WindowGroup {
-            LearningRootView(
-                introViewModel: container.introViewModel,
-                learningJourneyViewModel: container.learningJourneyViewModel,
-                bossChallengeViewModel: container.bossChallengeViewModel,
-                projectViewModel: container.projectViewModel,
-                learnerProfileViewModel: container.learnerProfileViewModel,
-                reviewQueueViewModel: container.reviewQueueViewModel,
-                mistakeNotebookViewModel: container.mistakeNotebookViewModel,
-                learningDiscoveryViewModel: container.learningDiscoveryViewModel,
-                supplementalTracksViewModel: container.supplementalTracksViewModel,
-                forcesRightToLeftLayout: forcesRightToLeftLayout
-            )
+#if os(iOS)
+            learningRootView
+                .task {
+                    container.syncAppleWatch()
+                }
+                .onChange(of: scenePhase) {
+                    guard scenePhase == .active else { return }
+                    container.syncAppleWatch()
+                }
+#else
+            learningRootView
+#endif
         }
+    }
+
+    private var learningRootView: LearningRootView {
+        LearningRootView(
+            introViewModel: container.introViewModel,
+            learningJourneyViewModel: container.learningJourneyViewModel,
+            bossChallengeViewModel: container.bossChallengeViewModel,
+            projectViewModel: container.projectViewModel,
+            learnerProfileViewModel: container.learnerProfileViewModel,
+            reviewQueueViewModel: container.reviewQueueViewModel,
+            mistakeNotebookViewModel: container.mistakeNotebookViewModel,
+            learningDiscoveryViewModel: container.learningDiscoveryViewModel,
+            supplementalTracksViewModel: container.supplementalTracksViewModel,
+            forcesRightToLeftLayout: forcesRightToLeftLayout
+        )
     }
 }
 

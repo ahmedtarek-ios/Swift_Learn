@@ -31,6 +31,18 @@
       "size" : "1024x1024"
     },
     {
+      "filename" : "AppIcon-CarPlay-120.png",
+      "idiom" : "car",
+      "scale" : "2x",
+      "size" : "60x60"
+    },
+    {
+      "filename" : "AppIcon-CarPlay-180.png",
+      "idiom" : "car",
+      "scale" : "3x",
+      "size" : "60x60"
+    },
+    {
       "filename" : "AppIcon-Mac-16.png",
       "idiom" : "mac",
       "scale" : "1x",

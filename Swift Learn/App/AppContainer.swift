@@ -7,6 +7,9 @@
 
 import Foundation
 import SwiftData
+#if os(iOS)
+import OSLog
+#endif
 
 @MainActor
 final class AppContainer {
@@ -20,6 +23,14 @@ final class AppContainer {
     let mistakeNotebookViewModel: MistakeNotebookViewModel
     let learningDiscoveryViewModel: LearningDiscoveryViewModel
     let supplementalTracksViewModel: SupplementalTracksViewModel
+#if os(iOS)
+    private let createWatchLearningSnapshot: CreateWatchLearningSnapshotUseCase
+    private let watchSnapshotPublisher: any WatchLearningSnapshotPublishing
+    private let watchSyncLogger = Logger(
+        subsystem: "com.ata.Swift-Learn",
+        category: "AppleWatchSync"
+    )
+#endif
 
     init(
         isStoredInMemoryOnly: Bool = false,
@@ -164,6 +175,15 @@ final class AppContainer {
             attemptRepository: attemptRepository,
             clock: clock
         )
+        let loadJourney = LoadLearningJourneyUseCase(
+            contentRepository: contentRepository,
+            progressRepository: progressRepository
+        )
+        let loadProfile = LoadLearnerProfileUseCase(
+            contentRepository: contentRepository,
+            progressRepository: progressRepository,
+            profileRepository: profileRepository
+        )
 
         self.modelContainer = modelContainer
         introViewModel = IntroViewModel(
@@ -171,10 +191,7 @@ final class AppContainer {
             sourceDisclosure: LearningSourceDisclosure(catalog: catalog)
         )
         learningJourneyViewModel = LearningJourneyViewModel(
-            loadJourney: LoadLearningJourneyUseCase(
-                contentRepository: contentRepository,
-                progressRepository: progressRepository
-            ),
+            loadJourney: loadJourney,
             submitAnswer: SubmitLessonAnswerUseCase(
                 contentRepository: contentRepository,
                 progressRepository: progressRepository
@@ -210,11 +227,7 @@ final class AppContainer {
             )
         )
         learnerProfileViewModel = LearnerProfileViewModel(
-            loadProfile: LoadLearnerProfileUseCase(
-                contentRepository: contentRepository,
-                progressRepository: progressRepository,
-                profileRepository: profileRepository
-            ),
+            loadProfile: loadProfile,
             loadMasteryOverview: LoadMasteryOverviewUseCase(
                 loadCanonicalSkills: loadCanonicalSkills,
                 attemptRepository: attemptRepository,
@@ -270,7 +283,31 @@ final class AppContainer {
             ),
             evaluatePractice: EvaluateSupplementalPracticeUseCase()
         )
+#if os(iOS)
+        createWatchLearningSnapshot = CreateWatchLearningSnapshotUseCase(
+            loadJourney: loadJourney,
+            loadProfile: loadProfile,
+            loadReviewQueue: loadReviewQueue,
+            clock: clock
+        )
+        watchSnapshotPublisher = WatchConnectivitySnapshotPublisher()
+#endif
     }
+
+#if os(iOS)
+    func syncAppleWatch() {
+        do {
+            watchSnapshotPublisher.activate()
+            try watchSnapshotPublisher.publish(
+                createWatchLearningSnapshot.execute()
+            )
+        } catch {
+            watchSyncLogger.error(
+                "Could not prepare Apple Watch snapshot: \(error.localizedDescription, privacy: .public)"
+            )
+        }
+    }
+#endif
 
     private static func resetStoredData(in modelContext: ModelContext) throws {
         for record in try modelContext.fetch(FetchDescriptor<LessonProgressRecord>()) {
