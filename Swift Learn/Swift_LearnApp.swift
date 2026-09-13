@@ -32,6 +32,9 @@ struct Swift_LearnApp: App {
         let seedsBossFixture = processInfo.arguments.contains(
             "--ui-testing-boss-fixture"
         )
+        let seedsLevelCompletionFixture = processInfo.arguments.contains(
+            "--ui-testing-level-completion-fixture"
+        )
         let seedsProjectFixture = processInfo.arguments.contains(
             "--ui-testing-project-fixture"
         )
@@ -62,6 +65,7 @@ struct Swift_LearnApp: App {
                 seedsReviewFixture: seedsReviewFixture,
                 seedsActivityFixture: seedsActivityFixture,
                 seedsBossFixture: seedsBossFixture,
+                seedsLevelCompletionFixture: seedsLevelCompletionFixture,
                 seedsProjectFixture: seedsProjectFixture,
                 failsFirstBossCompletionSave: failsFirstBossCompletionSave,
                 initialDiscoveryQuery: initialDiscoveryQuery,

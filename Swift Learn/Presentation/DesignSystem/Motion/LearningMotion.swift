@@ -47,6 +47,7 @@ extension EnvironmentValues {
 
 struct AchievementUnlockOverlay: View {
     let achievement: AchievementProgress
+    let headline: String
     let reduceMotion: Bool
     let dismiss: () -> Void
 
@@ -69,7 +70,7 @@ struct AchievementUnlockOverlay: View {
                 }
                 .frame(height: 118)
 
-                Text("Achievement Unlocked")
+                Text(headline)
                     .font(.headline)
                     .foregroundStyle(.secondary)
                 Text(achievement.definition.title)

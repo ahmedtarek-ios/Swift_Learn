@@ -52,6 +52,13 @@ final class LearnerProfileViewModel {
         case failed(String)
     }
 
+    enum MotivationState: Equatable {
+        case idle
+        case loading
+        case loaded
+        case failed(String)
+    }
+
     enum BadgeShowcaseState: Equatable {
         case idle
         case saving
@@ -70,6 +77,8 @@ final class LearnerProfileViewModel {
     private(set) var recentActivities: [RecentLearningActivity] = []
     private(set) var experienceAchievementState: ExperienceAchievementState = .idle
     private(set) var experienceAchievements: [AchievementProgress] = []
+    private(set) var motivationState: MotivationState = .idle
+    private(set) var motivationProgress: MotivationProgress?
     private(set) var badgeShowcaseState: BadgeShowcaseState = .idle
 
     var draftDisplayName = LearnerProfile.defaultProfile.displayName
@@ -134,6 +143,7 @@ final class LearnerProfileViewModel {
     private let loadMasteryOverview: LoadMasteryOverviewUseCase
     private let loadRecentActivityUseCase: LoadRecentLearningActivityUseCase
     private let loadExperienceAchievementsUseCase: LoadExperienceAchievementsUseCase
+    private let loadMotivationProgressUseCase: LoadMotivationProgressUseCase
     private let updateProfile: UpdateLearnerProfileUseCase
     private let updateBadgeShowcaseUseCase: UpdateLearnerBadgeShowcaseUseCase
     private let resetLearningProgressUseCase: ResetLearningProgressUseCase
@@ -144,6 +154,7 @@ final class LearnerProfileViewModel {
         loadMasteryOverview: LoadMasteryOverviewUseCase,
         loadRecentActivity: LoadRecentLearningActivityUseCase,
         loadExperienceAchievements: LoadExperienceAchievementsUseCase,
+        loadMotivationProgress: LoadMotivationProgressUseCase,
         updateProfile: UpdateLearnerProfileUseCase,
         updateBadgeShowcase: UpdateLearnerBadgeShowcaseUseCase,
         resetLearningProgress: ResetLearningProgressUseCase,
@@ -153,6 +164,7 @@ final class LearnerProfileViewModel {
         self.loadMasteryOverview = loadMasteryOverview
         loadRecentActivityUseCase = loadRecentActivity
         loadExperienceAchievementsUseCase = loadExperienceAchievements
+        loadMotivationProgressUseCase = loadMotivationProgress
         self.updateProfile = updateProfile
         updateBadgeShowcaseUseCase = updateBadgeShowcase
         resetLearningProgressUseCase = resetLearningProgress
@@ -179,6 +191,7 @@ final class LearnerProfileViewModel {
             loadState = .loaded
             loadRecentActivity()
             loadExperienceAchievements()
+            loadMotivationProgress()
         } catch {
             loadState = .failed(error.localizedDescription)
         }
@@ -206,6 +219,17 @@ final class LearnerProfileViewModel {
         } catch {
             experienceAchievements = []
             experienceAchievementState = .failed(error.localizedDescription)
+        }
+    }
+
+    func loadMotivationProgress() {
+        motivationState = .loading
+        do {
+            motivationProgress = try loadMotivationProgressUseCase.execute()
+            motivationState = .loaded
+        } catch {
+            motivationProgress = nil
+            motivationState = .failed(error.localizedDescription)
         }
     }
 
@@ -283,6 +307,7 @@ final class LearnerProfileViewModel {
             masteryOverview = try loadMasteryOverview.execute()
             loadRecentActivity()
             loadExperienceAchievements()
+            loadMotivationProgress()
             loadState = .loaded
             resetRevision += 1
             resetState = .reset

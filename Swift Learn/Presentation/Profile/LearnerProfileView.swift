@@ -79,6 +79,7 @@ struct LearnerProfileView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     profileEditor(snapshot)
                     progressSummary(snapshot)
+                    motivationSection
                     badgeShowcaseSection
                     recentActivitySection
                     achievementGrid(viewModel.achievements)
@@ -339,6 +340,45 @@ struct LearnerProfileView: View {
             }
         }
         .padding()
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+    }
+
+    @ViewBuilder
+    private var motivationSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Learning momentum")
+                .font(.title2.bold())
+
+            switch viewModel.motivationState {
+            case .idle, .loading:
+                ProgressView("Loading learning momentum…")
+            case .loaded:
+                if let progress = viewModel.motivationProgress {
+                    HStack(spacing: 24) {
+                        stat(value: progress.totalXP, label: "XP")
+                        stat(value: progress.streakDays, label: "Streak days")
+                        stat(value: progress.recoveryTokens, label: "Recovery tokens")
+                    }
+                    Text("Today: \(progress.dailyXP) of \(progress.dailyGoalXP) XP")
+                        .accessibilityIdentifier("profile-daily-goal")
+                    Text("This week: \(progress.weeklyXP) of \(progress.weeklyGoalXP) XP")
+                        .accessibilityIdentifier("profile-weekly-goal")
+                    Text("\(progress.totalXP) total XP, \(progress.streakDays) "
+                         + (progress.streakDays == 1 ? "streak day, " : "streak days, ")
+                         + "\(progress.recoveryTokens) recovery tokens")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("profile-momentum-summary")
+                }
+            case let .failed(message):
+                Text(message)
+                    .foregroundStyle(.secondary)
+                Button("Retry learning momentum", action: viewModel.loadMotivationProgress)
+                    .accessibilityIdentifier("retry-profile-momentum")
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
     }
 

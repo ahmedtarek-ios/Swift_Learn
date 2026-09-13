@@ -126,10 +126,22 @@ final class LearningJourneyViewModel {
     }
 
     var currentAchievement: AchievementProgress? {
-        progressEvents.compactMap { event -> AchievementProgress? in
+        let achievements = progressEvents.compactMap { event -> AchievementProgress? in
             guard case let .achievementEarned(achievement) = event else { return nil }
             return achievement
-        }.first
+        }
+        return achievements.first {
+            if case .level = $0.definition.kind { return true }
+            return false
+        } ?? achievements.first
+    }
+
+    var currentAchievementHeadline: String {
+        guard let currentAchievement,
+              case .level = currentAchievement.definition.kind else {
+            return "Achievement Unlocked"
+        }
+        return "Level Complete"
     }
 
     var progressSummary: String? {
@@ -140,9 +152,20 @@ final class LearningJourneyViewModel {
 
     func dismissCurrentAchievement() {
         guard let currentAchievement else { return }
+        let completedLevel: Bool
+        if case .level = currentAchievement.definition.kind {
+            completedLevel = true
+        } else {
+            completedLevel = false
+        }
         progressEvents.removeAll { event in
             guard case let .achievementEarned(achievement) = event else { return false }
-            return achievement.id == currentAchievement.id
+            if achievement.id == currentAchievement.id { return true }
+            // The first-level badge and its level badge describe one completion.
+            if completedLevel, case .firstLevel = achievement.definition.kind {
+                return true
+            }
+            return false
         }
     }
 }

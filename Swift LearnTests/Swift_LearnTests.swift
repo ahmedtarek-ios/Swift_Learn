@@ -402,12 +402,39 @@ struct Swift_LearnTests {
                 == "swift.bindings.type-annotations"
         )
         #expect(viewModel.currentAchievement?.id == "achievement.first-lesson")
+        #expect(viewModel.currentAchievementHeadline == "Achievement Unlocked")
         viewModel.dismissCurrentAchievement()
         #expect(viewModel.currentAchievement == nil)
         #expect(
             viewModel.nextLesson(after: "swift.bindings.constants")?.id
                 == "swift.bindings.type-annotations"
         )
+    }
+
+    @Test
+    func completingFirstLevelShowsOneLevelCelebration() throws {
+        let catalog = try bundledCatalog()
+        let level = try #require(catalog.levels.first)
+        let finalLesson = try #require(level.lessons.last)
+        let completed = Set(level.lessons.dropLast().map(\.id))
+        let progress = InMemoryLearningProgressRepository(completedLessonIDs: completed)
+        let viewModel = makeViewModel(
+            content: InMemoryLearningContentRepository(catalog: catalog),
+            progress: progress
+        )
+
+        viewModel.load()
+        viewModel.selectChoice(finalLesson.correctChoiceID)
+        viewModel.submit(lessonID: finalLesson.id)
+
+        #expect(viewModel.attemptResult?.isCorrect == true)
+        #expect(viewModel.progressEvents.contains(.levelCompleted(level.id)))
+        #expect(viewModel.currentAchievement?.id == "achievement.level.\(level.id)")
+        #expect(viewModel.currentAchievementHeadline == "Level Complete")
+
+        viewModel.dismissCurrentAchievement()
+        #expect(viewModel.currentAchievement == nil)
+        #expect(viewModel.currentAchievementHeadline == "Achievement Unlocked")
     }
 
     @Test
@@ -997,6 +1024,213 @@ struct Swift_LearnTests {
             appearance: .system
         )
         #expect(customProfile.customAvatarImageData == customImageData)
+    }
+
+    @Test
+    func motivationRewardsOnlyValidatedUniqueLearningEvidence() throws {
+        let catalog = try bundledCatalog()
+        let lesson = try #require(catalog.lessons.first)
+        let level = try #require(catalog.levels.first)
+        let skillID = SkillID(rawValue: lesson.id)
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let correctEvidence = LearningEvidence(
+            lessonID: lesson.id,
+            skillID: skillID,
+            activityID: lesson.activityID,
+            outcome: .correct,
+            errorCategory: nil
+        )
+        let reviewEvidence = LearningEvidence(
+            lessonID: lesson.id,
+            skillID: skillID,
+            activityID: .review(skillID: skillID),
+            outcome: .correct,
+            errorCategory: nil
+        )
+        let attempts = InMemoryLearningAttemptRepository(attempts: [
+            LearningAttempt(id: UUID(), evidence: correctEvidence, recordedAt: now),
+            LearningAttempt(id: UUID(), evidence: correctEvidence, recordedAt: now),
+            LearningAttempt(id: UUID(), evidence: reviewEvidence, recordedAt: now),
+            LearningAttempt(
+                id: UUID(),
+                evidence: LearningEvidence(
+                    lessonID: lesson.id,
+                    skillID: skillID,
+                    activityID: .review(skillID: skillID),
+                    outcome: .incorrect,
+                    errorCategory: .incorrectChoice
+                ),
+                recordedAt: now
+            ),
+            LearningAttempt(
+                id: UUID(),
+                evidence: LearningEvidence(
+                    lessonID: lesson.id,
+                    skillID: SkillID(rawValue: "invalid"),
+                    activityID: lesson.activityID,
+                    outcome: .correct,
+                    errorCategory: nil
+                ),
+                recordedAt: now
+            ),
+            LearningAttempt(
+                id: UUID(),
+                evidence: LearningEvidence(
+                    lessonID: lesson.id,
+                    skillID: skillID,
+                    activityID: .challenge(skillID: skillID),
+                    outcome: .correct,
+                    errorCategory: nil
+                ),
+                recordedAt: now
+            )
+        ])
+        let boss = BossChallengeCompletion(
+            challengeID: "boss.\(level.id)",
+            levelID: level.id,
+            completedAt: now
+        )
+        let bosses = InMemoryBossChallengeCompletionRepository(completions: [boss, boss])
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let projects = ContentLearningProjectRepository(contentRepository: content)
+        let project = try #require(projects.loadProjects().first)
+        let passedResults = project.requirements.map { requirement in
+            LearningProjectValidationResult(
+                requirementID: requirement.id,
+                lessonID: requirement.lesson.id,
+                skillID: requirement.skillID,
+                selectedChoiceID: requirement.lesson.correctChoiceID,
+                outcome: .correct,
+                feedback: requirement.lesson.correctFeedback
+            )
+        }
+        var invalidPassedResults = passedResults
+        let firstRequirement = try #require(passedResults.first)
+        invalidPassedResults[0] = LearningProjectValidationResult(
+            requirementID: firstRequirement.requirementID,
+            lessonID: firstRequirement.lessonID,
+            skillID: firstRequirement.skillID,
+            selectedChoiceID: "invalid",
+            outcome: .correct,
+            feedback: firstRequirement.feedback
+        )
+        let submissions = InMemoryLearningProjectSubmissionRepository(submissions: [
+            LearningProjectSubmission(
+                id: UUID(), projectID: project.id,
+                results: invalidPassedResults,
+                submittedAt: now.addingTimeInterval(-1)
+            ),
+            LearningProjectSubmission(
+                id: UUID(), projectID: project.id,
+                results: passedResults, submittedAt: now
+            ),
+            LearningProjectSubmission(
+                id: UUID(), projectID: project.id,
+                results: passedResults, submittedAt: now
+            )
+        ])
+        let progress = InMemoryLearningProgressRepository(completedLessonIDs: [lesson.id])
+        let result = try makeMotivationUseCase(
+            catalog: catalog, progress: progress, attempts: attempts,
+            bosses: bosses, submissions: submissions, now: now
+        ).execute()
+
+        #expect(result.totalXP == 280)
+        #expect(result.dailyXP == 280)
+        #expect(result.weeklyXP == 280)
+        #expect(result.streakDays == 1)
+        #expect(result.recoveryTokens == 0)
+        progress.completedLessonIDs.removeAll()
+        #expect(try makeMotivationUseCase(
+            catalog: catalog, progress: progress, attempts: attempts,
+            bosses: bosses, submissions: submissions, now: now
+        ).execute().totalXP == 260)
+    }
+
+    @Test
+    func motivationUsesMondayWeekAndOneEarnedRecoveryToken() throws {
+        let catalog = try bundledCatalog()
+        let lesson = try #require(catalog.lessons.first)
+        let skillID = SkillID(rawValue: lesson.id)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let monday = try #require(calendar.date(from: DateComponents(
+            year: 2026, month: 9, day: 7, hour: 12
+        )))
+        let review = LearningEvidence(
+            lessonID: lesson.id,
+            skillID: skillID,
+            activityID: .review(skillID: skillID),
+            outcome: .correct,
+            errorCategory: nil
+        )
+        let dates = try (Array(0...6) + [8]).map { day -> Date in
+            try #require(calendar.date(byAdding: .day, value: day, to: monday))
+        }
+        let attempts = InMemoryLearningAttemptRepository(attempts: dates.flatMap { date in
+            (0..<2).map { _ in
+                LearningAttempt(id: UUID(), evidence: review, recordedAt: date)
+            }
+        })
+        let daySix = try #require(calendar.date(byAdding: .day, value: 6, to: monday))
+        let earned = try makeMotivationUseCase(
+            catalog: catalog, attempts: attempts, now: daySix, calendar: calendar
+        ).execute()
+        #expect(earned.streakDays == 7)
+        #expect(earned.recoveryTokens == 1)
+
+        let dayEight = try #require(calendar.date(byAdding: .day, value: 8, to: monday))
+        let recovered = try makeMotivationUseCase(
+            catalog: catalog, attempts: attempts, now: dayEight, calendar: calendar
+        ).execute()
+        #expect(recovered.totalXP == 160)
+        #expect(recovered.dailyXP == 20)
+        #expect(recovered.weeklyXP == 20)
+        #expect(recovered.streakDays == 8)
+        #expect(recovered.recoveryTokens == 0)
+
+        let dayTen = try #require(calendar.date(byAdding: .day, value: 10, to: monday))
+        let expired = try makeMotivationUseCase(
+            catalog: catalog, attempts: attempts, now: dayTen, calendar: calendar
+        ).execute()
+        #expect(expired.streakDays == 0)
+    }
+
+    @Test
+    func motivationFailureDoesNotInventRewards() throws {
+        let catalog = try bundledCatalog()
+        let viewModel = makeProfileViewModel(
+            catalog: catalog,
+            profileRepository: InMemoryLearnerProfileRepository(),
+            motivationAttemptRepository: FailingLearningAttemptRepository()
+        )
+        viewModel.loadMotivationProgress()
+        #expect(viewModel.motivationProgress == nil)
+        #expect(viewModel.motivationState == .failed(
+            FixtureError.attemptsUnavailable.localizedDescription
+        ))
+
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let projects = ContentLearningProjectRepository(contentRepository: content)
+        let useCase = LoadMotivationProgressUseCase(
+            contentRepository: content,
+            progressRepository: InMemoryLearningProgressRepository(),
+            loadCanonicalSkills: LoadCanonicalSkillsUseCase(
+                contentRepository: content,
+                skillRepository: ContentCanonicalSkillRepository(
+                    contentRepository: content,
+                    projectRepository: projects
+                )
+            ),
+            attemptRepository: FailingLearningAttemptRepository(),
+            bossCompletionRepository: InMemoryBossChallengeCompletionRepository(),
+            projectRepository: projects,
+            projectSubmissionRepository: InMemoryLearningProjectSubmissionRepository(),
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 1_000))
+        )
+        #expect(throws: FixtureError.attemptsUnavailable) {
+            try useCase.execute()
+        }
     }
 
     @Test
@@ -2068,12 +2302,43 @@ struct Swift_LearnTests {
         ).loadCatalog()
     }
 
+    private func makeMotivationUseCase(
+        catalog: LearningCatalog,
+        progress: InMemoryLearningProgressRepository = .init(),
+        attempts: InMemoryLearningAttemptRepository = .init(),
+        bosses: InMemoryBossChallengeCompletionRepository = .init(),
+        submissions: InMemoryLearningProjectSubmissionRepository = .init(),
+        now: Date,
+        calendar: Calendar = .current
+    ) -> LoadMotivationProgressUseCase {
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let projects = ContentLearningProjectRepository(contentRepository: content)
+        return LoadMotivationProgressUseCase(
+            contentRepository: content,
+            progressRepository: progress,
+            loadCanonicalSkills: LoadCanonicalSkillsUseCase(
+                contentRepository: content,
+                skillRepository: ContentCanonicalSkillRepository(
+                    contentRepository: content,
+                    projectRepository: projects
+                )
+            ),
+            attemptRepository: attempts,
+            bossCompletionRepository: bosses,
+            projectRepository: projects,
+            projectSubmissionRepository: submissions,
+            clock: FixedLearningClock(now: now),
+            calendar: calendar
+        )
+    }
+
     private func makeProfileViewModel(
         catalog: LearningCatalog,
         profileRepository: any LearnerProfileRepository,
         progressRepository: InMemoryLearningProgressRepository = .init(),
         attemptRepository: InMemoryLearningAttemptRepository = .init(),
         recentAttemptRepository: (any LearningAttemptRepository)? = nil,
+        motivationAttemptRepository: (any LearningAttemptRepository)? = nil,
         bossCompletionRepository: any BossChallengeCompletionRepository
             = InMemoryBossChallengeCompletionRepository(),
         projectSubmissionRepository: InMemoryLearningProjectSubmissionRepository = .init(),
@@ -2116,6 +2381,16 @@ struct Swift_LearnTests {
                 bossCompletionRepository: bossCompletionRepository,
                 projectRepository: projectRepository,
                 projectSubmissionRepository: projectSubmissionRepository
+            ),
+            loadMotivationProgress: LoadMotivationProgressUseCase(
+                contentRepository: contentRepository,
+                progressRepository: progressRepository,
+                loadCanonicalSkills: loadCanonicalSkills,
+                attemptRepository: motivationAttemptRepository ?? attemptRepository,
+                bossCompletionRepository: bossCompletionRepository,
+                projectRepository: projectRepository,
+                projectSubmissionRepository: projectSubmissionRepository,
+                clock: FixedLearningClock(now: Date(timeIntervalSince1970: 1_000))
             ),
             updateProfile: UpdateLearnerProfileUseCase(
                 profileRepository: profileRepository

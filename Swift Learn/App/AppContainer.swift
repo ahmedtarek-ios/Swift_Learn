@@ -41,6 +41,7 @@ final class AppContainer {
         seedsReviewFixture: Bool = false,
         seedsActivityFixture: Bool = false,
         seedsBossFixture: Bool = false,
+        seedsLevelCompletionFixture: Bool = false,
         seedsProjectFixture: Bool = false,
         failsFirstBossCompletionSave: Bool = false,
         initialDiscoveryQuery: String = "",
@@ -129,6 +130,15 @@ final class AppContainer {
                 throw AppContainerError.bossFixtureUnavailable
             }
             for lesson in firstLevel.lessons {
+                try progressRepository.markCompleted(lessonID: lesson.id)
+            }
+        }
+        if seedsLevelCompletionFixture {
+            guard let firstLevel = catalog.levels.first,
+                  firstLevel.lessons.count > 1 else {
+                throw AppContainerError.levelCompletionFixtureUnavailable
+            }
+            for lesson in firstLevel.lessons.dropLast() {
                 try progressRepository.markCompleted(lessonID: lesson.id)
             }
         }
@@ -247,6 +257,16 @@ final class AppContainer {
                 bossCompletionRepository: bossCompletionRepository,
                 projectRepository: projectRepository,
                 projectSubmissionRepository: projectSubmissionRepository
+            ),
+            loadMotivationProgress: LoadMotivationProgressUseCase(
+                contentRepository: contentRepository,
+                progressRepository: progressRepository,
+                loadCanonicalSkills: loadCanonicalSkills,
+                attemptRepository: attemptRepository,
+                bossCompletionRepository: bossCompletionRepository,
+                projectRepository: projectRepository,
+                projectSubmissionRepository: projectSubmissionRepository,
+                clock: clock
             ),
             updateProfile: UpdateLearnerProfileUseCase(
                 profileRepository: profileRepository
@@ -374,6 +394,7 @@ final class AppContainer {
 private enum AppContainerError: LocalizedError {
     case activityFixtureUnavailable
     case bossFixtureUnavailable
+    case levelCompletionFixtureUnavailable
     case bossCompletionFixtureFailure
     case projectFixtureUnavailable
 
@@ -383,6 +404,8 @@ private enum AppContainerError: LocalizedError {
             "The UI-test activity fixture has no output-prediction lesson."
         case .bossFixtureUnavailable:
             "The boss challenge fixture has no learning level."
+        case .levelCompletionFixtureUnavailable:
+            "The UI-test level-completion fixture needs at least two lessons."
         case .bossCompletionFixtureFailure:
             "The UI-test boss achievement could not be saved."
         case .projectFixtureUnavailable:

@@ -135,6 +135,52 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
+    func testFirstLevelCompletesWithOneCelebration() throws {
+        let level = try XCTUnwrap(loadCatalogExpectation().levels.first)
+        let finalLesson = try XCTUnwrap(level.lessons.last)
+        let firstChoice = try XCTUnwrap(finalLesson.choices.first)
+        let app = launchApp(levelCompletionFixture: true)
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+
+        let resume = app.buttons["resume-current-task"].firstMatch
+        XCTAssertTrue(resume.waitForExistence(timeout: 15))
+        activate(resume)
+
+        let correctChoice = app.buttons[
+            "choice-\(finalLesson.correctChoiceID)"
+        ].firstMatch
+        XCTAssertTrue(correctChoice.waitForExistence(timeout: 5))
+        select(
+            correctChoice,
+            firstChoice: app.buttons["choice-\(firstChoice.id)"].firstMatch,
+            choiceIndex: finalLesson.correctChoiceIndex
+        )
+        let submit = app.buttons["submit-answer"].firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout: 5))
+        activate(submit)
+
+        let overlay = app.descendants(matching: .any)[
+            "achievement-unlock-overlay"
+        ].firstMatch
+        XCTAssertTrue(overlay.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Level Complete"].firstMatch.exists)
+
+        let dismiss = app.buttons["dismiss-achievement-unlock"].firstMatch
+        XCTAssertTrue(dismiss.waitForExistence(timeout: 5))
+        activate(dismiss)
+        let dismissed = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: overlay
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed)
+        assertSummary(
+            app.staticTexts["lesson-progress-summary"].firstMatch,
+            equals: "\(level.lessons.count) of \(try loadLessonExpectations().count) skills practiced",
+            in: app
+        )
+    }
+
+    @MainActor
     func testOutputPredictionActivityCompletes() throws {
         let lesson = try XCTUnwrap(
             loadLessonExpectations().first {
@@ -470,6 +516,9 @@ final class Swift_LearnUITests: XCTestCase {
             equals: "0 of \(try loadLessonExpectations().count) lessons completed",
             in: app
         )
+        let dailyGoal = app.staticTexts["profile-daily-goal"].firstMatch
+        reveal(dailyGoal, in: app)
+        assertSummary(dailyGoal, equals: "Today: 0 of 20 XP", in: app)
 
         let firstLessonBadge = app.descendants(matching: .any)[
             "achievement-card-achievement.first-lesson"
@@ -522,6 +571,12 @@ final class Swift_LearnUITests: XCTestCase {
             equals: "1 of \(try loadLessonExpectations().count) lessons completed",
             in: app
         )
+        let completedDailyGoal = app.staticTexts["profile-daily-goal"].firstMatch
+        reveal(completedDailyGoal, in: app)
+        assertSummary(completedDailyGoal, equals: "Today: 20 of 20 XP", in: app)
+        let momentum = app.staticTexts["profile-momentum-summary"].firstMatch
+        reveal(momentum, in: app)
+        assertSummary(momentum, equals: "20 total XP, 1 streak day, 0 recovery tokens", in: app)
         let updatedFirstLessonBadge = app.descendants(matching: .any)[
             "achievement-card-achievement.first-lesson"
         ].firstMatch
@@ -887,6 +942,7 @@ final class Swift_LearnUITests: XCTestCase {
         reviewFixture: Bool = false,
         activityFixture: Bool = false,
         bossFixture: Bool = false,
+        levelCompletionFixture: Bool = false,
         projectFixture: Bool = false,
         failsFirstBossCompletionSave: Bool = false,
         discoveryQuery: String = "",
@@ -909,6 +965,9 @@ final class Swift_LearnUITests: XCTestCase {
         }
         if bossFixture {
             app.launchArguments.append("--ui-testing-boss-fixture")
+        }
+        if levelCompletionFixture {
+            app.launchArguments.append("--ui-testing-level-completion-fixture")
         }
         if projectFixture {
             app.launchArguments.append("--ui-testing-project-fixture")

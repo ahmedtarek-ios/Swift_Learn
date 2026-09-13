@@ -63,6 +63,7 @@ struct LearningJourneyView: View {
             if let achievement = viewModel.currentAchievement {
                 AchievementUnlockOverlay(
                     achievement: achievement,
+                    headline: viewModel.currentAchievementHeadline,
                     reduceMotion: reduceMotion,
                     dismiss: viewModel.dismissCurrentAchievement
                 )
@@ -158,7 +159,7 @@ struct LearningJourneyView: View {
             Text("\(journey.completedLessonCount) of \(journey.totalLessonCount) skills practiced")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-                .contentTransition(.numericText())
+                .contentTransition(reduceMotion ? .identity : .numericText())
                 .animation(
                     LearningMotion.progress(reduceMotion: reduceMotion),
                     value: journey.completedLessonCount
