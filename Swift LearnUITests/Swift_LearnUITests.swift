@@ -808,10 +808,19 @@ final class Swift_LearnUITests: XCTestCase {
             "supplemental-track-supplemental.architecture.swift-learn"
         ].firstMatch
         XCTAssertTrue(track.waitForExistence(timeout: 10))
+#if os(tvOS)
+        let remote = XCUIRemote.shared
+        remote.press(.down)
+        remote.press(.down)
+        let trackCell = focusableListCell(containing: track, in: app)
+        waitForFocus(on: trackCell)
+        remote.press(.select)
+#else
         focusAndActivate(
             track,
             tvPath: [.down, .down]
         )
+#endif
         XCTAssertTrue(
             app.descendants(matching: .any)["supplemental-scope-label"]
                 .firstMatch.waitForExistence(timeout: 5)
@@ -825,10 +834,16 @@ final class Swift_LearnUITests: XCTestCase {
         let lesson = app.buttons[
             "supplemental-lesson-supplemental.architecture.dependency-direction"
         ].firstMatch
+#if os(tvOS)
+        let lessonCell = focusableListCell(containing: lesson, in: app)
+        waitForFocus(on: lessonCell)
+        XCUIRemote.shared.press(.select)
+#else
         focusAndActivate(
             lesson,
             tvPath: Array(repeating: .up, count: 48)
         )
+#endif
 
         let correctChoice = app.buttons["supplemental-choice-correct"].firstMatch
         XCTAssertTrue(correctChoice.waitForExistence(timeout: 5))
@@ -836,6 +851,9 @@ final class Swift_LearnUITests: XCTestCase {
 
         let submit = app.buttons["submit-supplemental-practice"].firstMatch
         XCTAssertTrue(submit.waitForExistence(timeout: 5))
+#if os(macOS)
+        app.activate()
+#endif
         focusAndActivate(submit)
         XCTAssertTrue(
             app.descendants(matching: .any)["supplemental-practice-result"]
