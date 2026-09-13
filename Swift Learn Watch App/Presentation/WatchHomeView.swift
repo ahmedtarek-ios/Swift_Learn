@@ -16,8 +16,8 @@ struct WatchHomeView: View {
                         .accessibilityIdentifier("watch-sync-loading")
                 case .empty:
                     WatchEmptyStateView()
-                case let .loaded(snapshot):
-                    WatchSnapshotView(snapshot: snapshot)
+                case let .loaded(content):
+                    WatchSnapshotView(content: content)
                 case let .failed(message):
                     WatchErrorStateView(message: message)
                 }
@@ -32,7 +32,9 @@ struct WatchHomeView: View {
 }
 
 private struct WatchSnapshotView: View {
-    let snapshot: WatchLearningSnapshot
+    let content: WatchHomeViewModel.Content
+
+    private var snapshot: WatchLearningSnapshot { content.snapshot }
 
     var body: some View {
         ScrollView {
@@ -94,6 +96,18 @@ private struct WatchSnapshotView: View {
                 .font(.callout.weight(.semibold))
                 .accessibilityIdentifier("watch-review-count")
 
+                Label(
+                    syncSummary,
+                    systemImage: content.pendingSyncEventCount == 0
+                        ? "checkmark.icloud.fill"
+                        : "icloud.and.arrow.up.fill"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(
+                    content.pendingSyncEventCount == 0 ? .green : .orange
+                )
+                .accessibilityIdentifier("watch-sync-status")
+
                 Text("Updated \(snapshot.generatedAt, style: .relative)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -113,6 +127,17 @@ private struct WatchSnapshotView: View {
             "1 review due"
         default:
             "\(snapshot.dueReviewCount) reviews due"
+        }
+    }
+
+    private var syncSummary: String {
+        switch content.pendingSyncEventCount {
+        case 0:
+            "Synced"
+        case 1:
+            "1 change waiting to sync"
+        default:
+            "\(content.pendingSyncEventCount) changes waiting to sync"
         }
     }
 }

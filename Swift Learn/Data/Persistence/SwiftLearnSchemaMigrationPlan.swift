@@ -70,6 +70,21 @@ enum SwiftLearnSchemaV6: VersionedSchema {
     ]
 }
 
+enum SwiftLearnSchemaV7: VersionedSchema {
+    static let versionIdentifier = Schema.Version(7, 0, 0)
+    static let models: [any PersistentModel.Type] = [
+        LessonProgressRecord.self,
+        LearnerProfileRecord.self,
+        LearningAttemptRecord.self,
+        LearnerAvatarImageRecord.self,
+        LearningProjectSubmissionRecord.self,
+        BossChallengeCompletionRecord.self,
+        LearnerBadgeShowcaseRecord.self,
+        LearningSyncStateRecord.self,
+        LearningSyncEventReceiptRecord.self
+    ]
+}
+
 enum SwiftLearnSchemaMigrationPlan: SchemaMigrationPlan {
     static let schemas: [any VersionedSchema.Type] = [
         SwiftLearnSchemaV1.self,
@@ -77,7 +92,8 @@ enum SwiftLearnSchemaMigrationPlan: SchemaMigrationPlan {
         SwiftLearnSchemaV3.self,
         SwiftLearnSchemaV4.self,
         SwiftLearnSchemaV5.self,
-        SwiftLearnSchemaV6.self
+        SwiftLearnSchemaV6.self,
+        SwiftLearnSchemaV7.self
     ]
 
     static let stages: [MigrationStage] = [
@@ -100,6 +116,10 @@ enum SwiftLearnSchemaMigrationPlan: SchemaMigrationPlan {
         .lightweight(
             fromVersion: SwiftLearnSchemaV5.self,
             toVersion: SwiftLearnSchemaV6.self
+        ),
+        .lightweight(
+            fromVersion: SwiftLearnSchemaV6.self,
+            toVersion: SwiftLearnSchemaV7.self
         )
     ]
 }

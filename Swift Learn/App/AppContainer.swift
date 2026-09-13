@@ -49,7 +49,7 @@ final class AppContainer {
         projectSubmissionIDGenerator: any LearningProjectSubmissionIDGenerating
             = SystemLearningProjectSubmissionIDGenerator()
     ) throws {
-        let schema = Schema(versionedSchema: SwiftLearnSchemaV6.self)
+        let schema = Schema(versionedSchema: SwiftLearnSchemaV7.self)
         let configuration: ModelConfiguration
         if let storageURL {
             configuration = ModelConfiguration(
@@ -93,8 +93,12 @@ final class AppContainer {
         let attemptRepository = SwiftDataLearningAttemptRepository(
             modelContext: modelContainer.mainContext
         )
-        let resetRepository = SwiftDataLearningResetRepository(
+        let syncRepository = SwiftDataLearningSyncRepository(
             modelContext: modelContainer.mainContext
+        )
+        let resetRepository = SwiftDataLearningResetRepository(
+            modelContext: modelContainer.mainContext,
+            syncGeneration: syncRepository
         )
         let projectSubmissionRepository = SwiftDataLearningProjectSubmissionRepository(
             modelContext: modelContainer.mainContext
@@ -284,13 +288,29 @@ final class AppContainer {
             evaluatePractice: EvaluateSupplementalPracticeUseCase()
         )
 #if os(iOS)
-        createWatchLearningSnapshot = CreateWatchLearningSnapshotUseCase(
+        let createWatchLearningSnapshot = CreateWatchLearningSnapshotUseCase(
             loadJourney: loadJourney,
             loadProfile: loadProfile,
             loadReviewQueue: loadReviewQueue,
+            loadSyncSnapshot: LoadLearningSyncSnapshotUseCase(
+                repository: syncRepository
+            ),
             clock: clock
         )
-        watchSnapshotPublisher = WatchConnectivitySnapshotPublisher()
+        self.createWatchLearningSnapshot = createWatchLearningSnapshot
+        let mergeSyncEvents = MergeLearningSyncEventsUseCase(
+            repository: syncRepository,
+            validator: ValidateLearningSyncEventUseCase(
+                contentRepository: contentRepository,
+                loadCanonicalSkills: loadCanonicalSkills
+            )
+        )
+        watchSnapshotPublisher = WatchConnectivitySnapshotPublisher(
+            receiveEvents: { events in
+                _ = try mergeSyncEvents.execute(events)
+                return try createWatchLearningSnapshot.execute()
+            }
+        )
 #endif
     }
 
@@ -334,6 +354,16 @@ final class AppContainer {
         }
         for record in try modelContext.fetch(
             FetchDescriptor<BossChallengeCompletionRecord>()
+        ) {
+            modelContext.delete(record)
+        }
+        for record in try modelContext.fetch(
+            FetchDescriptor<LearningSyncStateRecord>()
+        ) {
+            modelContext.delete(record)
+        }
+        for record in try modelContext.fetch(
+            FetchDescriptor<LearningSyncEventReceiptRecord>()
         ) {
             modelContext.delete(record)
         }

@@ -13,9 +13,16 @@ final class WatchConnectivitySnapshotPublisher: NSObject,
         category: "AppleWatchSync"
     )
     private var pendingPayload: Data?
+    private let receiveEvents:
+        @MainActor ([LearningSyncEvent]) throws -> WatchLearningSnapshot?
 
-    init(session: WCSession = .default) {
+    init(
+        session: WCSession = .default,
+        receiveEvents: @escaping @MainActor ([LearningSyncEvent]) throws
+            -> WatchLearningSnapshot? = { _ in nil }
+    ) {
         self.session = session
+        self.receiveEvents = receiveEvents
         super.init()
         session.delegate = self
     }
@@ -56,6 +63,47 @@ final class WatchConnectivitySnapshotPublisher: NSObject,
         Task { @MainActor [weak self] in
             self?.session.activate()
         }
+    }
+
+    nonisolated func session(
+        _ session: WCSession,
+        didReceiveUserInfo userInfo: [String: Any]
+    ) {
+        guard let payload = userInfo[LearningSyncWireFormat.eventPayloadKey] as? Data else {
+            return
+        }
+        Task { @MainActor [weak self, payload] in
+            guard let self else { return }
+            do {
+                let event = try LearningSyncWireFormat.decodeEvent(payload)
+                if let snapshot = try receiveEvents([event]) {
+                    try publish(snapshot)
+                }
+            } catch {
+                logger.error(
+                    "Watch learning event rejected: \(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
+    }
+
+    nonisolated func session(
+        _ session: WCSession,
+        didReceiveMessage message: [String: Any],
+        replyHandler: @escaping ([String: Any]) -> Void
+    ) {
+        guard message[WatchLearningSnapshotWireFormat.refreshRequestKey] as? Bool
+                == true else {
+            replyHandler([:])
+            return
+        }
+        guard let payload = session.applicationContext[
+            WatchLearningSnapshotWireFormat.payloadKey
+        ] as? Data else {
+            replyHandler([:])
+            return
+        }
+        replyHandler([WatchLearningSnapshotWireFormat.payloadKey: payload])
     }
 
     private func publishPendingPayloadIfPossible() throws {

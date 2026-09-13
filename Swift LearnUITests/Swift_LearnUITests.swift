@@ -808,9 +808,6 @@ final class Swift_LearnUITests: XCTestCase {
             "supplemental-track-supplemental.architecture.swift-learn"
         ].firstMatch
         XCTAssertTrue(track.waitForExistence(timeout: 10))
-#if os(tvOS)
-        dismissSoftwareKeyboardIfPresented(in: app)
-#endif
         focusAndActivate(
             track,
             tvPath: [.down, .down]
@@ -1171,13 +1168,6 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
 #if os(tvOS)
-    @MainActor
-    private func dismissSoftwareKeyboardIfPresented(in app: XCUIApplication) {
-        if app.keyboards.firstMatch.waitForExistence(timeout: 5) {
-            XCUIRemote.shared.press(.menu)
-        }
-    }
-
     @MainActor
     private func focusableListCell(
         containing button: XCUIElement,

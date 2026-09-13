@@ -1329,7 +1329,8 @@ struct Swift_LearnTests {
         try context.save()
 
         try SwiftDataLearningResetRepository(
-            modelContext: context
+            modelContext: context,
+            syncGeneration: SwiftDataLearningSyncRepository(modelContext: context)
         ).resetLearningProgress()
 
         #expect(try context.fetch(FetchDescriptor<LessonProgressRecord>()).isEmpty)
@@ -1339,6 +1340,11 @@ struct Swift_LearnTests {
         )
         #expect(
             try context.fetch(FetchDescriptor<BossChallengeCompletionRecord>()).isEmpty
+        )
+        #expect(
+            try SwiftDataLearningSyncRepository(
+                modelContext: context
+            ).loadSnapshot().resetGeneration == 1
         )
         #expect(try profileRepository.loadProfile() == profile)
         #expect(

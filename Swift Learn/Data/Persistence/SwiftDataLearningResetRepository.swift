@@ -10,9 +10,14 @@ import SwiftData
 @MainActor
 final class SwiftDataLearningResetRepository: LearningResetRepository {
     private let modelContext: ModelContext
+    private let syncGeneration: any LearningSyncResetGenerationAdvancing
 
-    init(modelContext: ModelContext) {
+    init(
+        modelContext: ModelContext,
+        syncGeneration: any LearningSyncResetGenerationAdvancing
+    ) {
         self.modelContext = modelContext
+        self.syncGeneration = syncGeneration
     }
 
     func resetLearningProgress() throws {
@@ -32,6 +37,6 @@ final class SwiftDataLearningResetRepository: LearningResetRepository {
         ) {
             modelContext.delete(record)
         }
-        try modelContext.save()
+        try syncGeneration.advanceResetGeneration()
     }
 }

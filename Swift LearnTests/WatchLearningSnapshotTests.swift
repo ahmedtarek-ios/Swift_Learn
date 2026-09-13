@@ -66,6 +66,9 @@ struct WatchLearningSnapshotTests {
                 attemptRepository: attempts,
                 clock: clock
             ),
+            loadSyncSnapshot: LoadLearningSyncSnapshotUseCase(
+                repository: WatchTestSyncRepository()
+            ),
             clock: clock
         )
 
@@ -77,6 +80,8 @@ struct WatchLearningSnapshotTests {
         #expect(snapshot.dueReviewCount == 1)
         #expect(snapshot.nextLesson?.id == "lesson.two")
         #expect(snapshot.nextLesson?.title == "Variables")
+        #expect(snapshot.resetGeneration == 0)
+        #expect(snapshot.acknowledgedEventIDs.isEmpty)
         #expect(snapshot.generatedAt == now)
         #expect(snapshot.progress == 0.5)
     }
@@ -122,6 +127,33 @@ struct WatchLearningSnapshotTests {
     }
 
     @Test
+    func wireFormatReadsLegacySnapshotWithoutResetGeneration() throws {
+        let snapshot = WatchLearningSnapshot(
+            schemaVersion: 1,
+            learnerName: "Swift Learner",
+            completedLessonCount: 1,
+            totalLessonCount: 2,
+            dueReviewCount: 0,
+            nextLesson: nil,
+            generatedAt: Date(timeIntervalSince1970: 123)
+        )
+        let encoded = try JSONEncoder().encode(snapshot)
+        var payload = try #require(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any]
+        )
+        payload.removeValue(forKey: "resetGeneration")
+        payload.removeValue(forKey: "acknowledgedEventIDs")
+
+        let decoded = try WatchLearningSnapshotWireFormat.decode(
+            JSONSerialization.data(withJSONObject: payload)
+        )
+
+        #expect(decoded.schemaVersion == 1)
+        #expect(decoded.resetGeneration == 0)
+        #expect(decoded.acknowledgedEventIDs.isEmpty)
+    }
+
+    @Test
     func snapshotCreationPropagatesJourneyFailure() {
         let catalog = makeCatalog()
         let content = WatchTestContentRepository(catalog: catalog)
@@ -148,6 +180,9 @@ struct WatchLearningSnapshotTests {
                 ),
                 attemptRepository: attempts,
                 clock: clock
+            ),
+            loadSyncSnapshot: LoadLearningSyncSnapshotUseCase(
+                repository: WatchTestSyncRepository()
             ),
             clock: clock
         )
@@ -269,6 +304,28 @@ private final class WatchTestAttemptRepository: LearningAttemptRepository {
     }
 
     func loadAllAttempts() -> [LearningAttempt] { attempts }
+}
+
+@MainActor
+private final class WatchTestSyncRepository: LearningSyncRepository {
+    private var snapshot: LearningSyncSnapshot = .empty
+    private var pendingEvents: [LearningSyncEvent] = []
+
+    func loadSnapshot() -> LearningSyncSnapshot { snapshot }
+
+    func saveSnapshot(_ snapshot: LearningSyncSnapshot) {
+        self.snapshot = snapshot
+    }
+
+    func loadPendingEvents() -> [LearningSyncEvent] { pendingEvents }
+
+    func enqueue(_ event: LearningSyncEvent) {
+        pendingEvents.append(event)
+    }
+
+    func removePendingEvents(ids: Set<UUID>) {
+        pendingEvents.removeAll { ids.contains($0.id) }
+    }
 }
 
 @MainActor

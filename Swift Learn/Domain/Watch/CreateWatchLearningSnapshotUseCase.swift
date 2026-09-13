@@ -5,23 +5,27 @@ struct CreateWatchLearningSnapshotUseCase {
     private let loadJourney: LoadLearningJourneyUseCase
     private let loadProfile: LoadLearnerProfileUseCase
     private let loadReviewQueue: LoadReviewQueueUseCase
+    private let loadSyncSnapshot: LoadLearningSyncSnapshotUseCase
     private let clock: any LearningClock
 
     init(
         loadJourney: LoadLearningJourneyUseCase,
         loadProfile: LoadLearnerProfileUseCase,
         loadReviewQueue: LoadReviewQueueUseCase,
+        loadSyncSnapshot: LoadLearningSyncSnapshotUseCase,
         clock: any LearningClock
     ) {
         self.loadJourney = loadJourney
         self.loadProfile = loadProfile
         self.loadReviewQueue = loadReviewQueue
+        self.loadSyncSnapshot = loadSyncSnapshot
         self.clock = clock
     }
 
     func execute() throws -> WatchLearningSnapshot {
         let journey = try loadJourney.execute()
         let profile = try loadProfile.execute().profile
+        let syncSnapshot = try loadSyncSnapshot.execute()
         let nextLesson = journey.catalog.lessons.first { lesson in
             !journey.isCompleted(lessonID: lesson.id)
                 && journey.isUnlocked(lessonID: lesson.id)
@@ -39,6 +43,8 @@ struct CreateWatchLearningSnapshotUseCase {
                     objective: $0.objective
                 )
             },
+            resetGeneration: syncSnapshot.resetGeneration,
+            acknowledgedEventIDs: syncSnapshot.appliedEventIDs,
             generatedAt: clock.now
         )
     }

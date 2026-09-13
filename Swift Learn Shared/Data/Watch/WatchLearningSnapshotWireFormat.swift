@@ -2,6 +2,7 @@ import Foundation
 
 enum WatchLearningSnapshotWireFormat {
     nonisolated static let payloadKey = "swiftLearn.watch.snapshot.v1"
+    nonisolated static let refreshRequestKey = "swiftLearn.watch.refresh.v1"
 
     static func encode(_ snapshot: WatchLearningSnapshot) throws -> Data {
         try JSONEncoder().encode(snapshot)
@@ -9,7 +10,9 @@ enum WatchLearningSnapshotWireFormat {
 
     static func decode(_ data: Data) throws -> WatchLearningSnapshot {
         let snapshot = try JSONDecoder().decode(WatchLearningSnapshot.self, from: data)
-        guard snapshot.schemaVersion == WatchLearningSnapshot.currentSchemaVersion else {
+        guard (1...WatchLearningSnapshot.currentSchemaVersion).contains(
+            snapshot.schemaVersion
+        ) else {
             throw WatchLearningSnapshotWireError.unsupportedSchema(
                 snapshot.schemaVersion
             )
