@@ -149,23 +149,31 @@ private struct LearningActivityDTO: Decodable {
     let code: String?
     let codePrefix: String?
     let codeSuffix: String?
-    let choices: [LearningChoiceDTO]
-    let correctChoiceID: String
+    let faultyCode: String?
+    let choices: [LearningChoiceDTO]?
+    let correctChoiceID: String?
+    let fragments: [LearningChoiceDTO]?
+    let correctOrderIDs: [String]?
+    let starterText: String?
+    let acceptedSolutions: [String]?
+    let maxLength: Int?
+    let tokens: [LearningChoiceDTO]?
+    let canonicalTokenIDs: [String]?
 
     func domainModel(lessonID: String) throws -> LearningActivity {
         guard schemaVersion == 1 else {
             throw LearningContentError.unsupportedActivitySchema(schemaVersion)
         }
-        let domainChoices = choices.map(\.domainModel)
-        guard !prompt.isEmpty,
-              !domainChoices.isEmpty,
-              domainChoices.contains(where: { $0.id == correctChoiceID }) else {
+        guard !prompt.isEmpty else {
             throw LearningContentError.invalidActivityPayload(lessonID)
         }
 
         switch type {
         case LearningActivityKind.missingCode.rawValue:
-            guard let codePrefix, let codeSuffix else {
+            guard let codePrefix, let codeSuffix,
+                  let choices, let correctChoiceID,
+                  !choices.isEmpty,
+                  choices.contains(where: { $0.id == correctChoiceID }) else {
                 throw LearningContentError.invalidActivityPayload(lessonID)
             }
             return .missingCode(
@@ -174,12 +182,15 @@ private struct LearningActivityDTO: Decodable {
                     prompt: prompt,
                     codePrefix: codePrefix,
                     codeSuffix: codeSuffix,
-                    choices: domainChoices,
+                    choices: choices.map(\.domainModel),
                     correctChoiceID: correctChoiceID
                 )
             )
         case LearningActivityKind.outputPrediction.rawValue:
-            guard let code, !code.isEmpty else {
+            guard let code, !code.isEmpty,
+                  let choices, let correctChoiceID,
+                  !choices.isEmpty,
+                  choices.contains(where: { $0.id == correctChoiceID }) else {
                 throw LearningContentError.invalidActivityPayload(lessonID)
             }
             return .outputPrediction(
@@ -187,8 +198,99 @@ private struct LearningActivityDTO: Decodable {
                     schemaVersion: schemaVersion,
                     prompt: prompt,
                     code: code,
-                    choices: domainChoices,
+                    choices: choices.map(\.domainModel),
                     correctChoiceID: correctChoiceID
+                )
+            )
+        case LearningActivityKind.codeOrdering.rawValue:
+            guard let fragments, let correctOrderIDs,
+                  fragments.count >= 2,
+                  fragments.allSatisfy({ !$0.id.isEmpty && !$0.code.isEmpty }),
+                  Set(fragments.map(\.id)).count == fragments.count,
+                  correctOrderIDs.count == fragments.count,
+                  Set(correctOrderIDs) == Set(fragments.map(\.id)) else {
+                throw LearningContentError.invalidActivityPayload(lessonID)
+            }
+            return .codeOrdering(
+                CodeOrderingActivity(
+                    schemaVersion: schemaVersion,
+                    prompt: prompt,
+                    fragments: fragments.map(\.domainModel),
+                    correctOrderIDs: correctOrderIDs
+                )
+            )
+        case LearningActivityKind.diagnosticSelection.rawValue:
+            guard let code, !code.isEmpty,
+                  let choices, let correctChoiceID,
+                  choices.count >= 2,
+                  choices.allSatisfy({ !$0.id.isEmpty && !$0.code.isEmpty }),
+                  Set(choices.map(\.id)).count == choices.count,
+                  choices.contains(where: { $0.id == correctChoiceID }) else {
+                throw LearningContentError.invalidActivityPayload(lessonID)
+            }
+            return .diagnosticSelection(
+                DiagnosticSelectionActivity(
+                    schemaVersion: schemaVersion,
+                    prompt: prompt,
+                    code: code,
+                    choices: choices.map(\.domainModel),
+                    correctChoiceID: correctChoiceID
+                )
+            )
+        case LearningActivityKind.codeRepair.rawValue:
+            guard let codePrefix, let faultyCode, let codeSuffix,
+                  !faultyCode.isEmpty,
+                  let choices, let correctChoiceID,
+                  choices.count >= 2,
+                  choices.allSatisfy({ !$0.id.isEmpty && !$0.code.isEmpty }),
+                  Set(choices.map(\.id)).count == choices.count,
+                  choices.contains(where: { $0.id == correctChoiceID }) else {
+                throw LearningContentError.invalidActivityPayload(lessonID)
+            }
+            return .codeRepair(
+                CodeRepairActivity(
+                    schemaVersion: schemaVersion,
+                    prompt: prompt,
+                    codePrefix: codePrefix,
+                    faultyCode: faultyCode,
+                    codeSuffix: codeSuffix,
+                    choices: choices.map(\.domainModel),
+                    correctChoiceID: correctChoiceID
+                )
+            )
+        case LearningActivityKind.constrainedEditing.rawValue:
+            guard let codePrefix, let codeSuffix,
+                  let starterText, let acceptedSolutions,
+                  let maxLength, let tokens, let canonicalTokenIDs,
+                  maxLength > 0, maxLength <= 200,
+                  starterText.count <= maxLength,
+                  acceptedSolutions.isEmpty == false,
+                  acceptedSolutions.allSatisfy({
+                      !$0.isEmpty && $0.count <= maxLength && !$0.contains("\n")
+                  }),
+                  tokens.count >= 2,
+                  tokens.allSatisfy({ !$0.id.isEmpty && !$0.code.isEmpty }),
+                  Set(tokens.map(\.id)).count == tokens.count,
+                  canonicalTokenIDs.count == tokens.count,
+                  Set(canonicalTokenIDs) == Set(tokens.map(\.id)),
+                  acceptedSolutions.contains(
+                      canonicalTokenIDs.compactMap { id in
+                          tokens.first { $0.id == id }?.code
+                      }.joined()
+                  ) else {
+                throw LearningContentError.invalidActivityPayload(lessonID)
+            }
+            return .constrainedEditing(
+                ConstrainedEditingActivity(
+                    schemaVersion: schemaVersion,
+                    prompt: prompt,
+                    codePrefix: codePrefix,
+                    codeSuffix: codeSuffix,
+                    starterText: starterText,
+                    acceptedSolutions: acceptedSolutions,
+                    maxLength: maxLength,
+                    tokens: tokens.map(\.domainModel),
+                    canonicalTokenIDs: canonicalTokenIDs
                 )
             )
         default:

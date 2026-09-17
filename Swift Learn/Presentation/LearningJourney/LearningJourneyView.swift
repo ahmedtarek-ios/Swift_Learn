@@ -519,14 +519,23 @@ struct LessonChallengeView: View {
                     codeIdentifier: "lesson-code",
                     choiceIdentifierPrefix: "choice-",
                     selectChoice: viewModel.selectChoice,
-                    reduceMotion: reduceMotion
+                    reduceMotion: reduceMotion,
+                    selectedFragmentIDs: viewModel.selectedFragmentIDs,
+                    selectFragment: { viewModel.selectFragment($0, lessonID: lesson.id) },
+                    removeFragment: viewModel.removeFragment,
+                    draftText: viewModel.draftText,
+                    selectedTokenIDs: viewModel.selectedTokenIDs,
+                    editText: viewModel.editText,
+                    selectToken: { viewModel.selectToken($0, lessonID: lesson.id) },
+                    removeToken: { viewModel.removeToken($0, lessonID: lesson.id) },
+                    resetSelection: viewModel.resetAttempt
                 )
 
                 Button("Check Code") {
                     viewModel.submit(lessonID: lesson.id)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(viewModel.selectedChoiceID == nil)
+                .disabled(viewModel.canSubmit(lessonID: lesson.id) == false)
                 .accessibilityIdentifier("submit-answer")
 
                 if let result = viewModel.attemptResult {

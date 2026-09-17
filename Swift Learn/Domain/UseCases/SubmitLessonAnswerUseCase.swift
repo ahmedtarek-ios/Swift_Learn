@@ -19,6 +19,13 @@ struct SubmitLessonAnswerUseCase {
     }
 
     func execute(lessonID: String, choiceID: String) throws -> LessonAttemptResult {
+        try execute(lessonID: lessonID, response: .choice(choiceID))
+    }
+
+    func execute(
+        lessonID: String,
+        response: LearningActivityResponse
+    ) throws -> LessonAttemptResult {
         let catalog = try contentRepository.loadCatalog()
         guard let lesson = catalog.lesson(id: lessonID) else {
             throw LearningDomainError.lessonNotFound
@@ -30,11 +37,14 @@ struct SubmitLessonAnswerUseCase {
         guard journey.isUnlocked(lessonID: lessonID) else {
             throw LearningDomainError.lessonLocked
         }
-        guard lesson.choice(id: choiceID) != nil else {
-            throw LearningDomainError.choiceNotFound
+        guard lesson.activity.accepts(response) else {
+            if case .choice = response {
+                throw LearningDomainError.choiceNotFound
+            }
+            throw LearningDomainError.invalidActivityResponse
         }
 
-        let isCorrect = lesson.correctChoiceID == choiceID
+        let isCorrect = lesson.activity.isCorrect(response)
         if isCorrect {
             try progressRepository.markCompleted(lessonID: lessonID)
         }

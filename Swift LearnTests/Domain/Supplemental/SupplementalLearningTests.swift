@@ -177,7 +177,8 @@ struct SupplementalLearningTests {
             loadTracks: LoadSupplementalTracksUseCase(
                 repository: BundledSupplementalTrackRepository()
             ),
-            evaluatePractice: EvaluateSupplementalPracticeUseCase()
+            evaluatePractice: EvaluateSupplementalPracticeUseCase(),
+            evaluateLab: EvaluateSupplementalAuthoredLabUseCase()
         )
 
         viewModel.load()
@@ -192,6 +193,137 @@ struct SupplementalLearningTests {
             viewModel.resultByLessonID[lesson.id]
                 == .correct(lesson.practice.correctFeedback)
         )
+    }
+
+    @Test
+    func authoredLabsAreSourceLockedAndSeparateFromBookLessons() throws {
+        let tracks = try LoadSupplementalTracksUseCase(
+            repository: BundledSupplementalTrackRepository()
+        ).execute()
+        let labs = tracks.flatMap(\.lessons).compactMap { lesson in
+            lesson.lab.map { (lesson.id, $0.activity.kind) }
+        }
+        #expect(labs.count == 3)
+        #expect(labs.allSatisfy { $0.0.hasPrefix("supplemental.") })
+        #expect(Set(labs.map { $0.1 }) == Set([
+            .unitTestAuthoring, .uiTestAuthoring, .architectureClassification
+        ]))
+        #expect(tracks.allSatisfy { !$0.source.references.isEmpty })
+    }
+
+    @Test
+    func authoredTestLabsValidateWrongCorrectAndInvalidResponses() throws {
+        let tracks = try LoadSupplementalTracksUseCase(
+            repository: BundledSupplementalTrackRepository()
+        ).execute()
+        let lessons = tracks.flatMap(\.lessons).filter {
+            $0.lab?.activity.kind == .unitTestAuthoring
+                || $0.lab?.activity.kind == .uiTestAuthoring
+        }
+        let evaluate = EvaluateSupplementalAuthoredLabUseCase()
+        #expect(lessons.count == 2)
+        for lesson in lessons {
+            let lab = try #require(lesson.lab)
+            let composition = try #require(lab.activity.textComposition)
+            let exact = try #require(composition.acceptedSolutions.first)
+            #expect(lab.activity.schemaVersion == 1)
+            #expect(lab.activity.accepts(.text(exact)))
+            #expect(
+                try evaluate.execute(response: .text(exact), lesson: lesson)
+                    == .correct(lab.correctFeedback)
+            )
+            #expect(
+                try evaluate.execute(response: .text("wrong"), lesson: lesson)
+                    == .incorrect(lab.incorrectFeedback)
+            )
+            #expect(throws: SupplementalLearningError.invalidActivityResponse(lesson.id)) {
+                try evaluate.execute(response: .text(""), lesson: lesson)
+            }
+            #expect(throws: SupplementalLearningError.invalidActivityResponse(lesson.id)) {
+                try evaluate.execute(response: .choice("correct"), lesson: lesson)
+            }
+        }
+    }
+
+    @Test
+    func architectureLabRequiresEveryResponsibilityAndChecksLayers() throws {
+        let lesson = try #require(
+            try LoadSupplementalTracksUseCase(
+                repository: BundledSupplementalTrackRepository()
+            ).execute().flatMap(\.lessons).first {
+                $0.lab?.activity.kind == .architectureClassification
+            }
+        )
+        let lab = try #require(lesson.lab)
+        guard case let .architectureClassification(activity) = lab.activity else {
+            Issue.record("Expected architecture classification lab")
+            return
+        }
+        let answers = Dictionary(uniqueKeysWithValues: activity.items.map {
+            ($0.id, $0.correctLayer)
+        })
+        let evaluate = EvaluateSupplementalAuthoredLabUseCase()
+        #expect(activity.items.count == 4)
+        #expect(throws: SupplementalLearningError.invalidActivityResponse(lesson.id)) {
+            try evaluate.execute(response: .classifications(["construct": .app]), lesson: lesson)
+        }
+        var wrong = answers
+        wrong["construct"] = .data
+        #expect(
+            try evaluate.execute(response: .classifications(wrong), lesson: lesson)
+                == .incorrect(lab.incorrectFeedback)
+        )
+        #expect(
+            try evaluate.execute(response: .classifications(answers), lesson: lesson)
+                == .correct(lab.correctFeedback)
+        )
+    }
+
+    @Test
+    func authoredLabViewModelEditsClassifiesSubmitsAndResets() throws {
+        let viewModel = SupplementalTracksViewModel(
+            loadTracks: LoadSupplementalTracksUseCase(
+                repository: BundledSupplementalTrackRepository()
+            ),
+            evaluatePractice: EvaluateSupplementalPracticeUseCase(),
+            evaluateLab: EvaluateSupplementalAuthoredLabUseCase()
+        )
+        viewModel.load()
+        let lessons = viewModel.tracks.flatMap(\.lessons)
+        let unitLesson = try #require(lessons.first {
+            $0.lab?.activity.kind == .unitTestAuthoring
+        })
+        let composition = try #require(unitLesson.lab?.activity.textComposition)
+        #expect(!viewModel.canSubmitLab(unitLesson))
+        viewModel.editLabText("wrong", for: unitLesson.id)
+        #expect(viewModel.canSubmitLab(unitLesson))
+        viewModel.submitLab(unitLesson)
+        #expect(viewModel.labResultByLessonID[unitLesson.id]
+            == .incorrect(unitLesson.lab?.incorrectFeedback ?? ""))
+        viewModel.resetLabSelection(for: unitLesson.id)
+        #expect(!viewModel.canSubmitLab(unitLesson))
+        viewModel.editLabText(try #require(composition.acceptedSolutions.first), for: unitLesson.id)
+        #expect(viewModel.labResultByLessonID[unitLesson.id] == nil)
+        viewModel.submitLab(unitLesson)
+        #expect(viewModel.labResultByLessonID[unitLesson.id]
+            == .correct(unitLesson.lab?.correctFeedback ?? ""))
+        viewModel.resetPractice(for: unitLesson.id)
+        #expect(!viewModel.canSubmitLab(unitLesson))
+
+        let architectureLesson = try #require(lessons.first {
+            $0.lab?.activity.kind == .architectureClassification
+        })
+        guard case let .architectureClassification(activity) = architectureLesson.lab?.activity else {
+            Issue.record("Expected architecture classification lab")
+            return
+        }
+        for item in activity.items {
+            viewModel.classify(itemID: item.id, as: item.correctLayer, for: architectureLesson)
+        }
+        #expect(viewModel.canSubmitLab(architectureLesson))
+        viewModel.submitLab(architectureLesson)
+        #expect(viewModel.labResultByLessonID[architectureLesson.id]
+            == .correct(architectureLesson.lab?.correctFeedback ?? ""))
     }
 
     private func makePractice() -> SupplementalPractice {

@@ -18,14 +18,24 @@ struct CompleteReviewUseCase {
     }
 
     func execute(skillID: SkillID, choiceID: String) throws -> LessonAttemptResult {
+        try execute(skillID: skillID, response: .choice(choiceID))
+    }
+
+    func execute(
+        skillID: SkillID,
+        response: LearningActivityResponse
+    ) throws -> LessonAttemptResult {
         guard let item = try loadReviewQueue.execute().first(where: { $0.id == skillID }) else {
             throw ReviewDomainError.reviewNotDue(skillID.rawValue)
         }
-        guard item.lesson.choice(id: choiceID) != nil else {
-            throw ReviewDomainError.choiceNotFound
+        guard item.lesson.activity.accepts(response) else {
+            if case .choice = response {
+                throw ReviewDomainError.choiceNotFound
+            }
+            throw ReviewDomainError.invalidActivityResponse
         }
 
-        let isCorrect = item.lesson.correctChoiceID == choiceID
+        let isCorrect = item.lesson.activity.isCorrect(response)
         try recordAttempt.execute(
             lessonID: item.lesson.id,
             activityID: .review(skillID: skillID),

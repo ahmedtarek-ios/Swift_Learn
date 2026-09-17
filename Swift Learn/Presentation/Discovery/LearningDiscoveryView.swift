@@ -316,6 +316,8 @@ private struct SupplementalLessonDetailView: View {
     let lesson: SupplementalLesson
     let source: SupplementalSourceLock
     @Bindable var viewModel: SupplementalTracksViewModel
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.learnerMotionPreference) private var motionPreference
 
     var body: some View {
         ScrollView {
@@ -332,6 +334,10 @@ private struct SupplementalLessonDetailView: View {
 
                 Divider()
                 practice
+                if lesson.lab != nil {
+                    Divider()
+                    authoredLab
+                }
                 Divider()
 
                 Text("Source lock")
@@ -384,6 +390,51 @@ private struct SupplementalLessonDetailView: View {
         }
         .padding()
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    @ViewBuilder
+    private var authoredLab: some View {
+        if let lab = lesson.lab {
+            let selection = viewModel.labSelection(for: lesson.id)
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Try a lab")
+                    .font(.headline)
+                LearningActivityRenderer(
+                    activity: lab.activity,
+                    selectedChoiceID: nil,
+                    codeIdentifier: "supplemental-lab-code",
+                    choiceIdentifierPrefix: "supplemental-lab-choice-",
+                    selectChoice: { _ in },
+                    reduceMotion: LearningMotionPolicy.shouldReduceMotion(
+                        systemReduceMotion: systemReduceMotion,
+                        preference: motionPreference
+                    ),
+                    draftText: selection.draftText,
+                    selectedTokenIDs: selection.selectedTokenIDs,
+                    editText: { viewModel.editLabText($0, for: lesson.id) },
+                    selectToken: { viewModel.selectLabToken($0, for: lesson) },
+                    removeToken: { viewModel.removeLabToken($0, for: lesson) },
+                    resetSelection: { viewModel.resetLabSelection(for: lesson.id) },
+                    selectedLayers: selection.selectedLayers,
+                    selectLayer: { itemID, layer in
+                        viewModel.classify(itemID: itemID, as: layer, for: lesson)
+                    }
+                )
+                Button("Check Lab") {
+                    viewModel.submitLab(lesson)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!viewModel.canSubmitLab(lesson))
+                .accessibilityIdentifier("submit-supplemental-lab")
+
+                if let result = viewModel.labResultByLessonID[lesson.id] {
+                    feedback(result)
+                        .accessibilityIdentifier("supplemental-lab-result")
+                }
+            }
+            .padding()
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
+        }
     }
 
     @ViewBuilder

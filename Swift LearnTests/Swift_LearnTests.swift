@@ -424,7 +424,7 @@ struct Swift_LearnTests {
         )
 
         viewModel.load()
-        viewModel.selectChoice(finalLesson.correctChoiceID)
+        viewModel.selectChoice(try #require(finalLesson.correctChoiceID))
         viewModel.submit(lessonID: finalLesson.id)
 
         #expect(viewModel.attemptResult?.isCorrect == true)
@@ -506,7 +506,7 @@ struct Swift_LearnTests {
     }
 
     @Test
-    func bundledActivitiesMigrateLegacyChoicesAndDecodeOutputPrediction() throws {
+    func bundledActivitiesMigrateLegacyChoicesAndDecodeTypedActivities() throws {
         let catalog = try bundledCatalog()
         let legacyLesson = try #require(catalog.lessons.first)
         let predictionLesson = try #require(
@@ -531,9 +531,19 @@ struct Swift_LearnTests {
         #expect(
             catalog.lessons.filter { $0.activity.kind == .outputPrediction }.count == 1
         )
-        #expect(
-            catalog.lessons.filter { $0.activity.kind == .missingCode }.count == 485
-        )
+        let orderingLesson = try #require(catalog.lesson(id: "swift.comments.multiline"))
+        guard case let .codeOrdering(ordering) = orderingLesson.activity else {
+            Issue.record("Expected a code-ordering activity")
+            return
+        }
+        #expect(ordering.correctOrderIDs == ["open", "first", "second", "close", "score"])
+        #expect(ordering.code(selectedFragmentIDs: ordering.correctOrderIDs)
+                == "/*\nRevisit scoring\nTune the multiplier.\n*/\nlet score = 10")
+        #expect(catalog.lessons.filter { $0.activity.kind == .codeOrdering }.count == 1)
+        #expect(catalog.lessons.filter { $0.activity.kind == .diagnosticSelection }.count == 1)
+        #expect(catalog.lessons.filter { $0.activity.kind == .codeRepair }.count == 1)
+        #expect(catalog.lessons.filter { $0.activity.kind == .constrainedEditing }.count == 1)
+        #expect(catalog.lessons.filter { $0.activity.kind == .missingCode }.count == 481)
     }
 
     @Test
@@ -555,6 +565,384 @@ struct Swift_LearnTests {
         #expect(journey.completedLessonCount == 3)
         #expect(journey.isUnlocked(lessonID: predictionLesson.id))
         #expect(!journey.isCompleted(lessonID: predictionLesson.id))
+    }
+
+    @Test
+    func codeOrderingFixtureUnlocksOnlyTheRepresentativeLesson() throws {
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            seedsCodeOrderingFixture: true
+        )
+        let viewModel = container.learningJourneyViewModel
+        viewModel.load()
+        let journey = try #require(viewModel.journey)
+        let lesson = try #require(journey.catalog.lesson(id: "swift.comments.multiline"))
+        let lessonIndex = try #require(journey.catalog.lessons.firstIndex { $0.id == lesson.id })
+
+        #expect(journey.completedLessonCount == lessonIndex)
+        #expect(journey.isUnlocked(lessonID: lesson.id))
+        #expect(journey.isCompleted(lessonID: lesson.id) == false)
+    }
+
+    @Test
+    func codeOrderingRejectsInvalidAndIncorrectResponsesBeforeCompleting() throws {
+        let catalog = try bundledCatalog()
+        let lesson = try #require(catalog.lesson(id: "swift.comments.multiline"))
+        guard case let .codeOrdering(ordering) = lesson.activity else {
+            Issue.record("Expected a code-ordering activity")
+            return
+        }
+        let precedingIDs = Set(catalog.lessons.prefix { $0.id != lesson.id }.map(\.id))
+        let progress = InMemoryLearningProgressRepository(completedLessonIDs: precedingIDs)
+        let submit = SubmitLessonAnswerUseCase(
+            contentRepository: InMemoryLearningContentRepository(catalog: catalog),
+            progressRepository: progress
+        )
+
+        #expect(throws: LearningDomainError.invalidActivityResponse) {
+            try submit.execute(lessonID: lesson.id, response: .orderedFragments(["open"]))
+        }
+        #expect(throws: LearningDomainError.invalidActivityResponse) {
+            try submit.execute(
+                lessonID: lesson.id,
+                response: .orderedFragments(["open", "open", "second", "close", "score"])
+            )
+        }
+        #expect(throws: LearningDomainError.invalidActivityResponse) {
+            try submit.execute(
+                lessonID: lesson.id,
+                response: .orderedFragments(["open", "first", "unknown", "close", "score"])
+            )
+        }
+        let incorrect = try submit.execute(
+            lessonID: lesson.id,
+            response: .orderedFragments(Array(ordering.correctOrderIDs.reversed()))
+        )
+        #expect(incorrect.isCorrect == false)
+        #expect(progress.completedLessonIDs.contains(lesson.id) == false)
+
+        let correct = try submit.execute(
+            lessonID: lesson.id,
+            response: .orderedFragments(ordering.correctOrderIDs)
+        )
+        #expect(correct.isCorrect)
+        #expect(progress.completedLessonIDs.contains(lesson.id))
+    }
+
+    @Test
+    func codeOrderingViewModelSupportsSelectionUndoAndCompletion() throws {
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            seedsCodeOrderingFixture: true
+        )
+        let viewModel = container.learningJourneyViewModel
+        viewModel.load()
+        let lesson = try #require(
+            viewModel.journey?.catalog.lesson(id: "swift.comments.multiline")
+        )
+        guard case let .codeOrdering(ordering) = lesson.activity else {
+            Issue.record("Expected a code-ordering activity")
+            return
+        }
+        #expect(viewModel.canSubmit(lessonID: lesson.id) == false)
+        for id in ordering.correctOrderIDs {
+            viewModel.selectFragment(id, lessonID: lesson.id)
+        }
+        viewModel.selectFragment("open", lessonID: lesson.id)
+        #expect(viewModel.selectedFragmentIDs == ordering.correctOrderIDs)
+        viewModel.resetAttempt()
+        #expect(viewModel.selectedFragmentIDs.isEmpty)
+        #expect(viewModel.canSubmit(lessonID: lesson.id) == false)
+        for id in ordering.correctOrderIDs {
+            viewModel.selectFragment(id, lessonID: lesson.id)
+        }
+        viewModel.removeFragment("first")
+        #expect(viewModel.canSubmit(lessonID: lesson.id) == false)
+        viewModel.selectFragment("first", lessonID: lesson.id)
+        #expect(viewModel.canSubmit(lessonID: lesson.id))
+        viewModel.submit(lessonID: lesson.id)
+        #expect(viewModel.attemptResult?.isCorrect == false)
+        viewModel.resetAttempt()
+        for id in ordering.correctOrderIDs {
+            viewModel.selectFragment(id, lessonID: lesson.id)
+        }
+        viewModel.submit(lessonID: lesson.id)
+        #expect(viewModel.attemptResult?.isCorrect == true)
+        #expect(viewModel.journey?.isCompleted(lessonID: lesson.id) == true)
+    }
+
+    @Test
+    func codeOrderingReviewRecordsCorrectOutcome() throws {
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            resetsStoredData: true,
+            seedsReviewFixture: true,
+            seedsCodeOrderingFixture: true,
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000))
+        )
+        let viewModel = container.reviewQueueViewModel
+        viewModel.load()
+        let item = try #require(viewModel.currentItem)
+        #expect(item.lesson.id == "swift.comments.multiline")
+        guard case let .codeOrdering(ordering) = item.lesson.activity else {
+            Issue.record("Expected a code-ordering review")
+            return
+        }
+        for id in ordering.correctOrderIDs {
+            viewModel.selectFragment(id)
+        }
+        #expect(viewModel.canSubmitCurrentItem)
+        viewModel.submit(skillID: item.id)
+        #expect(viewModel.attemptResult?.isCorrect == true)
+        #expect(viewModel.isSessionComplete)
+    }
+
+    @Test
+    func diagnosticSelectionValidatesChoiceAndCompletesTheLesson() throws {
+        let catalog = try bundledCatalog()
+        let lesson = try #require(catalog.lesson(id: "swift.types.safety"))
+        guard case let .diagnosticSelection(diagnostic) = lesson.activity else {
+            Issue.record("Expected a diagnostic-selection activity")
+            return
+        }
+        #expect(diagnostic.code == "let status: String = 42")
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            activityFixtureKind: .diagnosticSelection
+        )
+        let viewModel = container.learningJourneyViewModel
+        viewModel.load()
+        #expect(viewModel.journey?.isUnlocked(lessonID: lesson.id) == true)
+        viewModel.selectChoice("build-success")
+        viewModel.submit(lessonID: lesson.id)
+        #expect(viewModel.attemptResult?.isCorrect == false)
+        #expect(viewModel.journey?.isCompleted(lessonID: lesson.id) == false)
+        viewModel.selectChoice(diagnostic.correctChoiceID)
+        viewModel.submit(lessonID: lesson.id)
+        #expect(viewModel.attemptResult?.isCorrect == true)
+        #expect(viewModel.journey?.isCompleted(lessonID: lesson.id) == true)
+    }
+
+    @Test
+    func malformedDiagnosticSelectionPayloadIsRejected() throws {
+        let resource = try #require(
+            Bundle(for: AppContainer.self).url(
+                forResource: "swift-6.4-beta-foundations",
+                withExtension: "json"
+            )
+        )
+        let original = try #require(
+            String(data: Data(contentsOf: resource), encoding: .utf8)
+        )
+        let invalid = original.replacingOccurrences(
+            of: "\"correctChoiceID\": \"type-error\"",
+            with: "\"correctChoiceID\": \"unknown-diagnostic\""
+        )
+        #expect(invalid != original)
+        let repository = BundledLearningContentRepository(data: Data(invalid.utf8))
+        #expect(throws: LearningContentError.invalidActivityPayload("swift.types.safety")) {
+            try repository.loadCatalog()
+        }
+    }
+
+    @Test
+    func diagnosticSelectionReviewRecordsTheChosenOutcome() throws {
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            resetsStoredData: true,
+            seedsReviewFixture: true,
+            activityFixtureKind: .diagnosticSelection,
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000))
+        )
+        let viewModel = container.reviewQueueViewModel
+        viewModel.load()
+        let item = try #require(viewModel.currentItem)
+        #expect(item.lesson.id == "swift.types.safety")
+        viewModel.selectChoice("type-error")
+        viewModel.submit(skillID: item.id)
+        #expect(viewModel.attemptResult?.isCorrect == true)
+        #expect(viewModel.isSessionComplete)
+    }
+
+    @Test
+    func codeRepairShowsFaultAndValidatesTheReplacement() throws {
+        let catalog = try bundledCatalog()
+        let lesson = try #require(catalog.lesson(id: "swift.numbers.integer-conversion"))
+        guard case let .codeRepair(repair) = lesson.activity else {
+            Issue.record("Expected a code-repair activity")
+            return
+        }
+        #expect(repair.code(selectedChoiceID: nil).hasSuffix("twoThousand + one"))
+        #expect(repair.code(selectedChoiceID: repair.correctChoiceID)
+                .hasSuffix("twoThousand + UInt16(one)"))
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            activityFixtureKind: .codeRepair
+        )
+        let viewModel = container.learningJourneyViewModel
+        viewModel.load()
+        #expect(viewModel.journey?.isUnlocked(lessonID: lesson.id) == true)
+        viewModel.selectChoice("unconverted-uint8")
+        viewModel.submit(lessonID: lesson.id)
+        #expect(viewModel.attemptResult?.isCorrect == false)
+        viewModel.selectChoice(repair.correctChoiceID)
+        viewModel.submit(lessonID: lesson.id)
+        #expect(viewModel.attemptResult?.isCorrect == true)
+        #expect(viewModel.journey?.isCompleted(lessonID: lesson.id) == true)
+    }
+
+    @Test
+    func malformedCodeRepairPayloadIsRejected() throws {
+        let resource = try #require(
+            Bundle(for: AppContainer.self).url(
+                forResource: "swift-6.4-beta-foundations",
+                withExtension: "json"
+            )
+        )
+        let original = try #require(
+            String(data: Data(contentsOf: resource), encoding: .utf8)
+        )
+        let invalid = original.replacingOccurrences(
+            of: "\"faultyCode\": \"one\"",
+            with: "\"faultyCode\": \"\""
+        )
+        #expect(invalid != original)
+        let repository = BundledLearningContentRepository(data: Data(invalid.utf8))
+        #expect(throws: LearningContentError.invalidActivityPayload(
+            "swift.numbers.integer-conversion"
+        )) {
+            try repository.loadCatalog()
+        }
+    }
+
+    @Test
+    func codeRepairReviewRecordsTheReplacementOutcome() throws {
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            resetsStoredData: true,
+            seedsReviewFixture: true,
+            activityFixtureKind: .codeRepair,
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000))
+        )
+        let viewModel = container.reviewQueueViewModel
+        viewModel.load()
+        let item = try #require(viewModel.currentItem)
+        #expect(item.lesson.id == "swift.numbers.integer-conversion")
+        viewModel.selectChoice("uint16-conversion")
+        viewModel.submit(skillID: item.id)
+        #expect(viewModel.attemptResult?.isCorrect == true)
+        #expect(viewModel.isSessionComplete)
+    }
+
+    @Test
+    func constrainedEditingAcceptsOnlyBoundedAuthoredSolutions() throws {
+        let catalog = try bundledCatalog()
+        let lesson = try #require(catalog.lesson(id: "swift.numbers.integer-to-floating"))
+        guard case let .constrainedEditing(editing) = lesson.activity else {
+            Issue.record("Expected a constrained-editing activity")
+            return
+        }
+        #expect(editing.code(enteredText: "Double(three)")
+                .hasSuffix("Double(three) + fraction"))
+        #expect(editing.text(selectedTokenIDs: editing.canonicalTokenIDs)
+                == "Double(three)")
+        let precedingIDs = Set(catalog.lessons.prefix { $0.id != lesson.id }.map(\.id))
+        let progress = InMemoryLearningProgressRepository(completedLessonIDs: precedingIDs)
+        let submit = SubmitLessonAnswerUseCase(
+            contentRepository: InMemoryLearningContentRepository(catalog: catalog),
+            progressRepository: progress
+        )
+        #expect(throws: LearningDomainError.invalidActivityResponse) {
+            try submit.execute(lessonID: lesson.id, response: .text(""))
+        }
+        #expect(throws: LearningDomainError.invalidActivityResponse) {
+            try submit.execute(lessonID: lesson.id, response: .text(String(repeating: "x", count: 31)))
+        }
+        #expect(throws: LearningDomainError.invalidActivityResponse) {
+            try submit.execute(lessonID: lesson.id, response: .text("Double(\nthree)"))
+        }
+        let incorrect = try submit.execute(lessonID: lesson.id, response: .text("three"))
+        #expect(incorrect.isCorrect == false)
+        #expect(progress.completedLessonIDs.contains(lesson.id) == false)
+        let correct = try submit.execute(
+            lessonID: lesson.id,
+            response: .text("Double(three)")
+        )
+        #expect(correct.isCorrect)
+        #expect(progress.completedLessonIDs.contains(lesson.id))
+    }
+
+    @Test
+    func constrainedEditingViewModelSupportsTextAndTokenDrafts() throws {
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            activityFixtureKind: .constrainedEditing
+        )
+        let viewModel = container.learningJourneyViewModel
+        viewModel.load()
+        let lesson = try #require(
+            viewModel.journey?.catalog.lesson(id: "swift.numbers.integer-to-floating")
+        )
+        guard case let .constrainedEditing(editing) = lesson.activity else {
+            Issue.record("Expected a constrained-editing activity")
+            return
+        }
+        #expect(viewModel.canSubmit(lessonID: lesson.id) == false)
+        for id in editing.canonicalTokenIDs {
+            viewModel.selectToken(id, lessonID: lesson.id)
+        }
+        #expect(viewModel.selectedTokenIDs == editing.canonicalTokenIDs)
+        #expect(viewModel.draftText == "Double(three)")
+        viewModel.removeToken("value", lessonID: lesson.id)
+        #expect(viewModel.draftText == "Double()")
+        viewModel.editText("Double(three)")
+        #expect(viewModel.selectedTokenIDs.isEmpty)
+        viewModel.submit(lessonID: lesson.id)
+        #expect(viewModel.attemptResult?.isCorrect == true)
+        #expect(viewModel.journey?.isCompleted(lessonID: lesson.id) == true)
+    }
+
+    @Test
+    func malformedConstrainedEditingPayloadIsRejected() throws {
+        let resource = try #require(
+            Bundle(for: AppContainer.self).url(
+                forResource: "swift-6.4-beta-foundations",
+                withExtension: "json"
+            )
+        )
+        let original = try #require(
+            String(data: Data(contentsOf: resource), encoding: .utf8)
+        )
+        let invalid = original.replacingOccurrences(
+            of: "\"canonicalTokenIDs\": [\"convert\", \"open\", \"value\", \"close\"]",
+            with: "\"canonicalTokenIDs\": [\"value\", \"close\", \"convert\", \"open\"]"
+        )
+        #expect(invalid != original)
+        let repository = BundledLearningContentRepository(data: Data(invalid.utf8))
+        #expect(throws: LearningContentError.invalidActivityPayload(
+            "swift.numbers.integer-to-floating"
+        )) {
+            try repository.loadCatalog()
+        }
+    }
+
+    @Test
+    func constrainedEditingReviewRecordsAuthoredSolution() throws {
+        let container = try AppContainer(
+            isStoredInMemoryOnly: true,
+            resetsStoredData: true,
+            seedsReviewFixture: true,
+            activityFixtureKind: .constrainedEditing,
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000))
+        )
+        let viewModel = container.reviewQueueViewModel
+        viewModel.load()
+        let item = try #require(viewModel.currentItem)
+        #expect(item.lesson.id == "swift.numbers.integer-to-floating")
+        viewModel.editText("Double(three)")
+        viewModel.submit(skillID: item.id)
+        #expect(viewModel.attemptResult?.isCorrect == true)
+        #expect(viewModel.isSessionComplete)
     }
 
     @Test
@@ -694,7 +1082,7 @@ struct Swift_LearnTests {
 
             let result = try submitAnswer.execute(
                 lessonID: lesson.id,
-                choiceID: lesson.correctChoiceID
+                response: correctResponse(for: lesson)
             )
 
             #expect(result.isCorrect)
@@ -711,7 +1099,20 @@ struct Swift_LearnTests {
         #expect(viewModel.journey?.completedLessonCount == 0)
 
         for (index, lesson) in try bundledCatalog().lessons.enumerated() {
-            viewModel.selectChoice(lesson.correctChoiceID)
+            switch correctResponse(for: lesson) {
+            case let .choice(id):
+                viewModel.selectChoice(id)
+            case let .orderedFragments(ids):
+                for id in ids {
+                    viewModel.selectFragment(id, lessonID: lesson.id)
+                }
+            case let .text(text):
+                viewModel.editText(text)
+            case .classifications:
+                Issue.record("Architecture labs must remain outside the Swift-book catalog")
+            case .projectSubmission:
+                Issue.record("Guided-project validation must remain outside book lessons")
+            }
             viewModel.submit(lessonID: lesson.id)
             viewModel.load()
 
@@ -1094,12 +1495,12 @@ struct Swift_LearnTests {
         let content = InMemoryLearningContentRepository(catalog: catalog)
         let projects = ContentLearningProjectRepository(contentRepository: content)
         let project = try #require(projects.loadProjects().first)
-        let passedResults = project.requirements.map { requirement in
+        let passedResults = try project.requirements.map { requirement in
             LearningProjectValidationResult(
                 requirementID: requirement.id,
                 lessonID: requirement.lesson.id,
                 skillID: requirement.skillID,
-                selectedChoiceID: requirement.lesson.correctChoiceID,
+                selectedChoiceID: try #require(requirement.lesson.correctChoiceID),
                 outcome: .correct,
                 feedback: requirement.lesson.correctFeedback
             )
@@ -1355,6 +1756,10 @@ struct Swift_LearnTests {
         #expect(viewModel.snapshot?.profile.avatar == .girl)
         #expect(viewModel.snapshot?.profile.appearance == .dark)
         #expect(viewModel.snapshot?.profile.motionPreference == .reduced)
+
+        viewModel.load()
+        #expect(viewModel.snapshot?.profile.avatar == .girl)
+        #expect(viewModel.draftAvatar == .girl)
 
         let customImageData = Data([0xCA, 0xFE])
         viewModel.beginAvatarImport()
@@ -1763,7 +2168,7 @@ struct Swift_LearnTests {
         let correct = try submit.execute(
             levelID: level.id,
             itemID: first.id,
-            choiceID: first.lesson.correctChoiceID
+            choiceID: try #require(first.lesson.correctChoiceID)
         )
         let incorrect = try submit.execute(
             levelID: level.id,
@@ -1845,7 +2250,7 @@ struct Swift_LearnTests {
         #expect(viewModel.availability?.isUnlocked == true)
 
         let first = try #require(viewModel.currentItem)
-        viewModel.selectChoice(first.lesson.correctChoiceID)
+        viewModel.selectChoice(try #require(first.lesson.correctChoiceID))
         viewModel.submitCurrentAnswer()
         #expect(viewModel.currentItemIndex == 1)
         #expect(viewModel.attemptRevision == 1)
@@ -1858,7 +2263,7 @@ struct Swift_LearnTests {
         #expect(viewModel.currentItem?.id == second.id)
         #expect(viewModel.attemptRevision == 1)
         #expect(attempts.attempts.count == 1)
-        viewModel.selectChoice(second.lesson.correctChoiceID)
+        viewModel.selectChoice(try #require(second.lesson.correctChoiceID))
         viewModel.submitCurrentAnswer()
 
         #expect(viewModel.result?.isPassed == true)
@@ -1983,7 +2388,7 @@ struct Swift_LearnTests {
 
         viewModel.load()
         for item in try #require(viewModel.availability?.challenge.items) {
-            viewModel.selectChoice(item.lesson.correctChoiceID)
+            viewModel.selectChoice(try #require(item.lesson.correctChoiceID))
             viewModel.submitCurrentAnswer()
         }
 
@@ -2030,12 +2435,12 @@ struct Swift_LearnTests {
                 )
             ]
         )
-        let passedResults = project.requirements.map { requirement in
+        let passedResults = try project.requirements.map { requirement in
             LearningProjectValidationResult(
                 requirementID: requirement.id,
                 lessonID: requirement.lesson.id,
                 skillID: requirement.skillID,
-                selectedChoiceID: requirement.lesson.correctChoiceID,
+                selectedChoiceID: try #require(requirement.lesson.correctChoiceID),
                 outcome: .correct,
                 feedback: requirement.lesson.correctFeedback
             )
@@ -2162,12 +2567,12 @@ struct Swift_LearnTests {
                 $0.id != incorrectRequirement.lesson.correctChoiceID
             }
         )
-        let responses = project.requirements.map { requirement in
+        let responses = try project.requirements.map { requirement in
             LearningProjectResponse(
                 requirementID: requirement.id,
                 choiceID: requirement.id == incorrectRequirement.id
                     ? incorrectChoice.id
-                    : requirement.lesson.correctChoiceID
+                    : try #require(requirement.lesson.correctChoiceID)
             )
         }
 
@@ -2182,6 +2587,29 @@ struct Swift_LearnTests {
 
         #expect(!submission.isPassed)
         #expect(submission.correctRequirementCount == 2)
+        let validation = ProjectValidationActivity(project: project, submission: submission)
+        let validationActivity = LearningActivity.projectValidation(validation)
+        #expect(validation.schemaVersion == 1)
+        #expect(validationActivity.accepts(.projectSubmission(submission)))
+        #expect(!validationActivity.isCorrect(.projectSubmission(submission)))
+        #expect(validation.checklist.count == project.requirements.count)
+        #expect(validation.checklist.first {
+            $0.id == incorrectRequirement.id
+        }?.status == .needsReview)
+        let foreignSubmission = LearningProjectSubmission(
+            id: submission.id,
+            projectID: "another.project",
+            results: submission.results,
+            submittedAt: submission.submittedAt
+        )
+        #expect(!validationActivity.accepts(.projectSubmission(foreignSubmission)))
+        let duplicatedSubmission = LearningProjectSubmission(
+            id: submission.id,
+            projectID: project.id,
+            results: [submission.results[0], submission.results[0], submission.results[2]],
+            submittedAt: submission.submittedAt
+        )
+        #expect(!validationActivity.accepts(.projectSubmission(duplicatedSubmission)))
         #expect(submissions.submissions == [submission])
         #expect(attempts.attempts.count == 3)
         #expect(progress.completedLessonIDs == completedLessonIDs)
@@ -2243,6 +2671,12 @@ struct Swift_LearnTests {
         viewModel.load()
         viewModel.startSession()
         #expect(viewModel.availability?.isUnlocked == true)
+        guard case let .projectValidation(initialValidation) = viewModel.projectValidationActivity else {
+            Issue.record("Expected project validation activity before submission")
+            return
+        }
+        #expect(initialValidation.schemaVersion == 1)
+        #expect(initialValidation.checklist.allSatisfy { $0.status == .pending })
 
         for (index, requirement) in project.requirements.enumerated() {
             #expect(viewModel.currentRequirement?.id == requirement.id)
@@ -2251,7 +2685,7 @@ struct Swift_LearnTests {
             viewModel.continueProject()
             #expect(viewModel.currentRequirement?.id == requirement.id)
             #expect(viewModel.responses.count == index)
-            viewModel.selectChoice(requirement.lesson.correctChoiceID)
+            viewModel.selectChoice(try #require(requirement.lesson.correctChoiceID))
             viewModel.continueProject()
             if index < project.requirements.count - 1 {
                 #expect(viewModel.currentRequirementIndex == index + 1)
@@ -2260,6 +2694,15 @@ struct Swift_LearnTests {
         }
 
         #expect(viewModel.submission?.isPassed == true)
+        guard case let .projectValidation(finalValidation) = viewModel.projectValidationActivity,
+              let finalSubmission = viewModel.submission else {
+            Issue.record("Expected project validation activity after submission")
+            return
+        }
+        #expect(finalValidation.checklist.allSatisfy { $0.status == .passed })
+        #expect(finalValidation.accepts(finalSubmission))
+        #expect(LearningActivity.projectValidation(finalValidation)
+            .isCorrect(.projectSubmission(finalSubmission)))
         #expect(viewModel.attemptRevision == 1)
         #expect(attempts.attempts.count == 3)
         #expect(submissions.submissions.count == 1)
@@ -2300,6 +2743,33 @@ struct Swift_LearnTests {
         try BundledLearningContentRepository(
             bundle: Bundle(for: AppContainer.self)
         ).loadCatalog()
+    }
+
+    private func correctResponse(for lesson: LearningLesson) -> LearningActivityResponse {
+        switch lesson.activity {
+        case let .missingCode(activity):
+            .choice(activity.correctChoiceID)
+        case let .outputPrediction(activity):
+            .choice(activity.correctChoiceID)
+        case let .codeOrdering(activity):
+            .orderedFragments(activity.correctOrderIDs)
+        case let .diagnosticSelection(activity):
+            .choice(activity.correctChoiceID)
+        case let .codeRepair(activity):
+            .choice(activity.correctChoiceID)
+        case let .constrainedEditing(activity):
+            .text(activity.acceptedSolutions[0])
+        case let .unitTestAuthoring(activity):
+            .text(activity.composition.acceptedSolutions[0])
+        case let .uiTestAuthoring(activity):
+            .text(activity.composition.acceptedSolutions[0])
+        case let .architectureClassification(activity):
+            .classifications(Dictionary(uniqueKeysWithValues: activity.items.map {
+                ($0.id, $0.correctLayer)
+            }))
+        case .projectValidation:
+            preconditionFailure("Guided-project validation is not a Swift-book lesson")
+        }
     }
 
     private func makeMotivationUseCase(

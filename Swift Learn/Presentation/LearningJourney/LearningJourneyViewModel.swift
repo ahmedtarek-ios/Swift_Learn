@@ -20,7 +20,7 @@ final class LearningJourneyViewModel {
 
     private(set) var loadState: LoadState = .idle
     private(set) var journey: LearningJourney?
-    private(set) var selectedChoiceID: String?
+    private(set) var activitySelection = LearningActivitySelection()
     private(set) var attemptResult: LessonAttemptResult?
     private(set) var progressEvents: [LearningProgressEvent] = []
     private(set) var recentlyUnlockedLessonID: String?
@@ -31,6 +31,11 @@ final class LearningJourneyViewModel {
     private let submitAnswer: SubmitLessonAnswerUseCase
     private let recordAttempt: RecordLearningAttemptUseCase
     private let calculateProgressEvents: CalculateLearningProgressEventsUseCase
+
+    var selectedChoiceID: String? { activitySelection.choiceID }
+    var selectedFragmentIDs: [String] { activitySelection.orderedFragmentIDs }
+    var draftText: String { activitySelection.draftText }
+    var selectedTokenIDs: [String] { activitySelection.selectedTokenIDs }
 
     init(
         loadJourney: LoadLearningJourneyUseCase,
@@ -46,7 +51,7 @@ final class LearningJourneyViewModel {
 
     func load() {
         loadState = .loading
-        selectedChoiceID = nil
+        activitySelection.reset()
         attemptResult = nil
         progressEvents = []
         recentlyUnlockedLessonID = nil
@@ -65,12 +70,48 @@ final class LearningJourneyViewModel {
     }
 
     func selectChoice(_ choiceID: String) {
-        selectedChoiceID = choiceID
+        activitySelection.selectChoice(choiceID)
         attemptResult = nil
     }
 
+    func selectFragment(_ id: String, lessonID: String) {
+        guard let activity = journey?.catalog.lesson(id: lessonID)?.activity else { return }
+        activitySelection.appendFragment(id, for: activity)
+        attemptResult = nil
+    }
+
+    func removeFragment(_ id: String) {
+        activitySelection.removeFragment(id)
+        attemptResult = nil
+    }
+
+    func editText(_ text: String) {
+        activitySelection.editText(text)
+        attemptResult = nil
+    }
+
+    func selectToken(_ id: String, lessonID: String) {
+        guard let activity = journey?.catalog.lesson(id: lessonID)?.activity else { return }
+        activitySelection.appendToken(id, for: activity)
+        attemptResult = nil
+    }
+
+    func removeToken(_ id: String, lessonID: String) {
+        guard let activity = journey?.catalog.lesson(id: lessonID)?.activity else { return }
+        activitySelection.removeToken(id, for: activity)
+        attemptResult = nil
+    }
+
+    func canSubmit(lessonID: String) -> Bool {
+        guard let activity = journey?.catalog.lesson(id: lessonID)?.activity else {
+            return false
+        }
+        return activitySelection.response(for: activity) != nil
+    }
+
     func submit(lessonID: String) {
-        guard let selectedChoiceID else {
+        guard let lesson = journey?.catalog.lesson(id: lessonID),
+              let response = activitySelection.response(for: lesson.activity) else {
             attemptResult = LessonAttemptResult(
                 isCorrect: false,
                 feedback: LearningDomainError.choiceNotFound.localizedDescription
@@ -82,11 +123,8 @@ final class LearningJourneyViewModel {
             let journeyBeforeSubmission = journey
             let result = try submitAnswer.execute(
                 lessonID: lessonID,
-                choiceID: selectedChoiceID
+                response: response
             )
-            guard let lesson = journeyBeforeSubmission?.catalog.lesson(id: lessonID) else {
-                throw LearningDomainError.lessonNotFound
-            }
             try recordAttempt.execute(
                 lessonID: lessonID,
                 activityID: lesson.activityID,
@@ -117,7 +155,7 @@ final class LearningJourneyViewModel {
     }
 
     func resetAttempt() {
-        selectedChoiceID = nil
+        activitySelection.reset()
         attemptResult = nil
     }
 

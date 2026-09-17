@@ -142,22 +142,22 @@
           "id": "swift.comments.multiline",
           "title": "Multiline Comments",
           "objective": "Wrap multiple lines of nonexecutable text in a multiline comment.",
-          "instruction": "Disable both reminder lines. Choose the delimiters that make the entire block a multiline comment.",
-          "codePrefix": "",
-          "codeSuffix": "\nlet score = 10",
-          "choices": [
-            {
-              "id": "multiline-comment",
-              "code": "/* Revisit scoring\nTune the multiplier. */"
-            },
-            {
-              "id": "single-line-only",
-              "code": "// Revisit scoring\nTune the multiplier."
-            }
-          ],
-          "correctChoiceID": "multiline-comment",
+          "instruction": "Put the lines in order so both reminders are commented out and the score declaration remains active.",
+          "activity": {
+            "schemaVersion": 1,
+            "type": "codeOrdering",
+            "prompt": "Build a multiline comment, then declare the score.",
+            "fragments": [
+              { "id": "score", "code": "let score = 10" },
+              { "id": "close", "code": "*/" },
+              { "id": "second", "code": "Tune the multiplier." },
+              { "id": "open", "code": "/*" },
+              { "id": "first", "code": "Revisit scoring" }
+            ],
+            "correctOrderIDs": ["open", "first", "second", "close", "score"]
+          },
           "correctFeedback": "Correct. /* starts a multiline comment and */ ends it, so every enclosed line is ignored by the compiler.",
-          "incorrectFeedback": "// comments only the line where it appears. Use /* and */ to enclose multiple lines.",
+          "incorrectFeedback": "Open the comment before both reminder lines, close it after them, then declare the score.",
           "sourceTitle": "The Basics · Comments",
           "sourceReferences": [
             "LanguageGuide/TheBasics.xhtml#Comments"
@@ -392,23 +392,22 @@
         {
           "id": "swift.types.safety",
           "title": "Type Safety",
-          "objective": "Provide a value whose type matches its declared storage type.",
-          "instruction": "The constant is declared as String. Choose the value that satisfies Swift's type check.",
-          "codePrefix": "let status: String = ",
-          "codeSuffix": "",
-          "choices": [
-            {
-              "id": "string-value",
-              "code": "\"Ready\""
-            },
-            {
-              "id": "integer-value",
-              "code": "42"
-            }
-          ],
-          "correctChoiceID": "string-value",
-          "correctFeedback": "Correct. The String literal matches the declared String type.",
-          "incorrectFeedback": "42 is an Int and doesn't match String storage. Swift reports mismatched types during compilation.",
+          "objective": "Recognize a compile-time type mismatch in a Swift declaration.",
+          "instruction": "A String constant receives an integer. Predict Swift's diagnostic category.",
+          "activity": {
+            "schemaVersion": 1,
+            "type": "diagnosticSelection",
+            "prompt": "What happens when Swift builds this code?",
+            "code": "let status: String = 42",
+            "choices": [
+              { "id": "type-error", "code": "Compile-time type-mismatch error" },
+              { "id": "runtime-output", "code": "Runtime output of 42" },
+              { "id": "build-success", "code": "Build succeeds without a diagnostic" }
+            ],
+            "correctChoiceID": "type-error"
+          },
+          "correctFeedback": "Correct. Swift checks storage types while building code and reports a mismatched type as an error.",
+          "incorrectFeedback": "String storage cannot receive an Int value without an explicit conversion; Swift flags this while building code.",
           "sourceTitle": "The Basics · Type Safety and Type Inference",
           "sourceReferences": [
             "LanguageGuide/TheBasics.xhtml#Type-Safety-and-Type-Inference"
@@ -518,20 +517,20 @@
           "id": "swift.numbers.integer-conversion",
           "title": "Integer Conversion",
           "objective": "Explicitly convert differently sized integer values before combining them.",
-          "instruction": "Both operands must have the same type. Convert one from UInt8 to UInt16.",
-          "codePrefix": "let twoThousand: UInt16 = 2_000\nlet one: UInt8 = 1\nlet total = twoThousand + ",
-          "codeSuffix": "",
-          "choices": [
-            {
-              "id": "uint16-conversion",
-              "code": "UInt16(one)"
-            },
-            {
-              "id": "unconverted-uint8",
-              "code": "one"
-            }
-          ],
-          "correctChoiceID": "uint16-conversion",
+          "instruction": "The addition uses incompatible integer types. Repair only its right operand.",
+          "activity": {
+            "schemaVersion": 1,
+            "type": "codeRepair",
+            "prompt": "Replace the faulty right operand.",
+            "codePrefix": "let twoThousand: UInt16 = 2_000\nlet one: UInt8 = 1\nlet total = twoThousand + ",
+            "faultyCode": "one",
+            "codeSuffix": "",
+            "choices": [
+              { "id": "uint16-conversion", "code": "UInt16(one)" },
+              { "id": "unconverted-uint8", "code": "one" }
+            ],
+            "correctChoiceID": "uint16-conversion"
+          },
           "correctFeedback": "Correct. UInt16(one) creates a UInt16 value, so both addition operands have the same type.",
           "incorrectFeedback": "UInt16 and UInt8 aren't added implicitly. Convert one explicitly with UInt16(one).",
           "sourceTitle": "The Basics · Integer Conversion",
@@ -543,22 +542,26 @@
           "id": "swift.numbers.integer-to-floating",
           "title": "Integer to Floating-Point Conversion",
           "objective": "Explicitly convert an integer before combining it with a Double value.",
-          "instruction": "Convert the integer operand so both sides of the addition are Double.",
-          "codePrefix": "let three = 3\nlet fraction = 0.14159\nlet pi = ",
-          "codeSuffix": " + fraction",
-          "choices": [
-            {
-              "id": "double-conversion",
-              "code": "Double(three)"
-            },
-            {
-              "id": "unconverted-int",
-              "code": "three"
-            }
-          ],
-          "correctChoiceID": "double-conversion",
+          "instruction": "Edit only the left operand. Enter the exact conversion expression that makes the addition valid.",
+          "activity": {
+            "schemaVersion": 1,
+            "type": "constrainedEditing",
+            "prompt": "Write the conversion expression in the editable slot.",
+            "codePrefix": "let three = 3\nlet fraction = 0.14159\nlet pi = ",
+            "codeSuffix": " + fraction",
+            "starterText": "three",
+            "acceptedSolutions": ["Double(three)"],
+            "maxLength": 30,
+            "tokens": [
+              { "id": "value", "code": "three" },
+              { "id": "close", "code": ")" },
+              { "id": "convert", "code": "Double" },
+              { "id": "open", "code": "(" }
+            ],
+            "canonicalTokenIDs": ["convert", "open", "value", "close"]
+          },
           "correctFeedback": "Correct. Double(three) explicitly converts the Int so it can be added to a Double.",
-          "incorrectFeedback": "Swift doesn't implicitly convert an Int variable to Double. Use Double(three).",
+          "incorrectFeedback": "This exercise checks the exact authored expression Double(three); it does not compile arbitrary edits.",
           "sourceTitle": "The Basics · Integer and Floating-Point Conversion",
           "sourceReferences": [
             "LanguageGuide/TheBasics.xhtml#Integer-and-Floating-Point-Conversion"

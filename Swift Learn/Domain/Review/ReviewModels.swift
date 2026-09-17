@@ -39,6 +39,7 @@ enum ReviewDomainError: LocalizedError, Equatable {
     case reviewNotDue(String)
     case lessonUnavailable(String)
     case choiceNotFound
+    case invalidActivityResponse
 
     var errorDescription: String? {
         switch self {
@@ -48,6 +49,8 @@ enum ReviewDomainError: LocalizedError, Equatable {
             "Review lesson is unavailable: \(id)."
         case .choiceNotFound:
             "Choose a valid review answer."
+        case .invalidActivityResponse:
+            "Complete the review activity with a valid answer."
         }
     }
 }

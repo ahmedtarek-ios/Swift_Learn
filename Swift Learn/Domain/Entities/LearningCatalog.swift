@@ -105,12 +105,18 @@ struct LearningLesson: Identifiable, Equatable, Sendable {
         activity.choices
     }
 
-    var correctChoiceID: String {
+    var correctChoiceID: String? {
         activity.correctChoiceID
     }
 
     func choice(id: String) -> LearningChoice? {
-        choices.first { $0.id == id }
+        guard activity.kind != .codeOrdering,
+              activity.kind != .constrainedEditing,
+              activity.kind != .unitTestAuthoring,
+              activity.kind != .uiTestAuthoring,
+              activity.kind != .architectureClassification,
+              activity.kind != .projectValidation else { return nil }
+        return choices.first { $0.id == id }
     }
 
     func code(selectedChoiceID: String?) -> String {
@@ -121,11 +127,35 @@ struct LearningLesson: Identifiable, Equatable, Sendable {
 enum LearningActivityKind: String, Equatable, Sendable {
     case missingCode
     case outputPrediction
+    case codeOrdering
+    case diagnosticSelection
+    case codeRepair
+    case constrainedEditing
+    case unitTestAuthoring
+    case uiTestAuthoring
+    case architectureClassification
+    case projectValidation
+}
+
+enum LearningActivityResponse: Equatable, Sendable {
+    case choice(String)
+    case orderedFragments([String])
+    case text(String)
+    case classifications([String: ArchitectureLayer])
+    case projectSubmission(LearningProjectSubmission)
 }
 
 enum LearningActivity: Equatable, Sendable {
     case missingCode(MissingCodeActivity)
     case outputPrediction(OutputPredictionActivity)
+    case codeOrdering(CodeOrderingActivity)
+    case diagnosticSelection(DiagnosticSelectionActivity)
+    case codeRepair(CodeRepairActivity)
+    case constrainedEditing(ConstrainedEditingActivity)
+    case unitTestAuthoring(UnitTestAuthoringActivity)
+    case uiTestAuthoring(UITestAuthoringActivity)
+    case architectureClassification(ArchitectureClassificationActivity)
+    case projectValidation(ProjectValidationActivity)
 
     var kind: LearningActivityKind {
         switch self {
@@ -133,6 +163,22 @@ enum LearningActivity: Equatable, Sendable {
             .missingCode
         case .outputPrediction:
             .outputPrediction
+        case .codeOrdering:
+            .codeOrdering
+        case .diagnosticSelection:
+            .diagnosticSelection
+        case .codeRepair:
+            .codeRepair
+        case .constrainedEditing:
+            .constrainedEditing
+        case .unitTestAuthoring:
+            .unitTestAuthoring
+        case .uiTestAuthoring:
+            .uiTestAuthoring
+        case .architectureClassification:
+            .architectureClassification
+        case .projectValidation:
+            .projectValidation
         }
     }
 
@@ -141,6 +187,22 @@ enum LearningActivity: Equatable, Sendable {
         case let .missingCode(activity):
             activity.schemaVersion
         case let .outputPrediction(activity):
+            activity.schemaVersion
+        case let .codeOrdering(activity):
+            activity.schemaVersion
+        case let .diagnosticSelection(activity):
+            activity.schemaVersion
+        case let .codeRepair(activity):
+            activity.schemaVersion
+        case let .constrainedEditing(activity):
+            activity.schemaVersion
+        case let .unitTestAuthoring(activity):
+            activity.schemaVersion
+        case let .uiTestAuthoring(activity):
+            activity.schemaVersion
+        case let .architectureClassification(activity):
+            activity.schemaVersion
+        case let .projectValidation(activity):
             activity.schemaVersion
         }
     }
@@ -151,6 +213,22 @@ enum LearningActivity: Equatable, Sendable {
             activity.prompt
         case let .outputPrediction(activity):
             activity.prompt
+        case let .codeOrdering(activity):
+            activity.prompt
+        case let .diagnosticSelection(activity):
+            activity.prompt
+        case let .codeRepair(activity):
+            activity.prompt
+        case let .constrainedEditing(activity):
+            activity.prompt
+        case let .unitTestAuthoring(activity):
+            activity.prompt
+        case let .uiTestAuthoring(activity):
+            activity.prompt
+        case let .architectureClassification(activity):
+            activity.prompt
+        case let .projectValidation(activity):
+            activity.prompt
         }
     }
 
@@ -160,15 +238,118 @@ enum LearningActivity: Equatable, Sendable {
             activity.choices
         case let .outputPrediction(activity):
             activity.choices
+        case let .codeOrdering(activity):
+            activity.fragments
+        case let .diagnosticSelection(activity):
+            activity.choices
+        case let .codeRepair(activity):
+            activity.choices
+        case let .constrainedEditing(activity):
+            activity.tokens
+        case let .unitTestAuthoring(activity):
+            activity.composition.tokens
+        case let .uiTestAuthoring(activity):
+            activity.composition.tokens
+        case .architectureClassification:
+            ArchitectureLayer.allCases.map {
+                LearningChoice(id: $0.rawValue, code: $0.rawValue.capitalized)
+            }
+        case .projectValidation:
+            []
         }
     }
 
-    var correctChoiceID: String {
+    var correctChoiceID: String? {
         switch self {
         case let .missingCode(activity):
             activity.correctChoiceID
         case let .outputPrediction(activity):
             activity.correctChoiceID
+        case .codeOrdering:
+            nil
+        case let .diagnosticSelection(activity):
+            activity.correctChoiceID
+        case let .codeRepair(activity):
+            activity.correctChoiceID
+        case .constrainedEditing:
+            nil
+        case .unitTestAuthoring, .uiTestAuthoring, .architectureClassification,
+             .projectValidation:
+            nil
+        }
+    }
+
+    var textComposition: ConstrainedEditingActivity? {
+        switch self {
+        case let .constrainedEditing(activity):
+            activity
+        case let .unitTestAuthoring(activity):
+            activity.composition
+        case let .uiTestAuthoring(activity):
+            activity.composition
+        default:
+            nil
+        }
+    }
+
+    func accepts(_ response: LearningActivityResponse) -> Bool {
+        switch (self, response) {
+        case let (.missingCode(activity), .choice(id)):
+            activity.choices.contains { $0.id == id }
+        case let (.outputPrediction(activity), .choice(id)):
+            activity.choices.contains { $0.id == id }
+        case let (.codeOrdering(activity), .orderedFragments(ids)):
+            ids.count == activity.fragments.count
+                && Set(ids).count == ids.count
+                && Set(ids) == Set(activity.fragments.map(\.id))
+        case let (.diagnosticSelection(activity), .choice(id)):
+            activity.choices.contains { $0.id == id }
+        case let (.codeRepair(activity), .choice(id)):
+            activity.choices.contains { $0.id == id }
+        case let (.constrainedEditing(activity), .text(text)):
+            !text.isEmpty && text.count <= activity.maxLength
+                && text.contains("\n") == false
+        case let (.unitTestAuthoring(activity), .text(text)):
+            !text.isEmpty && text.count <= activity.composition.maxLength
+                && text.contains("\n") == false
+        case let (.uiTestAuthoring(activity), .text(text)):
+            !text.isEmpty && text.count <= activity.composition.maxLength
+                && text.contains("\n") == false
+        case let (.architectureClassification(activity), .classifications(answers)):
+            answers.count == activity.items.count
+                && Set(answers.keys) == Set(activity.items.map(\.id))
+        case let (.projectValidation(activity), .projectSubmission(submission)):
+            activity.accepts(submission)
+        default:
+            false
+        }
+    }
+
+    func isCorrect(_ response: LearningActivityResponse) -> Bool {
+        guard accepts(response) else { return false }
+        return switch (self, response) {
+        case let (.missingCode(activity), .choice(id)):
+            id == activity.correctChoiceID
+        case let (.outputPrediction(activity), .choice(id)):
+            id == activity.correctChoiceID
+        case let (.codeOrdering(activity), .orderedFragments(ids)):
+            ids == activity.correctOrderIDs
+        case let (.diagnosticSelection(activity), .choice(id)):
+            id == activity.correctChoiceID
+        case let (.codeRepair(activity), .choice(id)):
+            id == activity.correctChoiceID
+        case let (.constrainedEditing(activity), .text(text)):
+            activity.acceptedSolutions.contains(text)
+        case let (.unitTestAuthoring(activity), .text(text)):
+            activity.composition.acceptedSolutions.contains(text)
+        case let (.uiTestAuthoring(activity), .text(text)):
+            activity.composition.acceptedSolutions.contains(text)
+        case let (.architectureClassification(activity), .classifications(answers)):
+            activity.items.allSatisfy { answers[$0.id] == $0.correctLayer }
+        case (.projectValidation, let .projectSubmission(submission)):
+            submission.isPassed
+        default:
+            false
         }
     }
 
@@ -178,6 +359,22 @@ enum LearningActivity: Equatable, Sendable {
             activity.code(selectedChoiceID: selectedChoiceID)
         case let .outputPrediction(activity):
             activity.code
+        case let .codeOrdering(activity):
+            activity.fragments.map(\.code).joined(separator: "\n")
+        case let .diagnosticSelection(activity):
+            activity.code
+        case let .codeRepair(activity):
+            activity.code(selectedChoiceID: selectedChoiceID)
+        case let .constrainedEditing(activity):
+            activity.code(enteredText: activity.starterText)
+        case let .unitTestAuthoring(activity):
+            activity.composition.code(enteredText: activity.composition.starterText)
+        case let .uiTestAuthoring(activity):
+            activity.composition.code(enteredText: activity.composition.starterText)
+        case .architectureClassification:
+            ""
+        case .projectValidation:
+            ""
         }
     }
 }
@@ -204,6 +401,82 @@ struct OutputPredictionActivity: Equatable, Sendable {
     let code: String
     let choices: [LearningChoice]
     let correctChoiceID: String
+}
+
+struct CodeOrderingActivity: Equatable, Sendable {
+    let schemaVersion: Int
+    let prompt: String
+    let fragments: [LearningChoice]
+    let correctOrderIDs: [String]
+
+    func code(selectedFragmentIDs: [String]) -> String {
+        selectedFragmentIDs.compactMap { id in
+            fragments.first { $0.id == id }?.code
+        }.joined(separator: "\n")
+    }
+}
+
+struct DiagnosticSelectionActivity: Equatable, Sendable {
+    let schemaVersion: Int
+    let prompt: String
+    let code: String
+    let choices: [LearningChoice]
+    let correctChoiceID: String
+}
+
+struct CodeRepairActivity: Equatable, Sendable {
+    let schemaVersion: Int
+    let prompt: String
+    let codePrefix: String
+    let faultyCode: String
+    let codeSuffix: String
+    let choices: [LearningChoice]
+    let correctChoiceID: String
+
+    func code(selectedChoiceID: String?) -> String {
+        let replacement = selectedChoiceID.flatMap { id in
+            choices.first { $0.id == id }?.code
+        } ?? faultyCode
+        return codePrefix + replacement + codeSuffix
+    }
+}
+
+struct ConstrainedEditingActivity: Equatable, Sendable {
+    let schemaVersion: Int
+    let prompt: String
+    let codePrefix: String
+    let codeSuffix: String
+    let starterText: String
+    let acceptedSolutions: [String]
+    let maxLength: Int
+    let tokens: [LearningChoice]
+    let canonicalTokenIDs: [String]
+
+    var isWellFormed: Bool {
+        maxLength > 0 && maxLength <= 200
+            && starterText.count <= maxLength
+            && acceptedSolutions.isEmpty == false
+            && acceptedSolutions.allSatisfy {
+                $0.isEmpty == false && $0.count <= maxLength
+                    && $0.contains("\n") == false
+            }
+            && tokens.count >= 2
+            && tokens.allSatisfy { $0.id.isEmpty == false && $0.code.isEmpty == false }
+            && Set(tokens.map(\.id)).count == tokens.count
+            && canonicalTokenIDs.count == tokens.count
+            && Set(canonicalTokenIDs) == Set(tokens.map(\.id))
+            && acceptedSolutions.contains(text(selectedTokenIDs: canonicalTokenIDs))
+    }
+
+    func code(enteredText: String) -> String {
+        codePrefix + enteredText + codeSuffix
+    }
+
+    func text(selectedTokenIDs: [String]) -> String {
+        selectedTokenIDs.compactMap { id in
+            tokens.first { $0.id == id }?.code
+        }.joined()
+    }
 }
 
 struct LearningChoice: Identifiable, Equatable, Sendable {
@@ -325,6 +598,7 @@ enum LearningDomainError: LocalizedError, Equatable {
     case lessonNotFound
     case lessonLocked
     case choiceNotFound
+    case invalidActivityResponse
 
     var errorDescription: String? {
         switch self {
@@ -334,6 +608,8 @@ enum LearningDomainError: LocalizedError, Equatable {
             "Complete the previous lesson first."
         case .choiceNotFound:
             "Choose a valid code answer."
+        case .invalidActivityResponse:
+            "Complete the activity with a valid answer."
         }
     }
 }

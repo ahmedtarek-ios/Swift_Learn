@@ -65,7 +65,8 @@ struct SubmitLearningProjectUseCase {
             guard let response = responsesByRequirement[requirement.id] else {
                 throw LearningProjectDomainError.missingResponse(requirement.id)
             }
-            guard requirement.lesson.choice(id: response.choiceID) != nil else {
+            let activityResponse = LearningActivityResponse.choice(response.choiceID)
+            guard requirement.lesson.activity.accepts(activityResponse) else {
                 throw LearningProjectDomainError.choiceNotFound(requirement.id)
             }
             let activityID = LearningActivityID.project(
@@ -85,7 +86,7 @@ struct SubmitLearningProjectUseCase {
                 )
             }
 
-            let isCorrect = response.choiceID == requirement.lesson.correctChoiceID
+            let isCorrect = requirement.lesson.activity.isCorrect(activityResponse)
             let outcome: AttemptOutcome = isCorrect ? .correct : .incorrect
             results.append(
                 LearningProjectValidationResult(

@@ -108,7 +108,16 @@ struct ReviewQueueView: View {
                 codeIdentifier: "review-code",
                 choiceIdentifierPrefix: "review-choice-",
                 selectChoice: viewModel.selectChoice,
-                reduceMotion: reduceMotion
+                reduceMotion: reduceMotion,
+                selectedFragmentIDs: viewModel.selectedFragmentIDs,
+                selectFragment: viewModel.selectFragment,
+                removeFragment: viewModel.removeFragment,
+                draftText: viewModel.draftText,
+                selectedTokenIDs: viewModel.selectedTokenIDs,
+                editText: viewModel.editText,
+                selectToken: viewModel.selectToken,
+                removeToken: viewModel.removeToken,
+                resetSelection: viewModel.resetSelection
             )
 
             Button("Check Review") {
@@ -116,7 +125,7 @@ struct ReviewQueueView: View {
                 mistakeViewModel.load()
             }
             .buttonStyle(.borderedProminent)
-            .disabled(viewModel.selectedChoiceID == nil)
+            .disabled(viewModel.canSubmitCurrentItem == false)
             .accessibilityIdentifier("submit-review-answer")
 
             if let result = viewModel.attemptResult {

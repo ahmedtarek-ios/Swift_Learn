@@ -145,7 +145,9 @@ struct LoadMotivationProgressUseCase {
                   let result = results.first else { return false }
             return result.lessonID == requirement.lesson.id
                 && result.skillID == requirement.skillID
-                && result.selectedChoiceID == requirement.lesson.correctChoiceID
+                && requirement.lesson.activity.isCorrect(
+                    .choice(result.selectedChoiceID)
+                )
         }
     }
 

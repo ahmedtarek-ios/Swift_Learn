@@ -40,6 +40,8 @@ final class AppContainer {
         resetsStoredData: Bool = false,
         seedsReviewFixture: Bool = false,
         seedsActivityFixture: Bool = false,
+        seedsCodeOrderingFixture: Bool = false,
+        activityFixtureKind: LearningActivityKind? = nil,
         seedsBossFixture: Bool = false,
         seedsLevelCompletionFixture: Bool = false,
         seedsProjectFixture: Bool = false,
@@ -114,10 +116,13 @@ final class AppContainer {
                 )
                 : storedBossCompletionRepository
         let catalog = try contentRepository.loadCatalog()
-        if seedsActivityFixture {
+        let requestedActivityFixtureKind = activityFixtureKind
+            ?? (seedsCodeOrderingFixture ? .codeOrdering : nil)
+            ?? (seedsActivityFixture ? .outputPrediction : nil)
+        if let requestedActivityFixtureKind {
             let lessons = catalog.lessons
             guard let activityIndex = lessons.firstIndex(where: {
-                $0.activity.kind == .outputPrediction
+                $0.activity.kind == requestedActivityFixtureKind
             }) else {
                 throw AppContainerError.activityFixtureUnavailable
             }
@@ -175,7 +180,9 @@ final class AppContainer {
             submissionRepository: projectSubmissionRepository
         )
         if seedsReviewFixture && resetsStoredData,
-           let lesson = try contentRepository.loadCatalog().lessons.first {
+           let lesson = requestedActivityFixtureKind.flatMap({ kind in
+               catalog.lessons.first { $0.activity.kind == kind }
+           }) ?? catalog.lessons.first {
             try recordAttempt.execute(
                 lessonID: lesson.id,
                 activityID: lesson.activityID,
@@ -305,7 +312,8 @@ final class AppContainer {
             loadTracks: LoadSupplementalTracksUseCase(
                 repository: BundledSupplementalTrackRepository()
             ),
-            evaluatePractice: EvaluateSupplementalPracticeUseCase()
+            evaluatePractice: EvaluateSupplementalPracticeUseCase(),
+            evaluateLab: EvaluateSupplementalAuthoredLabUseCase()
         )
 #if os(iOS)
         let createWatchLearningSnapshot = CreateWatchLearningSnapshotUseCase(

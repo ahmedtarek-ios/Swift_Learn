@@ -110,6 +110,13 @@ final class LearningProjectViewModel {
         return requirements[currentRequirementIndex]
     }
 
+    var projectValidationActivity: LearningActivity? {
+        guard let project = availability?.project else { return nil }
+        return .projectValidation(
+            ProjectValidationActivity(project: project, submission: submission)
+        )
+    }
+
     var requirementCount: Int {
         availability?.project.requirements.count ?? 0
     }

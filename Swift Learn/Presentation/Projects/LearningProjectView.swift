@@ -28,6 +28,17 @@ struct LearningProjectView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                if let validation = viewModel.projectValidationActivity {
+                    LearningActivityRenderer(
+                        activity: validation,
+                        selectedChoiceID: nil,
+                        codeIdentifier: "project-validation-code",
+                        choiceIdentifierPrefix: "project-validation-choice-",
+                        selectChoice: { _ in },
+                        reduceMotion: reduceMotion
+                    )
+                }
+
                 if let submission = viewModel.submission {
                     submissionResult(submission)
                 } else if let requirement = viewModel.currentRequirement {

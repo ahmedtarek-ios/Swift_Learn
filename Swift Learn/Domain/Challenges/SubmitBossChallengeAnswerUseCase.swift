@@ -30,11 +30,12 @@ struct SubmitBossChallengeAnswerUseCase {
         guard let item = availability.challenge.items.first(where: { $0.id == itemID }) else {
             throw BossChallengeDomainError.itemNotFound(itemID)
         }
-        guard item.lesson.choice(id: choiceID) != nil else {
+        let response = LearningActivityResponse.choice(choiceID)
+        guard item.lesson.activity.accepts(response) else {
             throw BossChallengeDomainError.choiceNotFound
         }
 
-        let isCorrect = item.lesson.correctChoiceID == choiceID
+        let isCorrect = item.lesson.activity.isCorrect(response)
         try recordAttempt.execute(
             lessonID: item.lesson.id,
             activityID: .challenge(skillID: item.skillID),

@@ -29,6 +29,14 @@ struct Swift_LearnApp: App {
         let seedsActivityFixture = processInfo.arguments.contains(
             "--ui-testing-activity-fixture"
         )
+        let seedsCodeOrderingFixture = processInfo.arguments.contains(
+            "--ui-testing-code-ordering-fixture"
+        )
+        let activityFixtureKind = processInfo.arguments.first {
+            $0.hasPrefix("--ui-testing-activity-kind=")
+        }?.split(separator: "=", maxSplits: 1).last.flatMap {
+            LearningActivityKind(rawValue: String($0))
+        }
         let seedsBossFixture = processInfo.arguments.contains(
             "--ui-testing-boss-fixture"
         )
@@ -64,6 +72,8 @@ struct Swift_LearnApp: App {
                 ),
                 seedsReviewFixture: seedsReviewFixture,
                 seedsActivityFixture: seedsActivityFixture,
+                seedsCodeOrderingFixture: seedsCodeOrderingFixture,
+                activityFixtureKind: activityFixtureKind,
                 seedsBossFixture: seedsBossFixture,
                 seedsLevelCompletionFixture: seedsLevelCompletionFixture,
                 seedsProjectFixture: seedsProjectFixture,

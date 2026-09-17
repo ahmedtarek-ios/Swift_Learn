@@ -38,7 +38,8 @@ final class BundledSupplementalTrackRepository: SupplementalTrackRepository {
                     ],
                     prompt: "Which dependency makes a time-based unit test deterministic?",
                     correct: "An injected clock",
-                    incorrect: "The system wall clock"
+                    incorrect: "The system wall clock",
+                    lab: unitTestAuthoringLab
                 ),
                 lesson(
                     id: "testing.ui-testing",
@@ -51,7 +52,8 @@ final class BundledSupplementalTrackRepository: SupplementalTrackRepository {
                     ],
                     prompt: "What should identify a UI-test control across platforms?",
                     correct: "A stable accessibility identifier",
-                    incorrect: "Its screen coordinate"
+                    incorrect: "Its screen coordinate",
+                    lab: uiTestAuthoringLab
                 ),
                 lesson(
                     id: "testing.runner-discipline",
@@ -95,7 +97,8 @@ final class BundledSupplementalTrackRepository: SupplementalTrackRepository {
                     ],
                     prompt: "Which layer may construct a SwiftData repository?",
                     correct: "App composition",
-                    incorrect: "A SwiftUI view"
+                    incorrect: "A SwiftUI view",
+                    lab: architectureClassificationLab
                 ),
                 lesson(
                     id: "architecture.mvvm-responsibilities",
@@ -397,7 +400,8 @@ final class BundledSupplementalTrackRepository: SupplementalTrackRepository {
         keyPoints: [String],
         prompt: String,
         correct: String,
-        incorrect: String
+        incorrect: String,
+        lab: SupplementalAuthoredLab? = nil
     ) -> SupplementalLesson {
         SupplementalLesson(
             id: "supplemental.\(id)",
@@ -413,7 +417,112 @@ final class BundledSupplementalTrackRepository: SupplementalTrackRepository {
                 correctChoiceID: "correct",
                 correctFeedback: "Correct. Apply this boundary in the next production change.",
                 incorrectFeedback: "Review the lesson boundary, then choose again."
-            )
+            ),
+            lab: lab
+        )
+    }
+
+    private var unitTestAuthoringLab: SupplementalAuthoredLab {
+        SupplementalAuthoredLab(
+            activity: .unitTestAuthoring(
+                UnitTestAuthoringActivity(
+                    schemaVersion: 1,
+                    prompt: "Compose the Swift Testing assertion for a correct lesson result.",
+                    framework: "Swift Testing",
+                    target: "LessonAttemptResult.isCorrect",
+                    requiredAssertion: "#expect",
+                    expectedOutcome: "true",
+                    composition: ConstrainedEditingActivity(
+                        schemaVersion: 1,
+                        prompt: "Build the exact assertion in the editable line.",
+                        codePrefix: "let result = LessonAttemptResult(isCorrect: true, feedback: \"Correct\")\n",
+                        codeSuffix: "",
+                        starterText: "#expect(...) ",
+                        acceptedSolutions: ["#expect(result.isCorrect == true)"],
+                        maxLength: 80,
+                        tokens: [
+                            LearningChoice(id: "result", code: "result.isCorrect"),
+                            LearningChoice(id: "close", code: ")"),
+                            LearningChoice(id: "expect", code: "#expect("),
+                            LearningChoice(id: "expected", code: " == true")
+                        ],
+                        canonicalTokenIDs: ["expect", "result", "expected", "close"]
+                    )
+                )
+            ),
+            correctFeedback: "Correct. This authored assertion checks the declared result; the lab did not execute a test runner.",
+            incorrectFeedback: "Compose the declared #expect assertion for result.isCorrect == true."
+        )
+    }
+
+    private var uiTestAuthoringLab: SupplementalAuthoredLab {
+        SupplementalAuthoredLab(
+            activity: .uiTestAuthoring(
+                UITestAuthoringActivity(
+                    schemaVersion: 1,
+                    prompt: "Compose an XCTest assertion for the lesson-completion result.",
+                    framework: "XCTest UI Testing",
+                    entryIdentifier: "submit-answer",
+                    resultIdentifier: "lesson-complete-feedback",
+                    expectedOutcome: "result element exists",
+                    composition: ConstrainedEditingActivity(
+                        schemaVersion: 1,
+                        prompt: "Build the exact result assertion in the editable line.",
+                        codePrefix: "let app = XCUIApplication()\n",
+                        codeSuffix: "",
+                        starterText: "XCTAssertTrue(...) ",
+                        acceptedSolutions: [
+                            "XCTAssertTrue(app.descendants(matching: .any)[\"lesson-complete-feedback\"].firstMatch.exists)"
+                        ],
+                        maxLength: 140,
+                        tokens: [
+                            LearningChoice(id: "result", code: "[\"lesson-complete-feedback\"]"),
+                            LearningChoice(id: "close", code: ")"),
+                            LearningChoice(id: "assert", code: "XCTAssertTrue("),
+                            LearningChoice(id: "query", code: "app.descendants(matching: .any)"),
+                            LearningChoice(id: "exists", code: ".firstMatch.exists")
+                        ],
+                        canonicalTokenIDs: ["assert", "query", "result", "exists", "close"]
+                    )
+                )
+            ),
+            correctFeedback: "Correct. This authored assertion targets the visible result identifier; the lab did not run XCTest.",
+            incorrectFeedback: "Use the declared result identifier in an XCTest assertion."
+        )
+    }
+
+    private var architectureClassificationLab: SupplementalAuthoredLab {
+        SupplementalAuthoredLab(
+            activity: .architectureClassification(
+                ArchitectureClassificationActivity(
+                    schemaVersion: 1,
+                    prompt: "Assign each repository responsibility to its Clean Architecture layer.",
+                    items: [
+                        ArchitectureBoundaryItem(
+                            id: "construct",
+                            responsibility: "Construct the concrete SwiftData repository",
+                            correctLayer: .app
+                        ),
+                        ArchitectureBoundaryItem(
+                            id: "render",
+                            responsibility: "Render lesson state and forward user intent",
+                            correctLayer: .presentation
+                        ),
+                        ArchitectureBoundaryItem(
+                            id: "unlock",
+                            responsibility: "Decide whether a lesson can be unlocked",
+                            correctLayer: .domain
+                        ),
+                        ArchitectureBoundaryItem(
+                            id: "persist",
+                            responsibility: "Map and persist lesson progress records",
+                            correctLayer: .data
+                        )
+                    ]
+                )
+            ),
+            correctFeedback: "Correct. App composes, Presentation renders, Domain decides, and Data persists.",
+            incorrectFeedback: "Review the App, Presentation, Domain, and Data ownership rules in AGENTS.md §1."
         )
     }
 }
