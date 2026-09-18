@@ -539,6 +539,14 @@ private struct SequenceComposerControls: View {
         }
 #if os(tvOS)
         .defaultFocus($focusedTokenID, tokens.first?.id)
+        .task(id: availableIdentifierPrefix) {
+            // When tokens start below the fold, no visible control can take focus,
+            // leaving the remote stuck in the tab bar. Request the first token explicitly,
+            // matching the choice list.
+            focusedTokenID = nil
+            await Task.yield()
+            focusedTokenID = tokens.first?.id
+        }
 #endif
     }
 }

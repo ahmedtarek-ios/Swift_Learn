@@ -678,7 +678,9 @@ struct Swift_LearnTests {
             resetsStoredData: true,
             seedsReviewFixture: true,
             seedsCodeOrderingFixture: true,
-            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000))
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000)),
+            // Fixed-clock attempts share a timestamp; sequential IDs keep ordering deterministic.
+            idGenerator: SequentialLearningAttemptIDGenerator()
         )
         let viewModel = container.reviewQueueViewModel
         viewModel.load()
@@ -752,7 +754,9 @@ struct Swift_LearnTests {
             resetsStoredData: true,
             seedsReviewFixture: true,
             activityFixtureKind: .diagnosticSelection,
-            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000))
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000)),
+            // Fixed-clock attempts share a timestamp; sequential IDs keep ordering deterministic.
+            idGenerator: SequentialLearningAttemptIDGenerator()
         )
         let viewModel = container.reviewQueueViewModel
         viewModel.load()
@@ -822,7 +826,9 @@ struct Swift_LearnTests {
             resetsStoredData: true,
             seedsReviewFixture: true,
             activityFixtureKind: .codeRepair,
-            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000))
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000)),
+            // Fixed-clock attempts share a timestamp; sequential IDs keep ordering deterministic.
+            idGenerator: SequentialLearningAttemptIDGenerator()
         )
         let viewModel = container.reviewQueueViewModel
         viewModel.load()
@@ -933,7 +939,9 @@ struct Swift_LearnTests {
             resetsStoredData: true,
             seedsReviewFixture: true,
             activityFixtureKind: .constrainedEditing,
-            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000))
+            clock: FixedLearningClock(now: Date(timeIntervalSince1970: 2_000_000_000)),
+            // Fixed-clock attempts share a timestamp; sequential IDs keep ordering deterministic.
+            idGenerator: SequentialLearningAttemptIDGenerator()
         )
         let viewModel = container.reviewQueueViewModel
         viewModel.load()
@@ -3060,6 +3068,16 @@ private final class InMemoryLearningResetRepository: LearningResetRepository {
             throw resetError
         }
         try onReset()
+    }
+}
+
+/// Produces ascending UUIDs so same-timestamp attempts sort in recording order.
+private final class SequentialLearningAttemptIDGenerator: LearningAttemptIDGenerating {
+    private var byte: UInt8 = 1
+
+    func next() -> UUID {
+        defer { byte &+= 1 }
+        return UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, byte))
     }
 }
 

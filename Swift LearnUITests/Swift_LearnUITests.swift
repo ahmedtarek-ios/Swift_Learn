@@ -237,8 +237,7 @@ final class Swift_LearnUITests: XCTestCase {
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
 
         let startLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
-        reveal(startLesson, in: app)
-        activate(startLesson)
+        openJourneyLesson(startLesson, in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)["activity-kind-codeOrdering"]
                 .firstMatch.waitForExistence(timeout: 5)
@@ -247,7 +246,7 @@ final class Swift_LearnUITests: XCTestCase {
         let submit = app.buttons["submit-answer"].firstMatch
         XCTAssertTrue(submit.waitForExistence(timeout: 5))
         XCTAssertFalse(submit.isEnabled)
-        let firstFragment = app.buttons["activity-fragment-(lesson.correctOrderIDs[0])"].firstMatch
+        let firstFragment = app.buttons["activity-fragment-\(lesson.correctOrderIDs[0])"].firstMatch
         revealInteractive(firstFragment, in: app)
         selectOrderingFragment(firstFragment)
         let reset = app.buttons["activity-reset-composition"].firstMatch
@@ -316,8 +315,7 @@ final class Swift_LearnUITests: XCTestCase {
         let app = launchApp(activityKind: "diagnosticSelection")
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
         let startLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
-        reveal(startLesson, in: app)
-        activate(startLesson)
+        openJourneyLesson(startLesson, in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)["activity-kind-diagnosticSelection"]
                 .firstMatch.waitForExistence(timeout: 5)
@@ -384,8 +382,7 @@ final class Swift_LearnUITests: XCTestCase {
         let app = launchApp(activityKind: "codeRepair")
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
         let startLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
-        reveal(startLesson, in: app)
-        activate(startLesson)
+        openJourneyLesson(startLesson, in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)["activity-kind-codeRepair"]
                 .firstMatch.waitForExistence(timeout: 5)
@@ -453,8 +450,7 @@ final class Swift_LearnUITests: XCTestCase {
         let app = launchApp(activityKind: "constrainedEditing")
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
         let startLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
-        reveal(startLesson, in: app)
-        activate(startLesson)
+        openJourneyLesson(startLesson, in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)["activity-kind-constrainedEditing"]
                 .firstMatch.waitForExistence(timeout: 5)
@@ -1283,7 +1279,7 @@ final class Swift_LearnUITests: XCTestCase {
             "activity-required-assertion"
         ].firstMatch
         XCTAssertTrue(requiredAssertion.waitForExistence(timeout: 5))
-        XCTAssertTrue(requiredAssertion.label.contains("#expect"))
+        XCTAssertTrue(accessibleText(of: requiredAssertion).contains("#expect"))
         composeSupplementalAssertion(
             "#expect(result.isCorrect == true)",
             tokenIDs: ["expect", "result", "expected", "close"],
@@ -1324,7 +1320,13 @@ final class Swift_LearnUITests: XCTestCase {
         ] {
             let button = app.buttons["activity-layer-\(itemID)-\(layer)"].firstMatch
             revealInteractive(button, in: app)
+#if os(tvOS)
+            // Layer buttons form a grid; a fixed press pattern can skip a column.
+            moveFocus(to: button, in: app)
+            XCUIRemote.shared.press(.select)
+#else
             focusAndActivate(button)
+#endif
             XCTAssertEqual(button.value as? String, "Selected")
         }
         submitSupplementalLab(in: app)
@@ -1390,15 +1392,34 @@ final class Swift_LearnUITests: XCTestCase {
 #endif
     }
 
+    /// macOS exposes static text through `value` (and on child texts), not `label`.
+    @MainActor
+    private func accessibleText(of element: XCUIElement) -> String {
+#if os(macOS)
+        let children = element.staticTexts.allElementsBoundByIndex
+        return ([element] + children)
+            .flatMap { [$0.label, $0.value as? String ?? ""] }
+            .joined(separator: " ")
+#else
+        return element.label
+#endif
+    }
+
     @MainActor
     private func submitSupplementalLab(in app: XCUIApplication) {
         let submit = app.buttons["submit-supplemental-lab"].firstMatch
         revealInteractive(submit, in: app)
         XCTAssertTrue(submit.isEnabled)
+#if os(tvOS)
+        // After grid or token input, the fixed press pattern can miss the submit row.
+        moveFocus(to: submit, in: app)
+        XCUIRemote.shared.press(.select)
+#else
         focusAndActivate(submit)
+#endif
         let result = app.descendants(matching: .any)["supplemental-lab-result"].firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: 5))
-        XCTAssertTrue(result.label.contains("Correct"))
+        XCTAssertTrue(accessibleText(of: result).contains("Correct"))
     }
 
     @MainActor
@@ -1768,6 +1789,57 @@ final class Swift_LearnUITests: XCTestCase {
         ).firstMatch
     }
 
+    /// Steers focus toward `element` by comparing its frame with the focused element's frame.
+    /// When a press does not move focus, the other axis is tried next.
+    @MainActor
+    private func moveFocus(
+        to element: XCUIElement,
+        in app: XCUIApplication,
+        maxMoves: Int = 60
+    ) {
+        let remote = XCUIRemote.shared
+        var previousFrame: CGRect?
+        var prefersHorizontal = false
+        for _ in 0..<maxMoves where !element.hasFocus {
+            guard let current = focusedFrame(in: app) else {
+                remote.press(.down)
+                continue
+            }
+            if current == previousFrame {
+                prefersHorizontal.toggle()
+            }
+            previousFrame = current
+            let target = element.frame
+            let vertical: XCUIRemote.Button? = target.minY >= current.maxY - 1
+                ? .down
+                : target.maxY <= current.minY + 1 ? .up : nil
+            let horizontal: XCUIRemote.Button? = target.maxX <= current.minX + 1
+                ? .left
+                : target.minX >= current.maxX - 1 ? .right : nil
+            let primary = prefersHorizontal ? horizontal ?? vertical : vertical ?? horizontal
+            remote.press(primary ?? .down)
+        }
+        XCTAssertTrue(element.hasFocus)
+    }
+
+    /// Frame of the smallest element reporting focus, read from one hierarchy snapshot.
+    @MainActor
+    private func focusedFrame(in app: XCUIApplication) -> CGRect? {
+        guard let root = try? app.snapshot() else { return nil }
+        var pending: [XCUIElementSnapshot] = [root]
+        var focused: CGRect?
+        while let node = pending.popLast() {
+            if node.hasFocus {
+                let area = node.frame.width * node.frame.height
+                if focused.map({ area < $0.width * $0.height }) ?? true {
+                    focused = node.frame
+                }
+            }
+            pending.append(contentsOf: node.children)
+        }
+        return focused
+    }
+
     @MainActor
     private func waitForFocus(on element: XCUIElement) {
         let focused = XCTNSPredicateExpectation(
@@ -1897,7 +1969,9 @@ final class Swift_LearnUITests: XCTestCase {
         for id in lesson.canonicalTokenIDs {
             let token = app.buttons["activity-token-\(id)"].firstMatch
             revealInteractive(token, in: app)
-            selectOrderingFragment(token)
+            // Journey places tokens below the prompt and code; steer focus by frame.
+            moveFocus(to: token, in: app)
+            XCUIRemote.shared.press(.select)
             XCTAssertTrue(
                 app.buttons["activity-composed-\(id)"].firstMatch
                     .waitForExistence(timeout: 5)
@@ -1909,6 +1983,26 @@ final class Swift_LearnUITests: XCTestCase {
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         activate(editor)
         editor.typeText("Double(three)")
+#endif
+    }
+
+    /// Opens a Journey lesson row. On tvOS, rows deeper than the shared
+    /// 20-press `activate` budget need a bidirectional focus search.
+    @MainActor
+    private func openJourneyLesson(_ startLesson: XCUIElement, in app: XCUIApplication) {
+        reveal(startLesson, in: app)
+#if os(tvOS)
+        let remote = XCUIRemote.shared
+        for _ in 0..<60 where !startLesson.hasFocus {
+            remote.press(.down)
+        }
+        for _ in 0..<60 where !startLesson.hasFocus {
+            remote.press(.up)
+        }
+        XCTAssertTrue(startLesson.hasFocus)
+        remote.press(.select)
+#else
+        activate(startLesson)
 #endif
     }
 

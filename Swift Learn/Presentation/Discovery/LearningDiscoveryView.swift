@@ -426,6 +426,11 @@ private struct SupplementalLessonDetailView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(!viewModel.canSubmitLab(lesson))
                 .accessibilityIdentifier("submit-supplemental-lab")
+#if os(tvOS)
+                // A full-width section is reachable by pressing down from any layer column.
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .focusSection()
+#endif
 
                 if let result = viewModel.labResultByLessonID[lesson.id] {
                     feedback(result)

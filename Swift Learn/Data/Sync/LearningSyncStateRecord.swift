@@ -1,3 +1,10 @@
+//
+//  LearningSyncStateRecord.swift
+//  Swift Learn
+//
+//  Created by Ahmed Tarek on 09/09/2026.
+//
+
 import Foundation
 import SwiftData
 
