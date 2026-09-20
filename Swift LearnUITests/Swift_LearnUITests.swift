@@ -572,7 +572,7 @@ final class Swift_LearnUITests: XCTestCase {
         let bossAchievement = app.descendants(matching: .any)[
             "achievement-card-achievement.boss.\(level.id)"
         ].firstMatch
-        reveal(bossAchievement, in: app)
+        reveal(bossAchievement, in: app, maxMoves: 60)
         assertAchievement(
             bossAchievement,
             label: "\(level.title) Boss Challenge, Earned",
@@ -669,7 +669,7 @@ final class Swift_LearnUITests: XCTestCase {
         let projectAchievement = app.descendants(matching: .any)[
             "achievement-card-achievement.project.swift-foundations"
         ].firstMatch
-        reveal(projectAchievement, in: app)
+        reveal(projectAchievement, in: app, maxMoves: 60)
         assertAchievement(
             projectAchievement,
             label: "Build a Practice Setup, Earned",
@@ -1423,6 +1423,117 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
+    func testGitTabCompletesFirstCommandAndUnlocksTheNext() {
+        let app = launchApp()
+        openTab("git-tab", label: "Git", in: app, tvDirection: .right)
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["git-learning"]
+                .firstMatch.waitForExistence(timeout: 10)
+        )
+        let summary = app.staticTexts["git-progress-summary"].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        assertSummary(summary, equals: "0 of 8 commands", in: app)
+
+        XCTAssertTrue(app.staticTexts["git-question-title"].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["git-question-scenario"].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["git-question-instruction"].firstMatch.exists)
+
+        let wrong = app.buttons["git-choice-git-archive"].firstMatch
+        revealInteractive(wrong, in: app)
+        activate(wrong)
+        let submit = app.buttons["submit-git-answer"].firstMatch
+        revealInteractive(submit, in: app)
+        activate(submit)
+        let feedback = app.descendants(matching: .any)["git-answer-feedback"].firstMatch
+        XCTAssertTrue(feedback.waitForExistence(timeout: 5))
+        assertSummary(summary, equals: "0 of 8 commands", in: app)
+
+        let retry = app.buttons["retry-git-question"].firstMatch
+        revealInteractive(retry, in: app)
+        activate(retry)
+
+        let correct = app.buttons["git-choice-git-bundle-create-all"].firstMatch
+        revealInteractive(correct, in: app)
+        activate(correct)
+        revealInteractive(submit, in: app)
+        activate(submit)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["git-answer-feedback"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+        assertSummary(summary, equals: "1 of 8 commands", in: app)
+
+        let next = app.buttons["continue-next-git-question"].firstMatch
+        revealInteractive(next, in: app)
+        activate(next)
+        XCTAssertTrue(app.staticTexts["git-question-title"].firstMatch.exists)
+    }
+
+    @MainActor
+    func testGitResetClearsGitProgressAndKeepsSwiftProgress() throws {
+        let lesson = try XCTUnwrap(loadLessonExpectations().first)
+        let app = launchApp(persistsData: true)
+
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+        let startLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
+        openJourneyLesson(startLesson, in: app)
+        let correctChoice = app.buttons["choice-\(lesson.correctChoiceID)"].firstMatch
+        XCTAssertTrue(correctChoice.waitForExistence(timeout: 5))
+        revealInteractive(correctChoice, in: app)
+        select(
+            correctChoice,
+            firstChoice: app.buttons["choice-\(lesson.choices[0].id)"],
+            choiceIndex: lesson.correctChoiceIndex
+        )
+        let submitLesson = app.buttons["submit-answer"].firstMatch
+        revealInteractive(submitLesson, in: app)
+        activate(submitLesson)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["lesson-complete-feedback"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+        dismissAchievementOverlays(in: app)
+        popToJourneyRoot(in: app)
+
+        openTab("git-tab", label: "Git", in: app, tvDirection: .right)
+        let summary = app.staticTexts["git-progress-summary"].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 10))
+        let correct = app.buttons["git-choice-git-bundle-create-all"].firstMatch
+        revealInteractive(correct, in: app)
+        activate(correct)
+        let submitGit = app.buttons["submit-git-answer"].firstMatch
+        revealInteractive(submitGit, in: app)
+        activate(submitGit)
+        assertSummary(summary, equals: "1 of 8 commands", in: app)
+
+        let reset = app.buttons["reset-git-progress"].firstMatch
+        revealInteractive(reset, in: app)
+        activate(reset)
+        let cancel = confirmationButton(labeled: "Cancel", in: app)
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5))
+        activate(cancel)
+        assertSummary(summary, equals: "1 of 8 commands", in: app)
+
+        revealInteractive(reset, in: app)
+        activate(reset)
+        let confirm = confirmationButton(labeled: "Reset Git Progress", in: app)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        activate(confirm)
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["git-progress-reset-success"]
+                .firstMatch.waitForExistence(timeout: 10)
+        )
+        assertSummary(summary, equals: "0 of 8 commands", in: app)
+
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+        let restoredLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
+        reveal(restoredLesson, in: app)
+        assertValue(restoredLesson, equals: "Completed", in: app)
+    }
+
+    @MainActor
     func testProfileDataDiagnosticsProvidesExportEntry() {
         let app = launchApp()
         openTab("profile-tab", label: "Profile", in: app, tvDirection: .right)
@@ -1520,6 +1631,35 @@ final class Swift_LearnUITests: XCTestCase {
 #endif
     }
 
+    /// Returns from a pushed lesson to the Journey root so its rows are visible.
+    @MainActor
+    private func popToJourneyRoot(in app: XCUIApplication) {
+#if os(tvOS)
+        XCUIRemote.shared.press(.menu)
+#else
+        let back = app.navigationBars.buttons.element(boundBy: 0)
+        if back.exists, back.isHittable {
+            back.tap()
+        }
+#endif
+        _ = app.descendants(matching: .any)["journey-review-summary"]
+            .firstMatch.waitForExistence(timeout: 5)
+    }
+
+    /// A confirmation dialog renders as a sheet on iOS and an alert elsewhere,
+    /// and the system supplies its buttons, so they are matched by label.
+    @MainActor
+    private func confirmationButton(
+        labeled label: String,
+        in app: XCUIApplication
+    ) -> XCUIElement {
+        let sheetButton = app.sheets.buttons[label].firstMatch
+        if sheetButton.exists { return sheetButton }
+        let alertButton = app.alerts.buttons[label].firstMatch
+        if alertButton.exists { return alertButton }
+        return app.buttons.matching(identifier: label).element(boundBy: 0)
+    }
+
     @MainActor
     private func openTab(
         _ identifier: String,
@@ -1609,29 +1749,31 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
-    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+    /// `maxMoves` bounds each scroll direction; long lazy lists (the 41-card
+    /// achievement grid) need more than the default.
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication, maxMoves: Int = 12) {
         if element.waitForExistence(timeout: 2) {
             return
         }
 
 #if os(macOS)
-        scrollDown(until: element, in: app, requiresHittable: false)
+        scrollDown(until: element, in: app, requiresHittable: false, maxMoves: maxMoves)
 #elseif os(tvOS)
         let remote = XCUIRemote.shared
-        for _ in 0..<20 where !element.exists {
+        for _ in 0..<max(20, maxMoves) where !element.exists {
             remote.press(.down)
         }
-        for _ in 0..<20 where !element.exists {
+        for _ in 0..<max(20, maxMoves) where !element.exists {
             remote.press(.up)
         }
 #else
         XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 5))
 
-        for _ in 0..<12 where !element.exists {
+        for _ in 0..<maxMoves where !element.exists {
             app.swipeUp()
         }
 
-        for _ in 0..<12 where !element.exists {
+        for _ in 0..<maxMoves where !element.exists {
             app.swipeDown()
         }
 #endif
@@ -1690,7 +1832,8 @@ final class Swift_LearnUITests: XCTestCase {
     private func scrollDown(
         until element: XCUIElement,
         in app: XCUIApplication,
-        requiresHittable: Bool
+        requiresHittable: Bool,
+        maxMoves: Int = 12
     ) {
         guard app.scrollViews.firstMatch.waitForExistence(timeout: 5) else {
             XCTFail("Expected a scroll view while revealing \(element)")
@@ -1701,14 +1844,14 @@ final class Swift_LearnUITests: XCTestCase {
         let scrollCoordinate = app.windows.firstMatch.coordinate(
             withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75)
         )
-        for _ in 0..<12 {
+        for _ in 0..<maxMoves {
             if element.exists && (!requiresHittable || element.isHittable) {
                 break
             }
             scrollCoordinate.scroll(byDeltaX: 0, deltaY: -300)
         }
 
-        for _ in 0..<12 {
+        for _ in 0..<maxMoves {
             if element.exists && (!requiresHittable || element.isHittable) {
                 break
             }
@@ -1874,13 +2017,25 @@ final class Swift_LearnUITests: XCTestCase {
         let runnerPlugInURL = Bundle.main.builtInPlugInsURL?
             .appendingPathComponent("Swift LearnUITests.xctest", isDirectory: true)
         let runnerTestBundle = runnerPlugInURL.flatMap(Bundle.init(url:))
+        // Simulator and Mac runners can read the repository copy. It covers the case where the
+        // installed runner container was reaped (seen under `containermanagerd/Dead`).
+        let sourceURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Swift Learn/Data/Content/swift-6.4-beta-foundations.json")
+        let fileManager = FileManager.default
         let resourceURL = try XCTUnwrap(
-            testBundle.url(forResource: "swift-6.4-beta-foundations", withExtension: "json")
-                ?? runnerTestBundle?.url(
+            [
+                testBundle.url(forResource: "swift-6.4-beta-foundations", withExtension: "json"),
+                runnerTestBundle?.url(
                     forResource: "swift-6.4-beta-foundations",
                     withExtension: "json"
                 ),
-            "Missing UI-test catalog fixture in \(testBundle.bundleURL.path) or runner plug-ins at \(runnerPlugInURL?.path ?? "unavailable")"
+                sourceURL
+            ]
+            .compactMap { $0 }
+            .first { fileManager.isReadableFile(atPath: $0.path) },
+            "Missing UI-test catalog fixture in \(testBundle.bundleURL.path), runner plug-ins at \(runnerPlugInURL?.path ?? "unavailable"), or \(sourceURL.path)"
         )
         return try JSONDecoder().decode(
             LearningCatalogExpectation.self,

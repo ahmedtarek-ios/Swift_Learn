@@ -1,7 +1,9 @@
 import Foundation
 
 @MainActor
-final class InMemoryLearningSyncRepository: LearningSyncRepository {
+final class InMemoryLearningSyncRepository:
+    LearningSyncRepository,
+    WatchLearningEventSubmitting {
     private var snapshot: LearningSyncSnapshot
     private var pendingEvents: [LearningSyncEvent]
 
@@ -30,5 +32,9 @@ final class InMemoryLearningSyncRepository: LearningSyncRepository {
 
     func removePendingEvents(ids: Set<UUID>) {
         pendingEvents.removeAll { ids.contains($0.id) }
+    }
+
+    func submit(_ event: LearningSyncEvent) {
+        enqueue(event)
     }
 }

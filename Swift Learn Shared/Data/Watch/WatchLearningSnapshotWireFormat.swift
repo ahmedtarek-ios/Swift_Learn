@@ -1,6 +1,6 @@
 import Foundation
 
-enum WatchLearningSnapshotWireFormat {
+nonisolated enum WatchLearningSnapshotWireFormat {
     nonisolated static let payloadKey = "swiftLearn.watch.snapshot.v1"
     nonisolated static let refreshRequestKey = "swiftLearn.watch.refresh.v1"
 
@@ -21,7 +21,7 @@ enum WatchLearningSnapshotWireFormat {
     }
 }
 
-enum WatchLearningSnapshotWireError: LocalizedError, Equatable {
+nonisolated enum WatchLearningSnapshotWireError: LocalizedError, Equatable {
     case unsupportedSchema(Int)
 
     var errorDescription: String? {

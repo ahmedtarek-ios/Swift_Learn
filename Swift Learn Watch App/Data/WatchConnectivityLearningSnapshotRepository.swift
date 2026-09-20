@@ -1,4 +1,5 @@
 import Foundation
+import WidgetKit
 @preconcurrency import WatchConnectivity
 
 @MainActor
@@ -6,7 +7,7 @@ final class WatchConnectivityLearningSnapshotRepository: NSObject,
     WatchLearningSnapshotRepository,
     WatchLearningEventSubmitting,
     WCSessionDelegate {
-    private static let cacheKey = "swiftLearn.watch.snapshot.cache.v1"
+    private static let cacheKey = WatchSharedStore.snapshotCacheKey
 
     private let session: WCSession
     private let defaults: UserDefaults
@@ -18,7 +19,7 @@ final class WatchConnectivityLearningSnapshotRepository: NSObject,
 
     init(
         session: WCSession = .default,
-        defaults: UserDefaults = .standard,
+        defaults: UserDefaults = WatchSharedStore.defaults(),
         syncEventQueue: any LearningSyncEventQueueRepository,
         syncGeneration: any LearningSyncResetGenerationAdopting
     ) {
@@ -56,9 +57,7 @@ final class WatchConnectivityLearningSnapshotRepository: NSObject,
 
     func submit(_ event: LearningSyncEvent) throws {
         try syncEventQueue.enqueue(event)
-        guard WCSession.isSupported() else {
-            throw WatchLearningSnapshotRepositoryError.unsupported
-        }
+        guard WCSession.isSupported() else { return }
         if session.activationState == .notActivated {
             session.activate()
         }
@@ -160,6 +159,8 @@ final class WatchConnectivityLearningSnapshotRepository: NSObject,
         try syncEventQueue.removePendingEvents(ids: snapshot.acknowledgedEventIDs)
         inFlightEventIDs.subtract(snapshot.acknowledgedEventIDs)
         defaults.set(payload, forKey: Self.cacheKey)
+        // The complication and Smart Stack widget read this same snapshot.
+        WidgetCenter.shared.reloadTimelines(ofKind: "SwiftLearnProgressWidget")
         try flushPendingEvents()
         return snapshot
     }
@@ -178,19 +179,52 @@ final class WatchConnectivityLearningSnapshotRepository: NSObject,
             where inFlightEventIDs.contains(event.id) == false {
             let payload = try LearningSyncWireFormat.encode(event)
             inFlightEventIDs.insert(event.id)
-            session.transferUserInfo([
-                LearningSyncWireFormat.eventPayloadKey: payload
-            ])
+            guard session.isReachable else {
+                session.transferUserInfo([
+                    LearningSyncWireFormat.eventPayloadKey: payload
+                ])
+                continue
+            }
+            sendReachableEvent(id: event.id, payload: payload)
         }
+    }
+
+    /// Delivers one queued event to a reachable iPhone. The reply carries the
+    /// merged snapshot, whose acknowledged IDs clear the local queue. A failed
+    /// send falls back to the background transfer.
+    private func sendReachableEvent(id: UUID, payload: Data) {
+        session.sendMessage(
+            [LearningSyncWireFormat.eventPayloadKey: payload],
+            replyHandler: { @Sendable [weak self] reply in
+                guard let snapshotPayload = reply[
+                    WatchLearningSnapshotWireFormat.payloadKey
+                ] as? Data else { return }
+                Task { @MainActor [weak self, snapshotPayload] in
+                    self?.receive(snapshotPayload)
+                }
+            },
+            errorHandler: { @Sendable [weak self] _ in
+                Task { @MainActor [weak self, payload, id] in
+                    guard let self else { return }
+                    inFlightEventIDs.remove(id)
+                    session.transferUserInfo([
+                        LearningSyncWireFormat.eventPayloadKey: payload
+                    ])
+                    inFlightEventIDs.insert(id)
+                }
+            }
+        )
     }
 
     private func requestImmediateRefresh() {
         guard session.activationState == .activated, session.isReachable else {
             return
         }
+        // WatchConnectivity calls the reply handler on its own queue, so the
+        // closure must stay non-isolated and hop to the main actor itself.
         session.sendMessage(
             [WatchLearningSnapshotWireFormat.refreshRequestKey: true],
-            replyHandler: { [weak self] reply in
+            replyHandler: { @Sendable [weak self] reply in
                 guard let payload = reply[
                     WatchLearningSnapshotWireFormat.payloadKey
                 ] as? Data else { return }

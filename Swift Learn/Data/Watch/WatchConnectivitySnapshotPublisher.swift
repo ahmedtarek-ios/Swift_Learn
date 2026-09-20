@@ -10,6 +10,11 @@ import Foundation
 import OSLog
 @preconcurrency import WatchConnectivity
 
+/// Carries WatchConnectivity's non-Sendable reply handler to the main actor.
+private nonisolated struct WatchConnectivityReplyBox: @unchecked Sendable {
+    let respond: ([String: Any]) -> Void
+}
+
 @MainActor
 final class WatchConnectivitySnapshotPublisher: NSObject,
     WatchLearningSnapshotPublishing,
@@ -99,6 +104,37 @@ final class WatchConnectivitySnapshotPublisher: NSObject,
         didReceiveMessage message: [String: Any],
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
+        // A reachable Watch delivers queued events here for immediate merging;
+        // `transferUserInfo(_:)` remains the background fallback.
+        if let payload = message[LearningSyncWireFormat.eventPayloadKey] as? Data {
+            // WatchConnectivity hands back a non-Sendable reply handler.
+            let reply = WatchConnectivityReplyBox(respond: replyHandler)
+            Task { @MainActor [weak self, payload, reply] in
+                guard let self else {
+                    reply.respond([:])
+                    return
+                }
+                do {
+                    let event = try LearningSyncWireFormat.decodeEvent(payload)
+                    guard let snapshot = try receiveEvents([event]) else {
+                        reply.respond([:])
+                        return
+                    }
+                    try publish(snapshot)
+                    reply.respond([
+                        WatchLearningSnapshotWireFormat.payloadKey:
+                            try WatchLearningSnapshotWireFormat.encode(snapshot)
+                    ])
+                } catch {
+                    logger.error(
+                        "Watch learning event rejected: \(error.localizedDescription, privacy: .public)"
+                    )
+                    reply.respond([:])
+                }
+            }
+            return
+        }
+
         guard message[WatchLearningSnapshotWireFormat.refreshRequestKey] as? Bool
                 == true else {
             replyHandler([:])

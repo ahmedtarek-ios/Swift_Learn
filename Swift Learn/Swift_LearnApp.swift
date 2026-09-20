@@ -115,6 +115,7 @@ struct Swift_LearnApp: App {
             mistakeNotebookViewModel: container.mistakeNotebookViewModel,
             learningDiscoveryViewModel: container.learningDiscoveryViewModel,
             supplementalTracksViewModel: container.supplementalTracksViewModel,
+            gitLearningViewModel: container.gitLearningViewModel,
             forcesRightToLeftLayout: forcesRightToLeftLayout
         )
     }

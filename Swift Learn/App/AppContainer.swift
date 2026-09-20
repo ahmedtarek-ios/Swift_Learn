@@ -23,6 +23,7 @@ final class AppContainer {
     let mistakeNotebookViewModel: MistakeNotebookViewModel
     let learningDiscoveryViewModel: LearningDiscoveryViewModel
     let supplementalTracksViewModel: SupplementalTracksViewModel
+    let gitLearningViewModel: GitLearningViewModel
 #if os(iOS)
     private let createWatchLearningSnapshot: CreateWatchLearningSnapshotUseCase
     private let watchSnapshotPublisher: any WatchLearningSnapshotPublishing
@@ -52,7 +53,7 @@ final class AppContainer {
         projectSubmissionIDGenerator: any LearningProjectSubmissionIDGenerating
             = SystemLearningProjectSubmissionIDGenerator()
     ) throws {
-        let schema = Schema(versionedSchema: SwiftLearnSchemaV7.self)
+        let schema = Schema(versionedSchema: SwiftLearnSchemaV8.self)
         let configuration: ModelConfiguration
         if let storageURL {
             configuration = ModelConfiguration(
@@ -315,6 +316,25 @@ final class AppContainer {
             evaluatePractice: EvaluateSupplementalPracticeUseCase(),
             evaluateLab: EvaluateSupplementalAuthoredLabUseCase()
         )
+        let gitContentRepository = BundledGitCommandRepository(bundle: .main)
+        let gitTrackRepository = SwiftDataGitTrackRepository(
+            modelContext: modelContainer.mainContext
+        )
+        gitLearningViewModel = GitLearningViewModel(
+            loadTrack: LoadGitLearningTrackUseCase(
+                contentRepository: gitContentRepository,
+                progressRepository: gitTrackRepository
+            ),
+            submitAnswer: SubmitGitAnswerUseCase(
+                contentRepository: gitContentRepository,
+                progressRepository: gitTrackRepository,
+                attemptRepository: gitTrackRepository,
+                clock: clock
+            ),
+            resetProgress: ResetGitTrackProgressUseCase(
+                repository: gitTrackRepository
+            )
+        )
 #if os(iOS)
         let createWatchLearningSnapshot = CreateWatchLearningSnapshotUseCase(
             loadJourney: loadJourney,
@@ -322,6 +342,11 @@ final class AppContainer {
             loadReviewQueue: loadReviewQueue,
             loadSyncSnapshot: LoadLearningSyncSnapshotUseCase(
                 repository: syncRepository
+            ),
+            loadMasteryOverview: LoadMasteryOverviewUseCase(
+                loadCanonicalSkills: loadCanonicalSkills,
+                attemptRepository: attemptRepository,
+                clock: clock
             ),
             clock: clock
         )
@@ -359,6 +384,14 @@ final class AppContainer {
 
     private static func resetStoredData(in modelContext: ModelContext) throws {
         for record in try modelContext.fetch(FetchDescriptor<LessonProgressRecord>()) {
+            modelContext.delete(record)
+        }
+        for record in try modelContext.fetch(
+            FetchDescriptor<GitLessonProgressRecord>()
+        ) {
+            modelContext.delete(record)
+        }
+        for record in try modelContext.fetch(FetchDescriptor<GitAttemptRecord>()) {
             modelContext.delete(record)
         }
         for record in try modelContext.fetch(FetchDescriptor<LearnerProfileRecord>()) {

@@ -7,9 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		26C5B80F64EC27BBB3EB5D0D /* Swift Learn Watch Widgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F4EBD237D1C2168A525478F0 /* Swift Learn Watch Widgets.appex */; };
+		2F3C82ACB19B221FE21E44D2 /* WatchWidgetPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B4057EBE7359703562E5699 /* WatchWidgetPresentation.swift */; };
+		603FBE380AEB4658B6E5C100 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C374BE3DFEC60EC639A5F2AA /* Foundation.framework */; };
+		61C4C13D38CAB5436812AFAB /* SwiftLearnWatchWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = F032EF7ECAE153A276CA4C84 /* SwiftLearnWatchWidgets.swift */; };
+		91EE35661D532A5ADF6CC361 /* WatchLearningSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26AC445BFBBC39B5F2BF0331 /* WatchLearningSnapshot.swift */; };
+		98694FC5D5CE40EF91476AB6 /* SharedWatchSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2414A9EC431A3B3A681EC909 /* SharedWatchSnapshotStore.swift */; };
 		A10000000000000000000002 /* Swift Learn/Data/Content/swift-6.4-beta-foundations.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* Swift Learn/Data/Content/swift-6.4-beta-foundations.json */; };
 		A20000000000000000000002 /* Resources/LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* Resources/LaunchScreen.storyboard */; platformFilter = ios; };
 		B10000000000000000000001 /* Swift Learn Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* Swift Learn Watch App.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F517DE12A085CF68E3F0AF80 /* WatchLearningSnapshotWireFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4B24ACA46D1CE6FC401BC5 /* WatchLearningSnapshotWireFormat.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,6 +55,13 @@
 			remoteGlobalIDString = B10000000000000000000010;
 			remoteInfo = "Swift Learn Watch App";
 		};
+		F6DF6B124D4E2BE94FAF1047 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 37B77A343031B1C0002E2BAD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5A0D2EBC2F400CF8B605EB2C;
+			remoteInfo = "Swift Learn Watch Widgets";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -62,17 +76,38 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E487F0578358E37253AFF46C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				26C5B80F64EC27BBB3EB5D0D /* Swift Learn Watch Widgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2414A9EC431A3B3A681EC909 /* SharedWatchSnapshotStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SharedWatchSnapshotStore.swift; path = "Swift Learn Watch App/Data/SharedWatchSnapshotStore.swift"; sourceTree = "<group>"; };
+		26AC445BFBBC39B5F2BF0331 /* WatchLearningSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchLearningSnapshot.swift; path = "Swift Learn Shared/Domain/Watch/WatchLearningSnapshot.swift"; sourceTree = "<group>"; };
 		37B77A3C3031B1C0002E2BAD /* Swift Learn.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Swift Learn.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37B77A4B3031B1C1002E2BAD /* Swift LearnTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Swift LearnTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37B77A553031B1C1002E2BAD /* Swift LearnUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Swift LearnUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		38139CA0CAC56D0726F51217 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = "Swift Learn Watch Widgets/Info.plist"; sourceTree = "<group>"; };
+		459A122A22FFF23782247D14 /* WatchQuickReview.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchQuickReview.swift; path = "Swift Learn Shared/Domain/Watch/WatchQuickReview.swift"; sourceTree = "<group>"; };
+		6D4B24ACA46D1CE6FC401BC5 /* WatchLearningSnapshotWireFormat.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchLearningSnapshotWireFormat.swift; path = "Swift Learn Shared/Data/Watch/WatchLearningSnapshotWireFormat.swift"; sourceTree = "<group>"; };
+		9B4057EBE7359703562E5699 /* WatchWidgetPresentation.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchWidgetPresentation.swift; path = "Swift Learn Watch App/Presentation/WatchWidgetPresentation.swift"; sourceTree = "<group>"; };
 		A10000000000000000000001 /* Swift Learn/Data/Content/swift-6.4-beta-foundations.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Swift Learn/Data/Content/swift-6.4-beta-foundations.json"; sourceTree = SOURCE_ROOT; };
 		A20000000000000000000001 /* Resources/LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Resources/LaunchScreen.storyboard; sourceTree = SOURCE_ROOT; };
 		B10000000000000000000002 /* Swift Learn Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Swift Learn Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000003 /* Swift Learn Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Swift Learn Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000004 /* Swift Learn Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Swift Learn Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C374BE3DFEC60EC639A5F2AA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		F032EF7ECAE153A276CA4C84 /* SwiftLearnWatchWidgets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SwiftLearnWatchWidgets.swift; path = "Swift Learn Watch Widgets/SwiftLearnWatchWidgets.swift"; sourceTree = "<group>"; };
+		F4EBD237D1C2168A525478F0 /* Swift Learn Watch Widgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Swift Learn Watch Widgets.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FBA8018471A97A0DD30B3CB4 /* SwiftLearnWatchWidgets.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = SwiftLearnWatchWidgets.entitlements; path = "Swift Learn Watch Widgets/SwiftLearnWatchWidgets.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -156,6 +191,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F55170940BC502E6CC7904FA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				603FBE380AEB4658B6E5C100 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -172,6 +215,8 @@
 				B10000000000000000000007 /* Swift Learn Watch AppTests */,
 				B10000000000000000000008 /* Swift Learn Watch AppUITests */,
 				37B77A3D3031B1C0002E2BAD /* Products */,
+				5A3D92FE47CBEC2B35D48635 /* Frameworks */,
+				808EC1C659E299C0CFD3892E /* Swift Learn Watch Widgets */,
 			);
 			sourceTree = "<group>";
 		};
@@ -184,8 +229,40 @@
 				B10000000000000000000002 /* Swift Learn Watch App.app */,
 				B10000000000000000000003 /* Swift Learn Watch AppTests.xctest */,
 				B10000000000000000000004 /* Swift Learn Watch AppUITests.xctest */,
+				F4EBD237D1C2168A525478F0 /* Swift Learn Watch Widgets.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		5A3D92FE47CBEC2B35D48635 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				908BDFE3456747E40FA16F18 /* watchOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		808EC1C659E299C0CFD3892E /* Swift Learn Watch Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				F032EF7ECAE153A276CA4C84 /* SwiftLearnWatchWidgets.swift */,
+				9B4057EBE7359703562E5699 /* WatchWidgetPresentation.swift */,
+				2414A9EC431A3B3A681EC909 /* SharedWatchSnapshotStore.swift */,
+				26AC445BFBBC39B5F2BF0331 /* WatchLearningSnapshot.swift */,
+				459A122A22FFF23782247D14 /* WatchQuickReview.swift */,
+				6D4B24ACA46D1CE6FC401BC5 /* WatchLearningSnapshotWireFormat.swift */,
+				38139CA0CAC56D0726F51217 /* Info.plist */,
+				FBA8018471A97A0DD30B3CB4 /* SwiftLearnWatchWidgets.entitlements */,
+			);
+			name = "Swift Learn Watch Widgets";
+			sourceTree = SOURCE_ROOT;
+		};
+		908BDFE3456747E40FA16F18 /* watchOS */ = {
+			isa = PBXGroup;
+			children = (
+				C374BE3DFEC60EC639A5F2AA /* Foundation.framework */,
+			);
+			name = watchOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -210,8 +287,6 @@
 				B10000000000000000000005 /* Swift Learn Shared */,
 			);
 			name = "Swift Learn";
-			packageProductDependencies = (
-			);
 			productName = "Swift Learn";
 			productReference = 37B77A3C3031B1C0002E2BAD /* Swift Learn.app */;
 			productType = "com.apple.product-type.application";
@@ -233,8 +308,6 @@
 				37B77A4E3031B1C1002E2BAD /* Swift LearnTests */,
 			);
 			name = "Swift LearnTests";
-			packageProductDependencies = (
-			);
 			productName = "Swift LearnTests";
 			productReference = 37B77A4B3031B1C1002E2BAD /* Swift LearnTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -256,11 +329,26 @@
 				37B77A583031B1C1002E2BAD /* Swift LearnUITests */,
 			);
 			name = "Swift LearnUITests";
-			packageProductDependencies = (
-			);
 			productName = "Swift LearnUITests";
 			productReference = 37B77A553031B1C1002E2BAD /* Swift LearnUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		5A0D2EBC2F400CF8B605EB2C /* Swift Learn Watch Widgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D55283894F60D8C100FB6882 /* Build configuration list for PBXNativeTarget "Swift Learn Watch Widgets" */;
+			buildPhases = (
+				CE6B8810A0B2FAA648EEF3E3 /* Sources */,
+				F55170940BC502E6CC7904FA /* Frameworks */,
+				9F0DF034EBB98D62F57D09D4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Swift Learn Watch Widgets";
+			productName = "Swift Learn Watch Widgets";
+			productReference = F4EBD237D1C2168A525478F0 /* Swift Learn Watch Widgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		B10000000000000000000010 /* Swift Learn Watch App */ = {
 			isa = PBXNativeTarget;
@@ -269,18 +357,18 @@
 				B10000000000000000000014 /* Sources */,
 				B10000000000000000000011 /* Frameworks */,
 				B10000000000000000000017 /* Resources */,
+				E487F0578358E37253AFF46C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A6B84DC3181F25BC169C2540 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				B10000000000000000000005 /* Swift Learn Shared */,
 				B10000000000000000000006 /* Swift Learn Watch App */,
 			);
 			name = "Swift Learn Watch App";
-			packageProductDependencies = (
-			);
 			productName = "Swift Learn Watch App";
 			productReference = B10000000000000000000002 /* Swift Learn Watch App.app */;
 			productType = "com.apple.product-type.application";
@@ -302,8 +390,6 @@
 				B10000000000000000000007 /* Swift Learn Watch AppTests */,
 			);
 			name = "Swift Learn Watch AppTests";
-			packageProductDependencies = (
-			);
 			productName = "Swift Learn Watch AppTests";
 			productReference = B10000000000000000000003 /* Swift Learn Watch AppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -325,8 +411,6 @@
 				B10000000000000000000008 /* Swift Learn Watch AppUITests */,
 			);
 			name = "Swift Learn Watch AppUITests";
-			packageProductDependencies = (
-			);
 			productName = "Swift Learn Watch AppUITests";
 			productReference = B10000000000000000000004 /* Swift Learn Watch AppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -385,6 +469,7 @@
 				B10000000000000000000010 /* Swift Learn Watch App */,
 				B10000000000000000000015 /* Swift Learn Watch AppTests */,
 				B10000000000000000000019 /* Swift Learn Watch AppUITests */,
+				5A0D2EBC2F400CF8B605EB2C /* Swift Learn Watch Widgets */,
 			);
 		};
 /* End PBXProject section */
@@ -410,6 +495,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000002 /* Swift Learn/Data/Content/swift-6.4-beta-foundations.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9F0DF034EBB98D62F57D09D4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -479,6 +571,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CE6B8810A0B2FAA648EEF3E3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				61C4C13D38CAB5436812AFAB /* SwiftLearnWatchWidgets.swift in Sources */,
+				2F3C82ACB19B221FE21E44D2 /* WatchWidgetPresentation.swift in Sources */,
+				98694FC5D5CE40EF91476AB6 /* SharedWatchSnapshotStore.swift in Sources */,
+				91EE35661D532A5ADF6CC361 /* WatchLearningSnapshot.swift in Sources */,
+				F517DE12A085CF68E3F0AF80 /* WatchLearningSnapshotWireFormat.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -491,6 +595,12 @@
 			isa = PBXTargetDependency;
 			target = 37B77A3B3031B1C0002E2BAD /* Swift Learn */;
 			targetProxy = 37B77A563031B1C1002E2BAD /* PBXContainerItemProxy */;
+		};
+		A6B84DC3181F25BC169C2540 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "Swift Learn Watch Widgets";
+			target = 5A0D2EBC2F400CF8B605EB2C /* Swift Learn Watch Widgets */;
+			targetProxy = F6DF6B124D4E2BE94FAF1047 /* PBXContainerItemProxy */;
 		};
 		B10000000000000000000034 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -511,6 +621,38 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		27A5D6239C0A418EC801B24F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Swift Learn Watch Widgets/SwiftLearnWatchWidgets.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JM53MT2MHN;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Swift Learn Watch Widgets/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Swift Learn";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ata.Swift-Learn.watchkitapp.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
 		37B77A5D3031B1C1002E2BAD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -817,10 +959,44 @@
 			};
 			name = Release;
 		};
+		A4906B5D74DFCBE39290AB99 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Swift Learn Watch Widgets/SwiftLearnWatchWidgets.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = JM53MT2MHN;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Swift Learn Watch Widgets/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Swift Learn";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ata.Swift-Learn.watchkitapp.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 		B10000000000000000000040 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "Swift Learn Watch App/SwiftLearnWatchApp.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = JM53MT2MHN;
@@ -853,6 +1029,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "Swift Learn Watch App/SwiftLearnWatchApp.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = JM53MT2MHN;
@@ -1039,6 +1216,15 @@
 			buildConfigurations = (
 				B10000000000000000000044 /* Debug */,
 				B10000000000000000000045 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D55283894F60D8C100FB6882 /* Build configuration list for PBXNativeTarget "Swift Learn Watch Widgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4906B5D74DFCBE39290AB99 /* Release */,
+				27A5D6239C0A418EC801B24F /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

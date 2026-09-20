@@ -43,7 +43,8 @@ struct WatchLearningSnapshotTests {
                         lessonIDs: ["lesson.one", "lesson.two"],
                         activityIDs: [
                             LearningActivityID(rawValue: "lesson.one"),
-                            LearningActivityID(rawValue: "lesson.two")
+                            LearningActivityID(rawValue: "lesson.two"),
+                            .review(skillID: skillID)
                         ]
                     )
                 ]
@@ -69,6 +70,11 @@ struct WatchLearningSnapshotTests {
             loadSyncSnapshot: LoadLearningSyncSnapshotUseCase(
                 repository: WatchTestSyncRepository()
             ),
+            loadMasteryOverview: LoadMasteryOverviewUseCase(
+                loadCanonicalSkills: loadCanonicalSkills,
+                attemptRepository: attempts,
+                clock: clock
+            ),
             clock: clock
         )
 
@@ -78,12 +84,26 @@ struct WatchLearningSnapshotTests {
         #expect(snapshot.completedLessonCount == 1)
         #expect(snapshot.totalLessonCount == 2)
         #expect(snapshot.dueReviewCount == 1)
+        #expect(snapshot.reviewItems.count == 1)
+        #expect(snapshot.reviewItems.first?.skillID == "skill.one")
+        #expect(snapshot.reviewItems.first?.lessonID == "lesson.one")
+        #expect(snapshot.reviewItems.first?.activityID == "review.skill.one")
+        #expect(snapshot.reviewItems.first?.correctChoiceID == "let")
+        #expect(snapshot.reviewItems.first?.choices.map(\.id) == ["let", "var"])
         #expect(snapshot.nextLesson?.id == "lesson.two")
         #expect(snapshot.nextLesson?.title == "Variables")
         #expect(snapshot.resetGeneration == 0)
         #expect(snapshot.acknowledgedEventIDs.isEmpty)
         #expect(snapshot.generatedAt == now)
         #expect(snapshot.progress == 0.5)
+        let detail = try #require(snapshot.progressDetail)
+        #expect(detail.levelTitle == "Foundations")
+        #expect(detail.levelCompletedLessonCount == 1)
+        #expect(detail.levelTotalLessonCount == 2)
+        #expect(detail.trackedSkillCount == 1)
+        #expect(detail.proficientSkillCount == 0)
+        #expect(detail.masteredSkillCount == 0)
+        #expect(detail.levelProgress == 0.5)
     }
 
     @Test
@@ -93,6 +113,7 @@ struct WatchLearningSnapshotTests {
             completedLessonCount: 3,
             totalLessonCount: 10,
             dueReviewCount: 2,
+            reviewItems: [makeReviewSnapshot()],
             nextLesson: WatchNextLessonSnapshot(
                 id: "lesson.four",
                 title: "Optionals",
@@ -143,6 +164,7 @@ struct WatchLearningSnapshotTests {
         )
         payload.removeValue(forKey: "resetGeneration")
         payload.removeValue(forKey: "acknowledgedEventIDs")
+        payload.removeValue(forKey: "reviewItems")
 
         let decoded = try WatchLearningSnapshotWireFormat.decode(
             JSONSerialization.data(withJSONObject: payload)
@@ -151,6 +173,54 @@ struct WatchLearningSnapshotTests {
         #expect(decoded.schemaVersion == 1)
         #expect(decoded.resetGeneration == 0)
         #expect(decoded.acknowledgedEventIDs.isEmpty)
+        #expect(decoded.reviewItems.isEmpty)
+        #expect(decoded.progressDetail == nil)
+    }
+
+    @Test
+    func wireFormatRoundTripsProgressDetailAndReadsSnapshotWithoutIt() throws {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let snapshot = WatchLearningSnapshot(
+            learnerName: "Ahmed",
+            completedLessonCount: 12,
+            totalLessonCount: 486,
+            dueReviewCount: 2,
+            progressDetail: WatchProgressDetailSnapshot(
+                levelTitle: "Foundations",
+                levelCompletedLessonCount: 12,
+                levelTotalLessonCount: 53,
+                trackedSkillCount: 20,
+                proficientSkillCount: 5,
+                masteredSkillCount: 2
+            ),
+            nextLesson: nil,
+            generatedAt: now
+        )
+
+        let decoded = try WatchLearningSnapshotWireFormat.decode(
+            WatchLearningSnapshotWireFormat.encode(snapshot)
+        )
+
+        #expect(decoded == snapshot)
+        #expect(decoded.schemaVersion == 4)
+        #expect(decoded.progressDetail?.levelProgress == Double(12) / Double(53))
+
+        let withoutDetail = WatchLearningSnapshot(
+            schemaVersion: 3,
+            learnerName: "Ahmed",
+            completedLessonCount: 12,
+            totalLessonCount: 486,
+            dueReviewCount: 2,
+            nextLesson: nil,
+            generatedAt: now
+        )
+
+        let decodedLegacy = try WatchLearningSnapshotWireFormat.decode(
+            WatchLearningSnapshotWireFormat.encode(withoutDetail)
+        )
+
+        #expect(decodedLegacy.progressDetail == nil)
+        #expect(decodedLegacy.schemaVersion == 3)
     }
 
     @Test
@@ -183,6 +253,14 @@ struct WatchLearningSnapshotTests {
             ),
             loadSyncSnapshot: LoadLearningSyncSnapshotUseCase(
                 repository: WatchTestSyncRepository()
+            ),
+            loadMasteryOverview: LoadMasteryOverviewUseCase(
+                loadCanonicalSkills: LoadCanonicalSkillsUseCase(
+                    contentRepository: content,
+                    skillRepository: skills
+                ),
+                attemptRepository: attempts,
+                clock: clock
             ),
             clock: clock
         )
@@ -218,12 +296,32 @@ struct WatchLearningSnapshotTests {
             instruction: "Choose the correct answer.",
             codePrefix: "",
             codeSuffix: " value = 1",
-            choices: [LearningChoice(id: "let", code: "let")],
+            choices: [
+                LearningChoice(id: "let", code: "let"),
+                LearningChoice(id: "var", code: "var")
+            ],
             correctChoiceID: "let",
             correctFeedback: "Correct",
             incorrectFeedback: "Try again",
             sourceTitle: "Swift",
             sourceReferences: []
+        )
+    }
+
+    private func makeReviewSnapshot() -> WatchReviewItemSnapshot {
+        WatchReviewItemSnapshot(
+            skillID: "skill.one",
+            lessonID: "lesson.one",
+            activityID: "review.skill.one",
+            title: "Constants",
+            prompt: "Choose the constant declaration.",
+            choices: [
+                WatchReviewChoiceSnapshot(id: "let", text: "let"),
+                WatchReviewChoiceSnapshot(id: "var", text: "var")
+            ],
+            correctChoiceID: "let",
+            correctFeedback: "Correct",
+            incorrectFeedback: "Try again"
         )
     }
 }

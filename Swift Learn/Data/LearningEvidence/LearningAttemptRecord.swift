@@ -11,6 +11,13 @@ import SwiftData
 @Model
 final class LearningAttemptRecord {
     @Attribute(.unique) var id: UUID
+    /// Optional so the store migrates lightly. A record without a track is a
+    /// pre-Git Swift record.
+    var trackID: String?
+
+    var learningTrackID: LearningTrackID {
+        trackID.flatMap(LearningTrackID.init(rawValue:)) ?? .swift
+    }
     var lessonID: String
     var skillID: String
     var activityID: String
@@ -20,6 +27,7 @@ final class LearningAttemptRecord {
 
     init(
         id: UUID,
+        trackID: String = LearningTrackID.swift.rawValue,
         lessonID: String,
         skillID: String,
         activityID: String,
@@ -28,6 +36,7 @@ final class LearningAttemptRecord {
         recordedAt: Date
     ) {
         self.id = id
+        self.trackID = trackID
         self.lessonID = lessonID
         self.skillID = skillID
         self.activityID = activityID

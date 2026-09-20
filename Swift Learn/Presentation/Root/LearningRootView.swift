@@ -17,6 +17,7 @@ struct LearningRootView: View {
     private let mistakeNotebookViewModel: MistakeNotebookViewModel
     private let learningDiscoveryViewModel: LearningDiscoveryViewModel
     private let supplementalTracksViewModel: SupplementalTracksViewModel
+    private let gitLearningViewModel: GitLearningViewModel
     private let forcesRightToLeftLayout: Bool
 
     init(
@@ -29,6 +30,7 @@ struct LearningRootView: View {
         mistakeNotebookViewModel: MistakeNotebookViewModel,
         learningDiscoveryViewModel: LearningDiscoveryViewModel,
         supplementalTracksViewModel: SupplementalTracksViewModel,
+        gitLearningViewModel: GitLearningViewModel,
         forcesRightToLeftLayout: Bool = false
     ) {
         _introViewModel = State(initialValue: introViewModel)
@@ -40,6 +42,7 @@ struct LearningRootView: View {
         self.mistakeNotebookViewModel = mistakeNotebookViewModel
         self.learningDiscoveryViewModel = learningDiscoveryViewModel
         self.supplementalTracksViewModel = supplementalTracksViewModel
+        self.gitLearningViewModel = gitLearningViewModel
         self.forcesRightToLeftLayout = forcesRightToLeftLayout
     }
 
@@ -100,6 +103,12 @@ struct LearningRootView: View {
                 .tabItem {
                     Label("Journey", systemImage: "map.fill")
                         .accessibilityIdentifier("journey-tab")
+                }
+
+            GitLearningView(viewModel: gitLearningViewModel)
+                .tabItem {
+                    Label("Git", systemImage: "arrow.trianglehead.branch")
+                        .accessibilityIdentifier("git-tab")
                 }
 
             LearnerProfileView(viewModel: learnerProfileViewModel)

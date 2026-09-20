@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "sourceID": "git-commands-plan-quoted-v1",
+  "editionTitle": "Git Commands",
+  "categories": [
+    {
+      "id": "git.bundles",
+      "title": "Repository Bundles",
+      "summary": "Package a repository into a single file.",
+      "lessons": [
+        {
+          "id": "git.bundles.create-all",
+          "title": "Bundle an Entire Repository",
+          "objective": "Identify the command that packages every reference into one file.",
+          "scenario": "You need to move a repository to a machine with no network access, using one file on a USB drive.",
+          "prompt": "Which command creates the bundle?",
+          "choices": [
+            {
+              "id": "git-bundle-create-all",
+              "command": "git bundle create repo.bundle --all"
+            },
+            {
+              "id": "git-archive",
+              "command": "git archive --format=tar HEAD"
+            },
+            {
+              "id": "git-clone-mirror",
+              "command": "git clone --mirror ."
+            }
+          ],
+          "correctChoiceID": "git-bundle-create-all",
+          "correctFeedback": "Correct. git bundle create repo.bundle --all writes every reference into a single transferable file.",
+          "incorrectFeedback": "Use git bundle create repo.bundle --all to package the whole repository into one file.",
+          "sourceReferences": [
+            "plan:section-2:git-bundle-create-all"
+          ],
+          "safetyLevel": "readOnly"
+        }
+      ]
+    },
+    {
+      "id": "git.maintenance",
+      "title": "Maintenance & Repository Health",
+      "summary": "Inspect, validate, and maintain repositories.",
+      "lessons": [
+        {
+          "id": "git.maintenance.gc",
+          "title": "Clean and Optimize a Repository",
+          "objective": "Identify the repository cleanup command.",
+          "scenario": "A local repository has grown large and needs object cleanup and storage optimization.",
+          "prompt": "Choose the correct Git command.",
+          "choices": [
+            {
+              "id": "git-gc",
+              "command": "git gc"
+            },
+            {
+              "id": "git-fsck",
+              "command": "git fsck"
+            },
+            {
+              "id": "git-status",
+              "command": "git status"
+            }
+          ],
+          "correctChoiceID": "git-gc",
+          "correctFeedback": "Correct. git gc cleans unnecessary files and optimizes local repository storage.",
+          "incorrectFeedback": "Use git gc for repository cleanup and storage optimization.",
+          "sourceReferences": [
+            "plan:section-5:git-gc"
+          ],
+          "safetyLevel": "destructiveCleanup",
+          "safetyWarning": "Review repository state and Git documentation before cleanup operations."
+        }
+      ]
+    },
+    {
+      "id": "git.daily",
+      "title": "Daily Git Workflow",
+      "summary": "The commands used in everyday work.",
+      "lessons": [
+        {
+          "id": "git.daily.reset-soft-head-1",
+          "title": "Undo a Commit and Keep the Changes Staged",
+          "objective": "Distinguish a soft reset from a hard reset.",
+          "scenario": "You committed too early. You want the commit undone but every change kept, still staged.",
+          "prompt": "Which command undoes the commit without losing work?",
+          "choices": [
+            {
+              "id": "git-reset-soft",
+              "command": "git reset --soft HEAD~1"
+            },
+            {
+              "id": "git-reset-hard",
+              "command": "git reset --hard HEAD~1"
+            },
+            {
+              "id": "git-revert-head",
+              "command": "git revert HEAD"
+            }
+          ],
+          "correctChoiceID": "git-reset-soft",
+          "correctFeedback": "Correct. git reset --soft HEAD~1 moves the branch back one commit and keeps the changes staged.",
+          "incorrectFeedback": "git reset --soft HEAD~1 undoes the commit while keeping your changes staged.",
+          "sourceReferences": [
+            "plan:section-2:git-reset-soft"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "Rewriting history affects commits you may have shared. Confirm the branch is unpublished before resetting."
+        },
+        {
+          "id": "git.daily.reset-hard-head-1",
+          "title": "Discard a Commit and Its Changes",
+          "objective": "Recognize the destructive reset form.",
+          "scenario": "A commit and everything in it must be thrown away on a local branch you have never pushed.",
+          "prompt": "Which command discards both the commit and its changes?",
+          "choices": [
+            {
+              "id": "git-reset-hard",
+              "command": "git reset --hard HEAD~1"
+            },
+            {
+              "id": "git-reset-soft",
+              "command": "git reset --soft HEAD~1"
+            },
+            {
+              "id": "git-restore-staged",
+              "command": "git restore --staged ."
+            }
+          ],
+          "correctChoiceID": "git-reset-hard",
+          "correctFeedback": "Correct. git reset --hard HEAD~1 removes the commit and the changes it contained.",
+          "incorrectFeedback": "git reset --hard HEAD~1 is the form that also discards the changes. The soft form keeps them.",
+          "sourceReferences": [
+            "plan:section-2:git-reset-hard"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This permanently discards uncommitted and committed work. There is no undo once the objects are pruned."
+        },
+        {
+          "id": "git.daily.restore-worktree",
+          "title": "Discard Working Tree Changes",
+          "objective": "Identify the command that restores tracked files.",
+          "scenario": "Edits across the working tree are wrong and should return to the last commit, leaving the index alone.",
+          "prompt": "Which command restores the working tree?",
+          "choices": [
+            {
+              "id": "git-restore-dot",
+              "command": "git restore ."
+            },
+            {
+              "id": "git-restore-staged-dot",
+              "command": "git restore --staged ."
+            },
+            {
+              "id": "git-clean-fd",
+              "command": "git clean -fd"
+            }
+          ],
+          "correctChoiceID": "git-restore-dot",
+          "correctFeedback": "Correct. git restore . returns tracked files in the working tree to their committed state.",
+          "incorrectFeedback": "git restore . restores the working tree. The --staged form unstages instead.",
+          "sourceReferences": [
+            "plan:section-2:git-restore"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.restore-staged",
+          "title": "Unstage Everything",
+          "objective": "Distinguish restoring from unstaging.",
+          "scenario": "Files were staged by mistake. The edits must stay, but nothing should be staged.",
+          "prompt": "Which command unstages without touching the edits?",
+          "choices": [
+            {
+              "id": "git-restore-staged-dot",
+              "command": "git restore --staged ."
+            },
+            {
+              "id": "git-restore-dot",
+              "command": "git restore ."
+            },
+            {
+              "id": "git-reset-hard",
+              "command": "git reset --hard HEAD~1"
+            }
+          ],
+          "correctChoiceID": "git-restore-staged-dot",
+          "correctFeedback": "Correct. git restore --staged . removes files from the index and leaves the working tree untouched.",
+          "incorrectFeedback": "git restore --staged . unstages. Without --staged the command overwrites your edits instead.",
+          "sourceReferences": [
+            "plan:section-2:git-restore-staged"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.switch-branch",
+          "title": "Move to an Existing Branch",
+          "objective": "Identify the modern checkout replacement.",
+          "scenario": "A branch already exists and you need to work on it.",
+          "prompt": "Which command switches to it?",
+          "choices": [
+            {
+              "id": "git-switch",
+              "command": "git switch branch-name"
+            },
+            {
+              "id": "git-switch-c",
+              "command": "git switch -c feature/name"
+            },
+            {
+              "id": "git-restore-dot",
+              "command": "git restore ."
+            }
+          ],
+          "correctChoiceID": "git-switch",
+          "correctFeedback": "Correct. git switch branch-name moves to a branch that already exists.",
+          "incorrectFeedback": "git switch branch-name switches to an existing branch. The -c form creates a new one.",
+          "sourceReferences": [
+            "plan:section-2:git-switch"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.switch-create",
+          "title": "Create and Move to a Branch",
+          "objective": "Identify the branch-creating switch form.",
+          "scenario": "You are starting a feature and the branch does not exist yet.",
+          "prompt": "Which command creates the branch and moves to it?",
+          "choices": [
+            {
+              "id": "git-switch-c",
+              "command": "git switch -c feature/name"
+            },
+            {
+              "id": "git-switch",
+              "command": "git switch branch-name"
+            },
+            {
+              "id": "git-bundle-create-all",
+              "command": "git bundle create repo.bundle --all"
+            }
+          ],
+          "correctChoiceID": "git-switch-c",
+          "correctFeedback": "Correct. git switch -c feature/name creates the branch and switches to it.",
+          "incorrectFeedback": "The -c option is what creates the branch: git switch -c feature/name.",
+          "sourceReferences": [
+            "plan:section-2:git-switch-c"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        }
+      ]
+    }
+  ]
+}

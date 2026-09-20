@@ -2,9 +2,14 @@ import SwiftUI
 
 struct WatchHomeView: View {
     @ObservedObject private var viewModel: WatchHomeViewModel
+    private let quickReviewViewModel: WatchQuickReviewViewModel
 
-    init(viewModel: WatchHomeViewModel) {
+    init(
+        viewModel: WatchHomeViewModel,
+        quickReviewViewModel: WatchQuickReviewViewModel
+    ) {
         self.viewModel = viewModel
+        self.quickReviewViewModel = quickReviewViewModel
     }
 
     var body: some View {
@@ -17,7 +22,10 @@ struct WatchHomeView: View {
                 case .empty:
                     WatchEmptyStateView()
                 case let .loaded(content):
-                    WatchSnapshotView(content: content)
+                    WatchSnapshotView(
+                        content: content,
+                        quickReviewViewModel: quickReviewViewModel
+                    )
                 case let .failed(message):
                     WatchErrorStateView(message: message)
                 }
@@ -33,6 +41,7 @@ struct WatchHomeView: View {
 
 private struct WatchSnapshotView: View {
     let content: WatchHomeViewModel.Content
+    let quickReviewViewModel: WatchQuickReviewViewModel
 
     private var snapshot: WatchLearningSnapshot { content.snapshot }
 
@@ -67,6 +76,21 @@ private struct WatchSnapshotView: View {
                 }
                 .accessibilityElement(children: .combine)
 
+                NavigationLink {
+                    WatchProgressView(
+                        viewModel: WatchProgressViewModel(
+                            snapshot: snapshot,
+                            pendingSyncEventCount: content.pendingSyncEventCount
+                        )
+                    )
+                } label: {
+                    Label("Progress details", systemImage: "chart.bar.fill")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("watch-progress-entry")
+                .accessibilityHint("Opens level and mastery details")
+
                 if let nextLesson = snapshot.nextLesson {
                     NavigationLink {
                         WatchNextLessonView(lesson: nextLesson)
@@ -82,6 +106,8 @@ private struct WatchSnapshotView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(.orange)
                     .accessibilityIdentifier("watch-next-lesson")
+                    .accessibilityLabel("Next lesson, \(nextLesson.title)")
+                    .accessibilityHint("Opens lesson details")
                 } else {
                     Label("Journey complete", systemImage: "checkmark.seal.fill")
                         .foregroundStyle(.green)
@@ -95,6 +121,23 @@ private struct WatchSnapshotView: View {
                 }
                 .font(.callout.weight(.semibold))
                 .accessibilityIdentifier("watch-review-count")
+
+                if snapshot.reviewItems.isEmpty == false {
+                    NavigationLink {
+                        WatchQuickReviewView(
+                            viewModel: quickReviewViewModel,
+                            items: snapshot.reviewItems,
+                            resetGeneration: snapshot.resetGeneration
+                        )
+                    } label: {
+                        Label("Quick Review", systemImage: "bolt.circle.fill")
+                            .font(.callout.weight(.semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+                    .accessibilityIdentifier("watch-quick-review-entry")
+                    .accessibilityHint("Starts a short review session")
+                }
 
                 Label(
                     syncSummary,
@@ -186,6 +229,10 @@ private struct WatchEmptyStateView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("watch-empty-state")
+        .accessibilityLabel(
+            "Open Swift Learn on iPhone. "
+                + "Your progress will appear after the first sync."
+        )
     }
 }
 
@@ -206,5 +253,6 @@ private struct WatchErrorStateView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("watch-sync-error")
+        .accessibilityLabel("Sync unavailable. \(message)")
     }
 }

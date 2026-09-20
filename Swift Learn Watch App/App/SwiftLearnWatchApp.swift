@@ -6,7 +6,10 @@ struct SwiftLearnWatchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            WatchHomeView(viewModel: container.homeViewModel)
+            WatchHomeView(
+                viewModel: container.homeViewModel,
+                quickReviewViewModel: container.quickReviewViewModel
+            )
         }
     }
 }
