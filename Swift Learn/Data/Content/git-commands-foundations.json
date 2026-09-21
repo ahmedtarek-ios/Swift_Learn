@@ -1,38 +1,38 @@
 {
   "schemaVersion": 1,
-  "sourceID": "git-commands-plan-quoted-v1",
+  "sourceID": "git-commands-attachment-v1",
   "editionTitle": "Git Commands",
   "categories": [
     {
       "id": "git.bundles",
       "title": "Repository Bundles",
-      "summary": "Package a repository into a single file.",
+      "summary": "Package repositories for transfer without network access.",
       "lessons": [
         {
-          "id": "git.bundles.create-all",
-          "title": "Bundle an Entire Repository",
-          "objective": "Identify the command that packages every reference into one file.",
-          "scenario": "You need to move a repository to a machine with no network access, using one file on a USB drive.",
-          "prompt": "Which command creates the bundle?",
+          "id": "git.bundles.bundle-create-repo-bundle-all",
+          "title": "Create a Portable Bundle Containing Every Repository Reference",
+          "objective": "Identify the Git command used to create a portable bundle containing every repository reference.",
+          "scenario": "A repository task requires you to create a portable bundle containing every repository reference. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
           "choices": [
             {
-              "id": "git-bundle-create-all",
+              "id": "git-bundle-create-repo-bundle-all-1",
               "command": "git bundle create repo.bundle --all"
             },
             {
-              "id": "git-archive",
-              "command": "git archive --format=tar HEAD"
+              "id": "git-gc-2",
+              "command": "git gc"
             },
             {
-              "id": "git-clone-mirror",
-              "command": "git clone --mirror ."
+              "id": "git-maintenance-3",
+              "command": "git maintenance"
             }
           ],
-          "correctChoiceID": "git-bundle-create-all",
-          "correctFeedback": "Correct. git bundle create repo.bundle --all writes every reference into a single transferable file.",
-          "incorrectFeedback": "Use git bundle create repo.bundle --all to package the whole repository into one file.",
+          "correctChoiceID": "git-bundle-create-repo-bundle-all-1",
+          "correctFeedback": "Correct. git bundle create repo.bundle --all is used to create a portable bundle containing every repository reference.",
+          "incorrectFeedback": "Use git bundle create repo.bundle --all to create a portable bundle containing every repository reference.",
           "sourceReferences": [
-            "plan:section-2:git-bundle-create-all"
+            "attachment:line-1:git-bundle-create-repo-bundle-all"
           ],
           "safetyLevel": "readOnly"
         }
@@ -40,212 +40,4037 @@
     },
     {
       "id": "git.maintenance",
-      "title": "Maintenance & Repository Health",
-      "summary": "Inspect, validate, and maintain repositories.",
+      "title": "Maintenance / Repository Health",
+      "summary": "Inspect, validate, and maintain repository storage.",
       "lessons": [
         {
           "id": "git.maintenance.gc",
-          "title": "Clean and Optimize a Repository",
-          "objective": "Identify the repository cleanup command.",
-          "scenario": "A local repository has grown large and needs object cleanup and storage optimization.",
-          "prompt": "Choose the correct Git command.",
+          "title": "Clean/optimize Repository",
+          "objective": "Identify the Git command used to clean/optimize repository.",
+          "scenario": "A repository task requires you to clean/optimize repository. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
           "choices": [
             {
-              "id": "git-gc",
+              "id": "git-gc-1",
               "command": "git gc"
             },
             {
-              "id": "git-fsck",
+              "id": "git-maintenance-2",
+              "command": "git maintenance"
+            },
+            {
+              "id": "git-fsck-3",
+              "command": "git fsck"
+            }
+          ],
+          "correctChoiceID": "git-gc-1",
+          "correctFeedback": "Correct. git gc is used to clean/optimize repository.",
+          "incorrectFeedback": "Use git gc to clean/optimize repository.",
+          "sourceReferences": [
+            "attachment:line-9:git-gc"
+          ],
+          "safetyLevel": "destructiveCleanup",
+          "safetyWarning": "This command can permanently remove repository data. Verify recoverability and the exact target before proceeding."
+        },
+        {
+          "id": "git.maintenance.maintenance",
+          "title": "Run Repository Maintenance Tasks",
+          "objective": "Identify the Git command used to run repository maintenance tasks.",
+          "scenario": "A repository task requires you to run repository maintenance tasks. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-maintenance-1",
+              "command": "git maintenance"
+            },
+            {
+              "id": "git-fsck-2",
               "command": "git fsck"
             },
             {
-              "id": "git-status",
-              "command": "git status"
+              "id": "git-count-objects-3",
+              "command": "git count-objects"
             }
           ],
-          "correctChoiceID": "git-gc",
-          "correctFeedback": "Correct. git gc cleans unnecessary files and optimizes local repository storage.",
-          "incorrectFeedback": "Use git gc for repository cleanup and storage optimization.",
+          "correctChoiceID": "git-maintenance-1",
+          "correctFeedback": "Correct. git maintenance is used to run repository maintenance tasks.",
+          "incorrectFeedback": "Use git maintenance to run repository maintenance tasks.",
           "sourceReferences": [
-            "plan:section-5:git-gc"
+            "attachment:line-10:git-maintenance"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.maintenance.fsck",
+          "title": "Check Repository Object Integrity",
+          "objective": "Identify the Git command used to check repository object integrity.",
+          "scenario": "A repository task requires you to check repository object integrity. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-fsck-1",
+              "command": "git fsck"
+            },
+            {
+              "id": "git-count-objects-2",
+              "command": "git count-objects"
+            },
+            {
+              "id": "git-repack-3",
+              "command": "git repack"
+            }
+          ],
+          "correctChoiceID": "git-fsck-1",
+          "correctFeedback": "Correct. git fsck is used to check repository object integrity.",
+          "incorrectFeedback": "Use git fsck to check repository object integrity.",
+          "sourceReferences": [
+            "attachment:line-11:git-fsck"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.maintenance.count-objects",
+          "title": "Show Object Count/disk Usage",
+          "objective": "Identify the Git command used to show object count/disk usage.",
+          "scenario": "A repository task requires you to show object count/disk usage. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-count-objects-1",
+              "command": "git count-objects"
+            },
+            {
+              "id": "git-repack-2",
+              "command": "git repack"
+            },
+            {
+              "id": "git-prune-3",
+              "command": "git prune"
+            }
+          ],
+          "correctChoiceID": "git-count-objects-1",
+          "correctFeedback": "Correct. git count-objects is used to show object count/disk usage.",
+          "incorrectFeedback": "Use git count-objects to show object count/disk usage.",
+          "sourceReferences": [
+            "attachment:line-12:git-count-objects"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.maintenance.repack",
+          "title": "Repack Repository Objects",
+          "objective": "Identify the Git command used to repack repository objects.",
+          "scenario": "A repository task requires you to repack repository objects. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-repack-1",
+              "command": "git repack"
+            },
+            {
+              "id": "git-prune-2",
+              "command": "git prune"
+            },
+            {
+              "id": "git-pack-refs-3",
+              "command": "git pack-refs"
+            }
+          ],
+          "correctChoiceID": "git-repack-1",
+          "correctFeedback": "Correct. git repack is used to repack repository objects.",
+          "incorrectFeedback": "Use git repack to repack repository objects.",
+          "sourceReferences": [
+            "attachment:line-13:git-repack"
           ],
           "safetyLevel": "destructiveCleanup",
-          "safetyWarning": "Review repository state and Git documentation before cleanup operations."
+          "safetyWarning": "This command can permanently remove repository data. Verify recoverability and the exact target before proceeding."
+        },
+        {
+          "id": "git.maintenance.prune",
+          "title": "Delete Unreachable Objects",
+          "objective": "Identify the Git command used to delete unreachable objects.",
+          "scenario": "A repository task requires you to delete unreachable objects. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-prune-1",
+              "command": "git prune"
+            },
+            {
+              "id": "git-pack-refs-2",
+              "command": "git pack-refs"
+            },
+            {
+              "id": "git-gc-3",
+              "command": "git gc"
+            }
+          ],
+          "correctChoiceID": "git-prune-1",
+          "correctFeedback": "Correct. git prune is used to delete unreachable objects.",
+          "incorrectFeedback": "Use git prune to delete unreachable objects.",
+          "sourceReferences": [
+            "attachment:line-14:git-prune"
+          ],
+          "safetyLevel": "destructiveCleanup",
+          "safetyWarning": "This command can permanently remove repository data. Verify recoverability and the exact target before proceeding."
+        },
+        {
+          "id": "git.maintenance.pack-refs",
+          "title": "Pack Refs for Efficiency",
+          "objective": "Identify the Git command used to pack refs for efficiency.",
+          "scenario": "A repository task requires you to pack refs for efficiency. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-pack-refs-1",
+              "command": "git pack-refs"
+            },
+            {
+              "id": "git-gc-2",
+              "command": "git gc"
+            },
+            {
+              "id": "git-maintenance-3",
+              "command": "git maintenance"
+            }
+          ],
+          "correctChoiceID": "git-pack-refs-1",
+          "correctFeedback": "Correct. git pack-refs is used to pack refs for efficiency.",
+          "incorrectFeedback": "Use git pack-refs to pack refs for efficiency.",
+          "sourceReferences": [
+            "attachment:line-15:git-pack-refs"
+          ],
+          "safetyLevel": "readOnly"
+        }
+      ]
+    },
+    {
+      "id": "git.patches",
+      "title": "Patch Commands",
+      "summary": "Create, exchange, and apply patch-based changes.",
+      "lessons": [
+        {
+          "id": "git.patches.diff-file-patch",
+          "title": "Create Basic Patch",
+          "objective": "Identify the Git command used to create basic patch.",
+          "scenario": "A repository task requires you to create basic patch. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-diff-file-patch-1",
+              "command": "git diff > file.patch"
+            },
+            {
+              "id": "git-apply-file-patch-2",
+              "command": "git apply file.patch"
+            },
+            {
+              "id": "git-format-patch-3",
+              "command": "git format-patch"
+            }
+          ],
+          "correctChoiceID": "git-diff-file-patch-1",
+          "correctFeedback": "Correct. git diff > file.patch is used to create basic patch.",
+          "incorrectFeedback": "Use git diff > file.patch to create basic patch.",
+          "sourceReferences": [
+            "attachment:line-22:git-diff-file-patch"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.patches.apply-file-patch",
+          "title": "Apply Patch",
+          "objective": "Identify the Git command used to apply patch.",
+          "scenario": "A repository task requires you to apply patch. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-apply-file-patch-1",
+              "command": "git apply file.patch"
+            },
+            {
+              "id": "git-format-patch-2",
+              "command": "git format-patch"
+            },
+            {
+              "id": "git-am-3",
+              "command": "git am"
+            }
+          ],
+          "correctChoiceID": "git-apply-file-patch-1",
+          "correctFeedback": "Correct. git apply file.patch is used to apply patch.",
+          "incorrectFeedback": "Use git apply file.patch to apply patch.",
+          "sourceReferences": [
+            "attachment:line-23:git-apply-file-patch"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.patches.format-patch",
+          "title": "Generate Patches from Commits",
+          "objective": "Identify the Git command used to generate patches from commits.",
+          "scenario": "A repository task requires you to generate patches from commits. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-format-patch-1",
+              "command": "git format-patch"
+            },
+            {
+              "id": "git-am-2",
+              "command": "git am"
+            },
+            {
+              "id": "git-request-pull-3",
+              "command": "git request-pull"
+            }
+          ],
+          "correctChoiceID": "git-format-patch-1",
+          "correctFeedback": "Correct. git format-patch is used to generate patches from commits.",
+          "incorrectFeedback": "Use git format-patch to generate patches from commits.",
+          "sourceReferences": [
+            "attachment:line-24:git-format-patch"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.patches.am",
+          "title": "Apply Commits from Mailbox Patches",
+          "objective": "Identify the Git command used to apply commits from mailbox patches.",
+          "scenario": "A repository task requires you to apply commits from mailbox patches. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-am-1",
+              "command": "git am"
+            },
+            {
+              "id": "git-request-pull-2",
+              "command": "git request-pull"
+            },
+            {
+              "id": "git-send-email-3",
+              "command": "git send-email"
+            }
+          ],
+          "correctChoiceID": "git-am-1",
+          "correctFeedback": "Correct. git am is used to apply commits from mailbox patches.",
+          "incorrectFeedback": "Use git am to apply commits from mailbox patches.",
+          "sourceReferences": [
+            "attachment:line-25:git-am"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.patches.request-pull",
+          "title": "Generate Pull-request Summary",
+          "objective": "Identify the Git command used to generate pull-request summary.",
+          "scenario": "A repository task requires you to generate pull-request summary. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-request-pull-1",
+              "command": "git request-pull"
+            },
+            {
+              "id": "git-send-email-2",
+              "command": "git send-email"
+            },
+            {
+              "id": "git-diff-file-patch-3",
+              "command": "git diff > file.patch"
+            }
+          ],
+          "correctChoiceID": "git-request-pull-1",
+          "correctFeedback": "Correct. git request-pull is used to generate pull-request summary.",
+          "incorrectFeedback": "Use git request-pull to generate pull-request summary.",
+          "sourceReferences": [
+            "attachment:line-26:git-request-pull"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.patches.send-email",
+          "title": "Email Patches",
+          "objective": "Identify the Git command used to email patches.",
+          "scenario": "A repository task requires you to email patches. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-send-email-1",
+              "command": "git send-email"
+            },
+            {
+              "id": "git-diff-file-patch-2",
+              "command": "git diff > file.patch"
+            },
+            {
+              "id": "git-apply-file-patch-3",
+              "command": "git apply file.patch"
+            }
+          ],
+          "correctChoiceID": "git-send-email-1",
+          "correctFeedback": "Correct. git send-email is used to email patches.",
+          "incorrectFeedback": "Use git send-email to email patches.",
+          "sourceReferences": [
+            "attachment:line-27:git-send-email"
+          ],
+          "safetyLevel": "readOnly"
+        }
+      ]
+    },
+    {
+      "id": "git.notes",
+      "title": "Notes / Metadata",
+      "summary": "Attach and manage metadata on Git objects.",
+      "lessons": [
+        {
+          "id": "git.notes.notes-add",
+          "title": "Attach Note to Git Object",
+          "objective": "Identify the Git command used to attach note to git object.",
+          "scenario": "A repository task requires you to attach note to git object. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-notes-add-1",
+              "command": "git notes add"
+            },
+            {
+              "id": "git-notes-show-2",
+              "command": "git notes show"
+            },
+            {
+              "id": "git-notes-edit-3",
+              "command": "git notes edit"
+            }
+          ],
+          "correctChoiceID": "git-notes-add-1",
+          "correctFeedback": "Correct. git notes add is used to attach note to git object.",
+          "incorrectFeedback": "Use git notes add to attach note to git object.",
+          "sourceReferences": [
+            "attachment:line-40:git-notes-add"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.notes.notes-show",
+          "title": "Show Note",
+          "objective": "Identify the Git command used to show note.",
+          "scenario": "A repository task requires you to show note. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-notes-show-1",
+              "command": "git notes show"
+            },
+            {
+              "id": "git-notes-edit-2",
+              "command": "git notes edit"
+            },
+            {
+              "id": "git-notes-remove-3",
+              "command": "git notes remove"
+            }
+          ],
+          "correctChoiceID": "git-notes-show-1",
+          "correctFeedback": "Correct. git notes show is used to show note.",
+          "incorrectFeedback": "Use git notes show to show note.",
+          "sourceReferences": [
+            "attachment:line-41:git-notes-show"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.notes.notes-edit",
+          "title": "Edit Note",
+          "objective": "Identify the Git command used to edit note.",
+          "scenario": "A repository task requires you to edit note. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-notes-edit-1",
+              "command": "git notes edit"
+            },
+            {
+              "id": "git-notes-remove-2",
+              "command": "git notes remove"
+            },
+            {
+              "id": "git-notes-list-3",
+              "command": "git notes list"
+            }
+          ],
+          "correctChoiceID": "git-notes-edit-1",
+          "correctFeedback": "Correct. git notes edit is used to edit note.",
+          "incorrectFeedback": "Use git notes edit to edit note.",
+          "sourceReferences": [
+            "attachment:line-42:git-notes-edit"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.notes.notes-remove",
+          "title": "Remove Note",
+          "objective": "Identify the Git command used to remove note.",
+          "scenario": "A repository task requires you to remove note. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-notes-remove-1",
+              "command": "git notes remove"
+            },
+            {
+              "id": "git-notes-list-2",
+              "command": "git notes list"
+            },
+            {
+              "id": "git-notes-add-3",
+              "command": "git notes add"
+            }
+          ],
+          "correctChoiceID": "git-notes-remove-1",
+          "correctFeedback": "Correct. git notes remove is used to remove note.",
+          "incorrectFeedback": "Use git notes remove to remove note.",
+          "sourceReferences": [
+            "attachment:line-43:git-notes-remove"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.notes.notes-list",
+          "title": "List Notes",
+          "objective": "Identify the Git command used to list notes.",
+          "scenario": "A repository task requires you to list notes. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-notes-list-1",
+              "command": "git notes list"
+            },
+            {
+              "id": "git-notes-add-2",
+              "command": "git notes add"
+            },
+            {
+              "id": "git-notes-show-3",
+              "command": "git notes show"
+            }
+          ],
+          "correctChoiceID": "git-notes-list-1",
+          "correctFeedback": "Correct. git notes list is used to list notes.",
+          "incorrectFeedback": "Use git notes list to list notes.",
+          "sourceReferences": [
+            "attachment:line-44:git-notes-list"
+          ],
+          "safetyLevel": "readOnly"
+        }
+      ]
+    },
+    {
+      "id": "git.information",
+      "title": "Useful Information Commands",
+      "summary": "Summarize and verify repository information.",
+      "lessons": [
+        {
+          "id": "git.information.describe",
+          "title": "Create Human-readable Description from Tags",
+          "objective": "Identify the Git command used to create human-readable description from tags.",
+          "scenario": "A repository task requires you to create human-readable description from tags. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-describe-1",
+              "command": "git describe"
+            },
+            {
+              "id": "git-shortlog-2",
+              "command": "git shortlog"
+            },
+            {
+              "id": "git-show-branch-3",
+              "command": "git show-branch"
+            }
+          ],
+          "correctChoiceID": "git-describe-1",
+          "correctFeedback": "Correct. git describe is used to create human-readable description from tags.",
+          "incorrectFeedback": "Use git describe to create human-readable description from tags.",
+          "sourceReferences": [
+            "attachment:line-50:git-describe"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.information.shortlog",
+          "title": "Summarize Commit History by Author",
+          "objective": "Identify the Git command used to summarize commit history by author.",
+          "scenario": "A repository task requires you to summarize commit history by author. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-shortlog-1",
+              "command": "git shortlog"
+            },
+            {
+              "id": "git-show-branch-2",
+              "command": "git show-branch"
+            },
+            {
+              "id": "git-ls-remote-3",
+              "command": "git ls-remote"
+            }
+          ],
+          "correctChoiceID": "git-shortlog-1",
+          "correctFeedback": "Correct. git shortlog is used to summarize commit history by author.",
+          "incorrectFeedback": "Use git shortlog to summarize commit history by author.",
+          "sourceReferences": [
+            "attachment:line-51:git-shortlog"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.information.show-branch",
+          "title": "Show Branches and Commits",
+          "objective": "Identify the Git command used to show branches and commits.",
+          "scenario": "A repository task requires you to show branches and commits. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-show-branch-1",
+              "command": "git show-branch"
+            },
+            {
+              "id": "git-ls-remote-2",
+              "command": "git ls-remote"
+            },
+            {
+              "id": "git-verify-commit-3",
+              "command": "git verify-commit"
+            }
+          ],
+          "correctChoiceID": "git-show-branch-1",
+          "correctFeedback": "Correct. git show-branch is used to show branches and commits.",
+          "incorrectFeedback": "Use git show-branch to show branches and commits.",
+          "sourceReferences": [
+            "attachment:line-52:git-show-branch"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.information.ls-remote",
+          "title": "List Refs on Remote Server",
+          "objective": "Identify the Git command used to list refs on remote server.",
+          "scenario": "A repository task requires you to list refs on remote server. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-ls-remote-1",
+              "command": "git ls-remote"
+            },
+            {
+              "id": "git-verify-commit-2",
+              "command": "git verify-commit"
+            },
+            {
+              "id": "git-verify-tag-3",
+              "command": "git verify-tag"
+            }
+          ],
+          "correctChoiceID": "git-ls-remote-1",
+          "correctFeedback": "Correct. git ls-remote is used to list refs on remote server.",
+          "incorrectFeedback": "Use git ls-remote to list refs on remote server.",
+          "sourceReferences": [
+            "attachment:line-53:git-ls-remote",
+            "attachment:line-108:git-ls-remote"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.information.verify-commit",
+          "title": "Verify Gpg-signed Commit",
+          "objective": "Identify the Git command used to verify gpg-signed commit.",
+          "scenario": "A repository task requires you to verify gpg-signed commit. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-verify-commit-1",
+              "command": "git verify-commit"
+            },
+            {
+              "id": "git-verify-tag-2",
+              "command": "git verify-tag"
+            },
+            {
+              "id": "git-whatchanged-3",
+              "command": "git whatchanged"
+            }
+          ],
+          "correctChoiceID": "git-verify-commit-1",
+          "correctFeedback": "Correct. git verify-commit is used to verify gpg-signed commit.",
+          "incorrectFeedback": "Use git verify-commit to verify gpg-signed commit.",
+          "sourceReferences": [
+            "attachment:line-54:git-verify-commit"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.information.verify-tag",
+          "title": "Verify Signed Tag",
+          "objective": "Identify the Git command used to verify signed tag.",
+          "scenario": "A repository task requires you to verify signed tag. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-verify-tag-1",
+              "command": "git verify-tag"
+            },
+            {
+              "id": "git-whatchanged-2",
+              "command": "git whatchanged"
+            },
+            {
+              "id": "git-annotate-3",
+              "command": "git annotate"
+            }
+          ],
+          "correctChoiceID": "git-verify-tag-1",
+          "correctFeedback": "Correct. git verify-tag is used to verify signed tag.",
+          "incorrectFeedback": "Use git verify-tag to verify signed tag.",
+          "sourceReferences": [
+            "attachment:line-55:git-verify-tag"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.information.whatchanged",
+          "title": "Show History with Commit Differences",
+          "objective": "Identify the Git command used to show history with commit differences.",
+          "scenario": "A repository task requires you to show history with commit differences. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-whatchanged-1",
+              "command": "git whatchanged"
+            },
+            {
+              "id": "git-annotate-2",
+              "command": "git annotate"
+            },
+            {
+              "id": "git-version-3",
+              "command": "git version"
+            }
+          ],
+          "correctChoiceID": "git-whatchanged-1",
+          "correctFeedback": "Correct. git whatchanged is used to show history with commit differences.",
+          "incorrectFeedback": "Use git whatchanged to show history with commit differences.",
+          "sourceReferences": [
+            "attachment:line-56:git-whatchanged"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.information.annotate",
+          "title": "Similar to Blame",
+          "objective": "Identify the Git command used to similar to blame.",
+          "scenario": "A repository task requires you to similar to blame. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-annotate-1",
+              "command": "git annotate"
+            },
+            {
+              "id": "git-version-2",
+              "command": "git version"
+            },
+            {
+              "id": "git-instaweb-3",
+              "command": "git instaweb"
+            }
+          ],
+          "correctChoiceID": "git-annotate-1",
+          "correctFeedback": "Correct. git annotate is used to similar to blame.",
+          "incorrectFeedback": "Use git annotate to similar to blame.",
+          "sourceReferences": [
+            "attachment:line-57:git-annotate"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.information.version",
+          "title": "Show Git Version",
+          "objective": "Identify the Git command used to show git version.",
+          "scenario": "A repository task requires you to show git version. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-version-1",
+              "command": "git version"
+            },
+            {
+              "id": "git-instaweb-2",
+              "command": "git instaweb"
+            },
+            {
+              "id": "git-describe-3",
+              "command": "git describe"
+            }
+          ],
+          "correctChoiceID": "git-version-1",
+          "correctFeedback": "Correct. git version is used to show git version.",
+          "incorrectFeedback": "Use git version to show git version.",
+          "sourceReferences": [
+            "attachment:line-58:git-version"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.information.instaweb",
+          "title": "Browse Repository Using Gitweb",
+          "objective": "Identify the Git command used to browse repository using gitweb.",
+          "scenario": "A repository task requires you to browse repository using gitweb. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-instaweb-1",
+              "command": "git instaweb"
+            },
+            {
+              "id": "git-describe-2",
+              "command": "git describe"
+            },
+            {
+              "id": "git-shortlog-3",
+              "command": "git shortlog"
+            }
+          ],
+          "correctChoiceID": "git-instaweb-1",
+          "correctFeedback": "Correct. git instaweb is used to browse repository using gitweb.",
+          "incorrectFeedback": "Use git instaweb to browse repository using gitweb.",
+          "sourceReferences": [
+            "attachment:line-59:git-instaweb"
+          ],
+          "safetyLevel": "readOnly"
+        }
+      ]
+    },
+    {
+      "id": "git.objects-index",
+      "title": "Object / Index Manipulation",
+      "summary": "Work directly with objects, trees, packs, and the index.",
+      "lessons": [
+        {
+          "id": "git.objects-index.apply",
+          "title": "Apply Patch to Files/index",
+          "objective": "Identify the Git command used to apply patch to files/index.",
+          "scenario": "A repository task requires you to apply patch to files/index. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-apply-1",
+              "command": "git apply"
+            },
+            {
+              "id": "git-checkout-index-2",
+              "command": "git checkout-index"
+            },
+            {
+              "id": "git-commit-graph-3",
+              "command": "git commit-graph"
+            }
+          ],
+          "correctChoiceID": "git-apply-1",
+          "correctFeedback": "Correct. git apply is used to apply patch to files/index.",
+          "incorrectFeedback": "Use git apply to apply patch to files/index.",
+          "sourceReferences": [
+            "attachment:line-70:git-apply"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.checkout-index",
+          "title": "Copy Files from Index to Working Tree",
+          "objective": "Identify the Git command used to copy files from index to working tree.",
+          "scenario": "A repository task requires you to copy files from index to working tree. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-checkout-index-1",
+              "command": "git checkout-index"
+            },
+            {
+              "id": "git-commit-graph-2",
+              "command": "git commit-graph"
+            },
+            {
+              "id": "git-commit-tree-3",
+              "command": "git commit-tree"
+            }
+          ],
+          "correctChoiceID": "git-checkout-index-1",
+          "correctFeedback": "Correct. git checkout-index is used to copy files from index to working tree.",
+          "incorrectFeedback": "Use git checkout-index to copy files from index to working tree.",
+          "sourceReferences": [
+            "attachment:line-71:git-checkout-index"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.commit-graph",
+          "title": "Write/verify Commit Graph",
+          "objective": "Identify the Git command used to write/verify commit graph.",
+          "scenario": "A repository task requires you to write/verify commit graph. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-commit-graph-1",
+              "command": "git commit-graph"
+            },
+            {
+              "id": "git-commit-tree-2",
+              "command": "git commit-tree"
+            },
+            {
+              "id": "git-hash-object-3",
+              "command": "git hash-object"
+            }
+          ],
+          "correctChoiceID": "git-commit-graph-1",
+          "correctFeedback": "Correct. git commit-graph is used to write/verify commit graph.",
+          "incorrectFeedback": "Use git commit-graph to write/verify commit graph.",
+          "sourceReferences": [
+            "attachment:line-72:git-commit-graph"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.commit-tree",
+          "title": "Create Commit Object Manually",
+          "objective": "Identify the Git command used to create commit object manually.",
+          "scenario": "A repository task requires you to create commit object manually. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-commit-tree-1",
+              "command": "git commit-tree"
+            },
+            {
+              "id": "git-hash-object-2",
+              "command": "git hash-object"
+            },
+            {
+              "id": "git-index-pack-3",
+              "command": "git index-pack"
+            }
+          ],
+          "correctChoiceID": "git-commit-tree-1",
+          "correctFeedback": "Correct. git commit-tree is used to create commit object manually.",
+          "incorrectFeedback": "Use git commit-tree to create commit object manually.",
+          "sourceReferences": [
+            "attachment:line-73:git-commit-tree"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.hash-object",
+          "title": "Calculate an Object Id / Create Object",
+          "objective": "Identify the Git command used to calculate an object id / create object.",
+          "scenario": "A repository task requires you to calculate an object id / create object. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-hash-object-1",
+              "command": "git hash-object"
+            },
+            {
+              "id": "git-index-pack-2",
+              "command": "git index-pack"
+            },
+            {
+              "id": "git-merge-file-3",
+              "command": "git merge-file"
+            }
+          ],
+          "correctChoiceID": "git-hash-object-1",
+          "correctFeedback": "Correct. git hash-object is used to calculate an object id / create object.",
+          "incorrectFeedback": "Use git hash-object to calculate an object id / create object.",
+          "sourceReferences": [
+            "attachment:line-74:git-hash-object"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.index-pack",
+          "title": "Create Index for Pack File",
+          "objective": "Identify the Git command used to create index for pack file.",
+          "scenario": "A repository task requires you to create index for pack file. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-index-pack-1",
+              "command": "git index-pack"
+            },
+            {
+              "id": "git-merge-file-2",
+              "command": "git merge-file"
+            },
+            {
+              "id": "git-merge-index-3",
+              "command": "git merge-index"
+            }
+          ],
+          "correctChoiceID": "git-index-pack-1",
+          "correctFeedback": "Correct. git index-pack is used to create index for pack file.",
+          "incorrectFeedback": "Use git index-pack to create index for pack file.",
+          "sourceReferences": [
+            "attachment:line-75:git-index-pack"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.merge-file",
+          "title": "Three-way Merge Individual Files",
+          "objective": "Identify the Git command used to three-way merge individual files.",
+          "scenario": "A repository task requires you to three-way merge individual files. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-merge-file-1",
+              "command": "git merge-file"
+            },
+            {
+              "id": "git-merge-index-2",
+              "command": "git merge-index"
+            },
+            {
+              "id": "git-mktag-3",
+              "command": "git mktag"
+            }
+          ],
+          "correctChoiceID": "git-merge-file-1",
+          "correctFeedback": "Correct. git merge-file is used to three-way merge individual files.",
+          "incorrectFeedback": "Use git merge-file to three-way merge individual files.",
+          "sourceReferences": [
+            "attachment:line-76:git-merge-file"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.merge-index",
+          "title": "Merge Files Requiring Merging",
+          "objective": "Identify the Git command used to merge files requiring merging.",
+          "scenario": "A repository task requires you to merge files requiring merging. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-merge-index-1",
+              "command": "git merge-index"
+            },
+            {
+              "id": "git-mktag-2",
+              "command": "git mktag"
+            },
+            {
+              "id": "git-mktree-3",
+              "command": "git mktree"
+            }
+          ],
+          "correctChoiceID": "git-merge-index-1",
+          "correctFeedback": "Correct. git merge-index is used to merge files requiring merging.",
+          "incorrectFeedback": "Use git merge-index to merge files requiring merging.",
+          "sourceReferences": [
+            "attachment:line-77:git-merge-index"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.mktag",
+          "title": "Create Validated Tag Object",
+          "objective": "Identify the Git command used to create validated tag object.",
+          "scenario": "A repository task requires you to create validated tag object. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-mktag-1",
+              "command": "git mktag"
+            },
+            {
+              "id": "git-mktree-2",
+              "command": "git mktree"
+            },
+            {
+              "id": "git-multi-pack-index-3",
+              "command": "git multi-pack-index"
+            }
+          ],
+          "correctChoiceID": "git-mktag-1",
+          "correctFeedback": "Correct. git mktag is used to create validated tag object.",
+          "incorrectFeedback": "Use git mktag to create validated tag object.",
+          "sourceReferences": [
+            "attachment:line-78:git-mktag"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.mktree",
+          "title": "Build Tree Object",
+          "objective": "Identify the Git command used to build tree object.",
+          "scenario": "A repository task requires you to build tree object. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-mktree-1",
+              "command": "git mktree"
+            },
+            {
+              "id": "git-multi-pack-index-2",
+              "command": "git multi-pack-index"
+            },
+            {
+              "id": "git-pack-objects-3",
+              "command": "git pack-objects"
+            }
+          ],
+          "correctChoiceID": "git-mktree-1",
+          "correctFeedback": "Correct. git mktree is used to build tree object.",
+          "incorrectFeedback": "Use git mktree to build tree object.",
+          "sourceReferences": [
+            "attachment:line-79:git-mktree"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.multi-pack-index",
+          "title": "Manage Multi-pack Indexes",
+          "objective": "Identify the Git command used to manage multi-pack indexes.",
+          "scenario": "A repository task requires you to manage multi-pack indexes. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-multi-pack-index-1",
+              "command": "git multi-pack-index"
+            },
+            {
+              "id": "git-pack-objects-2",
+              "command": "git pack-objects"
+            },
+            {
+              "id": "git-prune-packed-3",
+              "command": "git prune-packed"
+            }
+          ],
+          "correctChoiceID": "git-multi-pack-index-1",
+          "correctFeedback": "Correct. git multi-pack-index is used to manage multi-pack indexes.",
+          "incorrectFeedback": "Use git multi-pack-index to manage multi-pack indexes.",
+          "sourceReferences": [
+            "attachment:line-80:git-multi-pack-index"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.pack-objects",
+          "title": "Create Packed Object Archive",
+          "objective": "Identify the Git command used to create packed object archive.",
+          "scenario": "A repository task requires you to create packed object archive. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-pack-objects-1",
+              "command": "git pack-objects"
+            },
+            {
+              "id": "git-prune-packed-2",
+              "command": "git prune-packed"
+            },
+            {
+              "id": "git-read-tree-3",
+              "command": "git read-tree"
+            }
+          ],
+          "correctChoiceID": "git-pack-objects-1",
+          "correctFeedback": "Correct. git pack-objects is used to create packed object archive.",
+          "incorrectFeedback": "Use git pack-objects to create packed object archive.",
+          "sourceReferences": [
+            "attachment:line-81:git-pack-objects"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.prune-packed",
+          "title": "Remove Objects Already Stored in Packs",
+          "objective": "Identify the Git command used to remove objects already stored in packs.",
+          "scenario": "A repository task requires you to remove objects already stored in packs. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-prune-packed-1",
+              "command": "git prune-packed"
+            },
+            {
+              "id": "git-read-tree-2",
+              "command": "git read-tree"
+            },
+            {
+              "id": "git-replay-3",
+              "command": "git replay"
+            }
+          ],
+          "correctChoiceID": "git-prune-packed-1",
+          "correctFeedback": "Correct. git prune-packed is used to remove objects already stored in packs.",
+          "incorrectFeedback": "Use git prune-packed to remove objects already stored in packs.",
+          "sourceReferences": [
+            "attachment:line-82:git-prune-packed"
+          ],
+          "safetyLevel": "destructiveCleanup",
+          "safetyWarning": "This command can permanently remove repository data. Verify recoverability and the exact target before proceeding."
+        },
+        {
+          "id": "git.objects-index.read-tree",
+          "title": "Read Tree into Index",
+          "objective": "Identify the Git command used to read tree into index.",
+          "scenario": "A repository task requires you to read tree into index. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-read-tree-1",
+              "command": "git read-tree"
+            },
+            {
+              "id": "git-replay-2",
+              "command": "git replay"
+            },
+            {
+              "id": "git-symbolic-ref-3",
+              "command": "git symbolic-ref"
+            }
+          ],
+          "correctChoiceID": "git-read-tree-1",
+          "correctFeedback": "Correct. git read-tree is used to read tree into index.",
+          "incorrectFeedback": "Use git read-tree to read tree into index.",
+          "sourceReferences": [
+            "attachment:line-83:git-read-tree"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.replay",
+          "title": "Experimental Commit Replay",
+          "objective": "Identify the Git command used to experimental commit replay.",
+          "scenario": "A repository task requires you to experimental commit replay. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-replay-1",
+              "command": "git replay"
+            },
+            {
+              "id": "git-symbolic-ref-2",
+              "command": "git symbolic-ref"
+            },
+            {
+              "id": "git-unpack-objects-3",
+              "command": "git unpack-objects"
+            }
+          ],
+          "correctChoiceID": "git-replay-1",
+          "correctFeedback": "Correct. git replay is used to experimental commit replay.",
+          "incorrectFeedback": "Use git replay to experimental commit replay.",
+          "sourceReferences": [
+            "attachment:line-84:git-replay"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.symbolic-ref",
+          "title": "Read/change Symbolic Refs",
+          "objective": "Identify the Git command used to read/change symbolic refs.",
+          "scenario": "A repository task requires you to read/change symbolic refs. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-symbolic-ref-1",
+              "command": "git symbolic-ref"
+            },
+            {
+              "id": "git-unpack-objects-2",
+              "command": "git unpack-objects"
+            },
+            {
+              "id": "git-update-index-3",
+              "command": "git update-index"
+            }
+          ],
+          "correctChoiceID": "git-symbolic-ref-1",
+          "correctFeedback": "Correct. git symbolic-ref is used to read/change symbolic refs.",
+          "incorrectFeedback": "Use git symbolic-ref to read/change symbolic refs.",
+          "sourceReferences": [
+            "attachment:line-85:git-symbolic-ref"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.unpack-objects",
+          "title": "Unpack Packed Git Objects",
+          "objective": "Identify the Git command used to unpack packed git objects.",
+          "scenario": "A repository task requires you to unpack packed git objects. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-unpack-objects-1",
+              "command": "git unpack-objects"
+            },
+            {
+              "id": "git-update-index-2",
+              "command": "git update-index"
+            },
+            {
+              "id": "git-update-ref-3",
+              "command": "git update-ref"
+            }
+          ],
+          "correctChoiceID": "git-unpack-objects-1",
+          "correctFeedback": "Correct. git unpack-objects is used to unpack packed git objects.",
+          "incorrectFeedback": "Use git unpack-objects to unpack packed git objects.",
+          "sourceReferences": [
+            "attachment:line-86:git-unpack-objects"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.update-index",
+          "title": "Manipulate Index",
+          "objective": "Identify the Git command used to manipulate index.",
+          "scenario": "A repository task requires you to manipulate index. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-update-index-1",
+              "command": "git update-index"
+            },
+            {
+              "id": "git-update-ref-2",
+              "command": "git update-ref"
+            },
+            {
+              "id": "git-write-tree-3",
+              "command": "git write-tree"
+            }
+          ],
+          "correctChoiceID": "git-update-index-1",
+          "correctFeedback": "Correct. git update-index is used to manipulate index.",
+          "incorrectFeedback": "Use git update-index to manipulate index.",
+          "sourceReferences": [
+            "attachment:line-87:git-update-index"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.update-ref",
+          "title": "Safely Update Refs",
+          "objective": "Identify the Git command used to safely update refs.",
+          "scenario": "A repository task requires you to safely update refs. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-update-ref-1",
+              "command": "git update-ref"
+            },
+            {
+              "id": "git-write-tree-2",
+              "command": "git write-tree"
+            },
+            {
+              "id": "git-apply-3",
+              "command": "git apply"
+            }
+          ],
+          "correctChoiceID": "git-update-ref-1",
+          "correctFeedback": "Correct. git update-ref is used to safely update refs.",
+          "incorrectFeedback": "Use git update-ref to safely update refs.",
+          "sourceReferences": [
+            "attachment:line-88:git-update-ref"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.objects-index.write-tree",
+          "title": "Create Tree from Current Index",
+          "objective": "Identify the Git command used to create tree from current index.",
+          "scenario": "A repository task requires you to create tree from current index. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-write-tree-1",
+              "command": "git write-tree"
+            },
+            {
+              "id": "git-apply-2",
+              "command": "git apply"
+            },
+            {
+              "id": "git-checkout-index-3",
+              "command": "git checkout-index"
+            }
+          ],
+          "correctChoiceID": "git-write-tree-1",
+          "correctFeedback": "Correct. git write-tree is used to create tree from current index.",
+          "incorrectFeedback": "Use git write-tree to create tree from current index.",
+          "sourceReferences": [
+            "attachment:line-89:git-write-tree"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        }
+      ]
+    },
+    {
+      "id": "git.inspection",
+      "title": "Low-Level Inspection",
+      "summary": "Inspect revisions, refs, trees, packs, and repository internals.",
+      "lessons": [
+        {
+          "id": "git.inspection.cat-file",
+          "title": "Inspect Git Objects",
+          "objective": "Identify the Git command used to inspect git objects.",
+          "scenario": "A repository task requires you to inspect git objects. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-cat-file-1",
+              "command": "git cat-file"
+            },
+            {
+              "id": "git-cherry-2",
+              "command": "git cherry"
+            },
+            {
+              "id": "git-diff-files-3",
+              "command": "git diff-files"
+            }
+          ],
+          "correctChoiceID": "git-cat-file-1",
+          "correctFeedback": "Correct. git cat-file is used to inspect git objects.",
+          "incorrectFeedback": "Use git cat-file to inspect git objects.",
+          "sourceReferences": [
+            "attachment:line-96:git-cat-file"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.cherry",
+          "title": "Find Commits Not Applied Upstream",
+          "objective": "Identify the Git command used to find commits not applied upstream.",
+          "scenario": "A repository task requires you to find commits not applied upstream. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-cherry-1",
+              "command": "git cherry"
+            },
+            {
+              "id": "git-diff-files-2",
+              "command": "git diff-files"
+            },
+            {
+              "id": "git-diff-index-3",
+              "command": "git diff-index"
+            }
+          ],
+          "correctChoiceID": "git-cherry-1",
+          "correctFeedback": "Correct. git cherry is used to find commits not applied upstream.",
+          "incorrectFeedback": "Use git cherry to find commits not applied upstream.",
+          "sourceReferences": [
+            "attachment:line-97:git-cherry"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.diff-files",
+          "title": "Compare Working Tree with Index",
+          "objective": "Identify the Git command used to compare working tree with index.",
+          "scenario": "A repository task requires you to compare working tree with index. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-diff-files-1",
+              "command": "git diff-files"
+            },
+            {
+              "id": "git-diff-index-2",
+              "command": "git diff-index"
+            },
+            {
+              "id": "git-diff-pairs-3",
+              "command": "git diff-pairs"
+            }
+          ],
+          "correctChoiceID": "git-diff-files-1",
+          "correctFeedback": "Correct. git diff-files is used to compare working tree with index.",
+          "incorrectFeedback": "Use git diff-files to compare working tree with index.",
+          "sourceReferences": [
+            "attachment:line-98:git-diff-files"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.diff-index",
+          "title": "Compare Tree with Index/working Tree",
+          "objective": "Identify the Git command used to compare tree with index/working tree.",
+          "scenario": "A repository task requires you to compare tree with index/working tree. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-diff-index-1",
+              "command": "git diff-index"
+            },
+            {
+              "id": "git-diff-pairs-2",
+              "command": "git diff-pairs"
+            },
+            {
+              "id": "git-diff-tree-3",
+              "command": "git diff-tree"
+            }
+          ],
+          "correctChoiceID": "git-diff-index-1",
+          "correctFeedback": "Correct. git diff-index is used to compare tree with index/working tree.",
+          "incorrectFeedback": "Use git diff-index to compare tree with index/working tree.",
+          "sourceReferences": [
+            "attachment:line-99:git-diff-index"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.diff-pairs",
+          "title": "Compare Supplied Blob Pairs",
+          "objective": "Identify the Git command used to compare supplied blob pairs.",
+          "scenario": "A repository task requires you to compare supplied blob pairs. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-diff-pairs-1",
+              "command": "git diff-pairs"
+            },
+            {
+              "id": "git-diff-tree-2",
+              "command": "git diff-tree"
+            },
+            {
+              "id": "git-for-each-ref-3",
+              "command": "git for-each-ref"
+            }
+          ],
+          "correctChoiceID": "git-diff-pairs-1",
+          "correctFeedback": "Correct. git diff-pairs is used to compare supplied blob pairs.",
+          "incorrectFeedback": "Use git diff-pairs to compare supplied blob pairs.",
+          "sourceReferences": [
+            "attachment:line-100:git-diff-pairs"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.diff-tree",
+          "title": "Compare Tree Objects",
+          "objective": "Identify the Git command used to compare tree objects.",
+          "scenario": "A repository task requires you to compare tree objects. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-diff-tree-1",
+              "command": "git diff-tree"
+            },
+            {
+              "id": "git-for-each-ref-2",
+              "command": "git for-each-ref"
+            },
+            {
+              "id": "git-for-each-repo-3",
+              "command": "git for-each-repo"
+            }
+          ],
+          "correctChoiceID": "git-diff-tree-1",
+          "correctFeedback": "Correct. git diff-tree is used to compare tree objects.",
+          "incorrectFeedback": "Use git diff-tree to compare tree objects.",
+          "sourceReferences": [
+            "attachment:line-101:git-diff-tree"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.for-each-ref",
+          "title": "Iterate over Git Refs",
+          "objective": "Identify the Git command used to iterate over git refs.",
+          "scenario": "A repository task requires you to iterate over git refs. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-for-each-ref-1",
+              "command": "git for-each-ref"
+            },
+            {
+              "id": "git-for-each-repo-2",
+              "command": "git for-each-repo"
+            },
+            {
+              "id": "git-format-rev-3",
+              "command": "git format-rev"
+            }
+          ],
+          "correctChoiceID": "git-for-each-ref-1",
+          "correctFeedback": "Correct. git for-each-ref is used to iterate over git refs.",
+          "incorrectFeedback": "Use git for-each-ref to iterate over git refs.",
+          "sourceReferences": [
+            "attachment:line-102:git-for-each-ref"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.for-each-repo",
+          "title": "Run Command over Multiple Repositories",
+          "objective": "Identify the Git command used to run command over multiple repositories.",
+          "scenario": "A repository task requires you to run command over multiple repositories. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-for-each-repo-1",
+              "command": "git for-each-repo"
+            },
+            {
+              "id": "git-format-rev-2",
+              "command": "git format-rev"
+            },
+            {
+              "id": "git-get-tar-commit-id-3",
+              "command": "git get-tar-commit-id"
+            }
+          ],
+          "correctChoiceID": "git-for-each-repo-1",
+          "correctFeedback": "Correct. git for-each-repo is used to run command over multiple repositories.",
+          "incorrectFeedback": "Use git for-each-repo to run command over multiple repositories.",
+          "sourceReferences": [
+            "attachment:line-103:git-for-each-repo"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.format-rev",
+          "title": "Experimental Revision Formatter",
+          "objective": "Identify the Git command used to experimental revision formatter.",
+          "scenario": "A repository task requires you to experimental revision formatter. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-format-rev-1",
+              "command": "git format-rev"
+            },
+            {
+              "id": "git-get-tar-commit-id-2",
+              "command": "git get-tar-commit-id"
+            },
+            {
+              "id": "git-last-modified-3",
+              "command": "git last-modified"
+            }
+          ],
+          "correctChoiceID": "git-format-rev-1",
+          "correctFeedback": "Correct. git format-rev is used to experimental revision formatter.",
+          "incorrectFeedback": "Use git format-rev to experimental revision formatter.",
+          "sourceReferences": [
+            "attachment:line-104:git-format-rev"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.get-tar-commit-id",
+          "title": "Extract Commit Id from Git Archive",
+          "objective": "Identify the Git command used to extract commit id from git archive.",
+          "scenario": "A repository task requires you to extract commit id from git archive. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-get-tar-commit-id-1",
+              "command": "git get-tar-commit-id"
+            },
+            {
+              "id": "git-last-modified-2",
+              "command": "git last-modified"
+            },
+            {
+              "id": "git-ls-files-3",
+              "command": "git ls-files"
+            }
+          ],
+          "correctChoiceID": "git-get-tar-commit-id-1",
+          "correctFeedback": "Correct. git get-tar-commit-id is used to extract commit id from git archive.",
+          "incorrectFeedback": "Use git get-tar-commit-id to extract commit id from git archive.",
+          "sourceReferences": [
+            "attachment:line-105:git-get-tar-commit-id"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.last-modified",
+          "title": "Experimental Last-modified Information",
+          "objective": "Identify the Git command used to experimental last-modified information.",
+          "scenario": "A repository task requires you to experimental last-modified information. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-last-modified-1",
+              "command": "git last-modified"
+            },
+            {
+              "id": "git-ls-files-2",
+              "command": "git ls-files"
+            },
+            {
+              "id": "git-ls-tree-3",
+              "command": "git ls-tree"
+            }
+          ],
+          "correctChoiceID": "git-last-modified-1",
+          "correctFeedback": "Correct. git last-modified is used to experimental last-modified information.",
+          "incorrectFeedback": "Use git last-modified to experimental last-modified information.",
+          "sourceReferences": [
+            "attachment:line-106:git-last-modified"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.ls-files",
+          "title": "Show Files Known to Index",
+          "objective": "Identify the Git command used to show files known to index.",
+          "scenario": "A repository task requires you to show files known to index. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-ls-files-1",
+              "command": "git ls-files"
+            },
+            {
+              "id": "git-ls-tree-2",
+              "command": "git ls-tree"
+            },
+            {
+              "id": "git-merge-base-3",
+              "command": "git merge-base"
+            }
+          ],
+          "correctChoiceID": "git-ls-files-1",
+          "correctFeedback": "Correct. git ls-files is used to show files known to index.",
+          "incorrectFeedback": "Use git ls-files to show files known to index.",
+          "sourceReferences": [
+            "attachment:line-107:git-ls-files"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.ls-tree",
+          "title": "Show Contents of Tree Object",
+          "objective": "Identify the Git command used to show contents of tree object.",
+          "scenario": "A repository task requires you to show contents of tree object. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-ls-tree-1",
+              "command": "git ls-tree"
+            },
+            {
+              "id": "git-merge-base-2",
+              "command": "git merge-base"
+            },
+            {
+              "id": "git-name-rev-3",
+              "command": "git name-rev"
+            }
+          ],
+          "correctChoiceID": "git-ls-tree-1",
+          "correctFeedback": "Correct. git ls-tree is used to show contents of tree object.",
+          "incorrectFeedback": "Use git ls-tree to show contents of tree object.",
+          "sourceReferences": [
+            "attachment:line-109:git-ls-tree"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.merge-base",
+          "title": "Find Common Ancestor",
+          "objective": "Identify the Git command used to find common ancestor.",
+          "scenario": "A repository task requires you to find common ancestor. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-merge-base-1",
+              "command": "git merge-base"
+            },
+            {
+              "id": "git-name-rev-2",
+              "command": "git name-rev"
+            },
+            {
+              "id": "git-pack-redundant-3",
+              "command": "git pack-redundant"
+            }
+          ],
+          "correctChoiceID": "git-merge-base-1",
+          "correctFeedback": "Correct. git merge-base is used to find common ancestor.",
+          "incorrectFeedback": "Use git merge-base to find common ancestor.",
+          "sourceReferences": [
+            "attachment:line-110:git-merge-base"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.name-rev",
+          "title": "Convert Commit Ids to Symbolic Names",
+          "objective": "Identify the Git command used to convert commit ids to symbolic names.",
+          "scenario": "A repository task requires you to convert commit ids to symbolic names. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-name-rev-1",
+              "command": "git name-rev"
+            },
+            {
+              "id": "git-pack-redundant-2",
+              "command": "git pack-redundant"
+            },
+            {
+              "id": "git-repo-3",
+              "command": "git repo"
+            }
+          ],
+          "correctChoiceID": "git-name-rev-1",
+          "correctFeedback": "Correct. git name-rev is used to convert commit ids to symbolic names.",
+          "incorrectFeedback": "Use git name-rev to convert commit ids to symbolic names.",
+          "sourceReferences": [
+            "attachment:line-111:git-name-rev"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.pack-redundant",
+          "title": "Find Redundant Pack Files",
+          "objective": "Identify the Git command used to find redundant pack files.",
+          "scenario": "A repository task requires you to find redundant pack files. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-pack-redundant-1",
+              "command": "git pack-redundant"
+            },
+            {
+              "id": "git-repo-2",
+              "command": "git repo"
+            },
+            {
+              "id": "git-rev-list-3",
+              "command": "git rev-list"
+            }
+          ],
+          "correctChoiceID": "git-pack-redundant-1",
+          "correctFeedback": "Correct. git pack-redundant is used to find redundant pack files.",
+          "incorrectFeedback": "Use git pack-redundant to find redundant pack files.",
+          "sourceReferences": [
+            "attachment:line-112:git-pack-redundant"
+          ],
+          "safetyLevel": "destructiveCleanup",
+          "safetyWarning": "This command can permanently remove repository data. Verify recoverability and the exact target before proceeding."
+        },
+        {
+          "id": "git.inspection.repo",
+          "title": "Retrieve Repository Information",
+          "objective": "Identify the Git command used to retrieve repository information.",
+          "scenario": "A repository task requires you to retrieve repository information. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-repo-1",
+              "command": "git repo"
+            },
+            {
+              "id": "git-rev-list-2",
+              "command": "git rev-list"
+            },
+            {
+              "id": "git-rev-parse-3",
+              "command": "git rev-parse"
+            }
+          ],
+          "correctChoiceID": "git-repo-1",
+          "correctFeedback": "Correct. git repo is used to retrieve repository information.",
+          "incorrectFeedback": "Use git repo to retrieve repository information.",
+          "sourceReferences": [
+            "attachment:line-113:git-repo"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.rev-list",
+          "title": "List Commit Objects",
+          "objective": "Identify the Git command used to list commit objects.",
+          "scenario": "A repository task requires you to list commit objects. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-rev-list-1",
+              "command": "git rev-list"
+            },
+            {
+              "id": "git-rev-parse-2",
+              "command": "git rev-parse"
+            },
+            {
+              "id": "git-show-index-3",
+              "command": "git show-index"
+            }
+          ],
+          "correctChoiceID": "git-rev-list-1",
+          "correctFeedback": "Correct. git rev-list is used to list commit objects.",
+          "incorrectFeedback": "Use git rev-list to list commit objects.",
+          "sourceReferences": [
+            "attachment:line-114:git-rev-list"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.rev-parse",
+          "title": "Parse Revisions/parameters",
+          "objective": "Identify the Git command used to parse revisions/parameters.",
+          "scenario": "A repository task requires you to parse revisions/parameters. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-rev-parse-1",
+              "command": "git rev-parse"
+            },
+            {
+              "id": "git-show-index-2",
+              "command": "git show-index"
+            },
+            {
+              "id": "git-show-ref-3",
+              "command": "git show-ref"
+            }
+          ],
+          "correctChoiceID": "git-rev-parse-1",
+          "correctFeedback": "Correct. git rev-parse is used to parse revisions/parameters.",
+          "incorrectFeedback": "Use git rev-parse to parse revisions/parameters.",
+          "sourceReferences": [
+            "attachment:line-115:git-rev-parse"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.show-index",
+          "title": "Show Pack Index",
+          "objective": "Identify the Git command used to show pack index.",
+          "scenario": "A repository task requires you to show pack index. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-show-index-1",
+              "command": "git show-index"
+            },
+            {
+              "id": "git-show-ref-2",
+              "command": "git show-ref"
+            },
+            {
+              "id": "git-unpack-file-3",
+              "command": "git unpack-file"
+            }
+          ],
+          "correctChoiceID": "git-show-index-1",
+          "correctFeedback": "Correct. git show-index is used to show pack index.",
+          "incorrectFeedback": "Use git show-index to show pack index.",
+          "sourceReferences": [
+            "attachment:line-116:git-show-index"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.show-ref",
+          "title": "Show Local Refs",
+          "objective": "Identify the Git command used to show local refs.",
+          "scenario": "A repository task requires you to show local refs. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-show-ref-1",
+              "command": "git show-ref"
+            },
+            {
+              "id": "git-unpack-file-2",
+              "command": "git unpack-file"
+            },
+            {
+              "id": "git-var-3",
+              "command": "git var"
+            }
+          ],
+          "correctChoiceID": "git-show-ref-1",
+          "correctFeedback": "Correct. git show-ref is used to show local refs.",
+          "incorrectFeedback": "Use git show-ref to show local refs.",
+          "sourceReferences": [
+            "attachment:line-117:git-show-ref"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.unpack-file",
+          "title": "Create Temporary File from Blob",
+          "objective": "Identify the Git command used to create temporary file from blob.",
+          "scenario": "A repository task requires you to create temporary file from blob. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-unpack-file-1",
+              "command": "git unpack-file"
+            },
+            {
+              "id": "git-var-2",
+              "command": "git var"
+            },
+            {
+              "id": "git-verify-pack-3",
+              "command": "git verify-pack"
+            }
+          ],
+          "correctChoiceID": "git-unpack-file-1",
+          "correctFeedback": "Correct. git unpack-file is used to create temporary file from blob.",
+          "incorrectFeedback": "Use git unpack-file to create temporary file from blob.",
+          "sourceReferences": [
+            "attachment:line-118:git-unpack-file"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.var",
+          "title": "Show Git Logical Variables",
+          "objective": "Identify the Git command used to show git logical variables.",
+          "scenario": "A repository task requires you to show git logical variables. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-var-1",
+              "command": "git var"
+            },
+            {
+              "id": "git-verify-pack-2",
+              "command": "git verify-pack"
+            },
+            {
+              "id": "git-cat-file-3",
+              "command": "git cat-file"
+            }
+          ],
+          "correctChoiceID": "git-var-1",
+          "correctFeedback": "Correct. git var is used to show git logical variables.",
+          "incorrectFeedback": "Use git var to show git logical variables.",
+          "sourceReferences": [
+            "attachment:line-119:git-var"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.inspection.verify-pack",
+          "title": "Validate Pack Files",
+          "objective": "Identify the Git command used to validate pack files.",
+          "scenario": "A repository task requires you to validate pack files. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-verify-pack-1",
+              "command": "git verify-pack"
+            },
+            {
+              "id": "git-cat-file-2",
+              "command": "git cat-file"
+            },
+            {
+              "id": "git-cherry-3",
+              "command": "git cherry"
+            }
+          ],
+          "correctChoiceID": "git-verify-pack-1",
+          "correctFeedback": "Correct. git verify-pack is used to validate pack files.",
+          "incorrectFeedback": "Use git verify-pack to validate pack files.",
+          "sourceReferences": [
+            "attachment:line-120:git-verify-pack"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        }
+      ]
+    },
+    {
+      "id": "git.server-protocol",
+      "title": "Git Server / Protocol Commands",
+      "summary": "Support Git transport and server-side protocol operations.",
+      "lessons": [
+        {
+          "id": "git.server-protocol.daemon",
+          "title": "Run Simple Git Server",
+          "objective": "Identify the Git command used to run simple git server.",
+          "scenario": "A repository task requires you to run simple git server. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-daemon-1",
+              "command": "git daemon"
+            },
+            {
+              "id": "git-fetch-pack-2",
+              "command": "git fetch-pack"
+            },
+            {
+              "id": "git-http-backend-3",
+              "command": "git http-backend"
+            }
+          ],
+          "correctChoiceID": "git-daemon-1",
+          "correctFeedback": "Correct. git daemon is used to run simple git server.",
+          "incorrectFeedback": "Use git daemon to run simple git server.",
+          "sourceReferences": [
+            "attachment:line-127:git-daemon"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.fetch-pack",
+          "title": "Receive Objects from Another Repository",
+          "objective": "Identify the Git command used to receive objects from another repository.",
+          "scenario": "A repository task requires you to receive objects from another repository. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-fetch-pack-1",
+              "command": "git fetch-pack"
+            },
+            {
+              "id": "git-http-backend-2",
+              "command": "git http-backend"
+            },
+            {
+              "id": "git-send-pack-3",
+              "command": "git send-pack"
+            }
+          ],
+          "correctChoiceID": "git-fetch-pack-1",
+          "correctFeedback": "Correct. git fetch-pack is used to receive objects from another repository.",
+          "incorrectFeedback": "Use git fetch-pack to receive objects from another repository.",
+          "sourceReferences": [
+            "attachment:line-128:git-fetch-pack"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.http-backend",
+          "title": "Server-side Git-over-http Implementation",
+          "objective": "Identify the Git command used to server-side git-over-http implementation.",
+          "scenario": "A repository task requires you to server-side git-over-http implementation. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-http-backend-1",
+              "command": "git http-backend"
+            },
+            {
+              "id": "git-send-pack-2",
+              "command": "git send-pack"
+            },
+            {
+              "id": "git-update-server-info-3",
+              "command": "git update-server-info"
+            }
+          ],
+          "correctChoiceID": "git-http-backend-1",
+          "correctFeedback": "Correct. git http-backend is used to server-side git-over-http implementation.",
+          "incorrectFeedback": "Use git http-backend to server-side git-over-http implementation.",
+          "sourceReferences": [
+            "attachment:line-129:git-http-backend"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.send-pack",
+          "title": "Send Objects to Remote Repository",
+          "objective": "Identify the Git command used to send objects to remote repository.",
+          "scenario": "A repository task requires you to send objects to remote repository. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-send-pack-1",
+              "command": "git send-pack"
+            },
+            {
+              "id": "git-update-server-info-2",
+              "command": "git update-server-info"
+            },
+            {
+              "id": "git-http-fetch-3",
+              "command": "git http-fetch"
+            }
+          ],
+          "correctChoiceID": "git-send-pack-1",
+          "correctFeedback": "Correct. git send-pack is used to send objects to remote repository.",
+          "incorrectFeedback": "Use git send-pack to send objects to remote repository.",
+          "sourceReferences": [
+            "attachment:line-130:git-send-pack"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.update-server-info",
+          "title": "Update Information Used by Basic Http Servers",
+          "objective": "Identify the Git command used to update information used by basic http servers.",
+          "scenario": "A repository task requires you to update information used by basic http servers. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-update-server-info-1",
+              "command": "git update-server-info"
+            },
+            {
+              "id": "git-http-fetch-2",
+              "command": "git http-fetch"
+            },
+            {
+              "id": "git-http-push-3",
+              "command": "git http-push"
+            }
+          ],
+          "correctChoiceID": "git-update-server-info-1",
+          "correctFeedback": "Correct. git update-server-info is used to update information used by basic http servers.",
+          "incorrectFeedback": "Use git update-server-info to update information used by basic http servers.",
+          "sourceReferences": [
+            "attachment:line-131:git-update-server-info"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.http-fetch",
+          "title": "Fetch Repository over Http",
+          "objective": "Identify the Git command used to fetch repository over http.",
+          "scenario": "A repository task requires you to fetch repository over http. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-http-fetch-1",
+              "command": "git http-fetch"
+            },
+            {
+              "id": "git-http-push-2",
+              "command": "git http-push"
+            },
+            {
+              "id": "git-receive-pack-3",
+              "command": "git receive-pack"
+            }
+          ],
+          "correctChoiceID": "git-http-fetch-1",
+          "correctFeedback": "Correct. git http-fetch is used to fetch repository over http.",
+          "incorrectFeedback": "Use git http-fetch to fetch repository over http.",
+          "sourceReferences": [
+            "attachment:line-132:git-http-fetch"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.http-push",
+          "title": "Push over Http/dav",
+          "objective": "Identify the Git command used to push over http/dav.",
+          "scenario": "A repository task requires you to push over http/dav. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-http-push-1",
+              "command": "git http-push"
+            },
+            {
+              "id": "git-receive-pack-2",
+              "command": "git receive-pack"
+            },
+            {
+              "id": "git-shell-3",
+              "command": "git shell"
+            }
+          ],
+          "correctChoiceID": "git-http-push-1",
+          "correctFeedback": "Correct. git http-push is used to push over http/dav.",
+          "incorrectFeedback": "Use git http-push to push over http/dav.",
+          "sourceReferences": [
+            "attachment:line-133:git-http-push"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.receive-pack",
+          "title": "Server-side Receive Operation for Push",
+          "objective": "Identify the Git command used to server-side receive operation for push.",
+          "scenario": "A repository task requires you to server-side receive operation for push. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-receive-pack-1",
+              "command": "git receive-pack"
+            },
+            {
+              "id": "git-shell-2",
+              "command": "git shell"
+            },
+            {
+              "id": "git-upload-archive-3",
+              "command": "git upload-archive"
+            }
+          ],
+          "correctChoiceID": "git-receive-pack-1",
+          "correctFeedback": "Correct. git receive-pack is used to server-side receive operation for push.",
+          "incorrectFeedback": "Use git receive-pack to server-side receive operation for push.",
+          "sourceReferences": [
+            "attachment:line-134:git-receive-pack"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.shell",
+          "title": "Restricted Ssh Shell for Git",
+          "objective": "Identify the Git command used to restricted ssh shell for git.",
+          "scenario": "A repository task requires you to restricted ssh shell for git. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-shell-1",
+              "command": "git shell"
+            },
+            {
+              "id": "git-upload-archive-2",
+              "command": "git upload-archive"
+            },
+            {
+              "id": "git-upload-pack-3",
+              "command": "git upload-pack"
+            }
+          ],
+          "correctChoiceID": "git-shell-1",
+          "correctFeedback": "Correct. git shell is used to restricted ssh shell for git.",
+          "incorrectFeedback": "Use git shell to restricted ssh shell for git.",
+          "sourceReferences": [
+            "attachment:line-135:git-shell"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.upload-archive",
+          "title": "Serve Remote Archive Requests",
+          "objective": "Identify the Git command used to serve remote archive requests.",
+          "scenario": "A repository task requires you to serve remote archive requests. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-upload-archive-1",
+              "command": "git upload-archive"
+            },
+            {
+              "id": "git-upload-pack-2",
+              "command": "git upload-pack"
+            },
+            {
+              "id": "git-daemon-3",
+              "command": "git daemon"
+            }
+          ],
+          "correctChoiceID": "git-upload-archive-1",
+          "correctFeedback": "Correct. git upload-archive is used to serve remote archive requests.",
+          "incorrectFeedback": "Use git upload-archive to serve remote archive requests.",
+          "sourceReferences": [
+            "attachment:line-136:git-upload-archive"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.server-protocol.upload-pack",
+          "title": "Server-side Fetch/clone Service",
+          "objective": "Identify the Git command used to server-side fetch/clone service.",
+          "scenario": "A repository task requires you to server-side fetch/clone service. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-upload-pack-1",
+              "command": "git upload-pack"
+            },
+            {
+              "id": "git-daemon-2",
+              "command": "git daemon"
+            },
+            {
+              "id": "git-fetch-pack-3",
+              "command": "git fetch-pack"
+            }
+          ],
+          "correctChoiceID": "git-upload-pack-1",
+          "correctFeedback": "Correct. git upload-pack is used to server-side fetch/clone service.",
+          "incorrectFeedback": "Use git upload-pack to server-side fetch/clone service.",
+          "sourceReferences": [
+            "attachment:line-137:git-upload-pack"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        }
+      ]
+    },
+    {
+      "id": "git.helpers",
+      "title": "Internal Helper Commands",
+      "summary": "Use Git helpers for attributes, credentials, mail, hooks, and formatting.",
+      "lessons": [
+        {
+          "id": "git.helpers.check-attr",
+          "title": "Inspect `.gitattributes`",
+          "objective": "Identify the Git command used to inspect `.gitattributes`.",
+          "scenario": "A repository task requires you to inspect `.gitattributes`. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-check-attr-1",
+              "command": "git check-attr"
+            },
+            {
+              "id": "git-check-ignore-2",
+              "command": "git check-ignore"
+            },
+            {
+              "id": "git-check-mailmap-3",
+              "command": "git check-mailmap"
+            }
+          ],
+          "correctChoiceID": "git-check-attr-1",
+          "correctFeedback": "Correct. git check-attr is used to inspect `.gitattributes`.",
+          "incorrectFeedback": "Use git check-attr to inspect `.gitattributes`.",
+          "sourceReferences": [
+            "attachment:line-144:git-check-attr"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.check-ignore",
+          "title": "Check/debug `.gitignore` Rules",
+          "objective": "Identify the Git command used to check/debug `.gitignore` rules.",
+          "scenario": "A repository task requires you to check/debug `.gitignore` rules. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-check-ignore-1",
+              "command": "git check-ignore"
+            },
+            {
+              "id": "git-check-mailmap-2",
+              "command": "git check-mailmap"
+            },
+            {
+              "id": "git-check-ref-format-3",
+              "command": "git check-ref-format"
+            }
+          ],
+          "correctChoiceID": "git-check-ignore-1",
+          "correctFeedback": "Correct. git check-ignore is used to check/debug `.gitignore` rules.",
+          "incorrectFeedback": "Use git check-ignore to check/debug `.gitignore` rules.",
+          "sourceReferences": [
+            "attachment:line-145:git-check-ignore"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.check-mailmap",
+          "title": "Resolve Canonical Author Identity",
+          "objective": "Identify the Git command used to resolve canonical author identity.",
+          "scenario": "A repository task requires you to resolve canonical author identity. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-check-mailmap-1",
+              "command": "git check-mailmap"
+            },
+            {
+              "id": "git-check-ref-format-2",
+              "command": "git check-ref-format"
+            },
+            {
+              "id": "git-column-3",
+              "command": "git column"
+            }
+          ],
+          "correctChoiceID": "git-check-mailmap-1",
+          "correctFeedback": "Correct. git check-mailmap is used to resolve canonical author identity.",
+          "incorrectFeedback": "Use git check-mailmap to resolve canonical author identity.",
+          "sourceReferences": [
+            "attachment:line-146:git-check-mailmap"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.check-ref-format",
+          "title": "Validate Branch/ref Name",
+          "objective": "Identify the Git command used to validate branch/ref name.",
+          "scenario": "A repository task requires you to validate branch/ref name. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-check-ref-format-1",
+              "command": "git check-ref-format"
+            },
+            {
+              "id": "git-column-2",
+              "command": "git column"
+            },
+            {
+              "id": "git-credential-3",
+              "command": "git credential"
+            }
+          ],
+          "correctChoiceID": "git-check-ref-format-1",
+          "correctFeedback": "Correct. git check-ref-format is used to validate branch/ref name.",
+          "incorrectFeedback": "Use git check-ref-format to validate branch/ref name.",
+          "sourceReferences": [
+            "attachment:line-147:git-check-ref-format"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.column",
+          "title": "Format Output into Columns",
+          "objective": "Identify the Git command used to format output into columns.",
+          "scenario": "A repository task requires you to format output into columns. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-column-1",
+              "command": "git column"
+            },
+            {
+              "id": "git-credential-2",
+              "command": "git credential"
+            },
+            {
+              "id": "git-credential-cache-3",
+              "command": "git credential-cache"
+            }
+          ],
+          "correctChoiceID": "git-column-1",
+          "correctFeedback": "Correct. git column is used to format output into columns.",
+          "incorrectFeedback": "Use git column to format output into columns.",
+          "sourceReferences": [
+            "attachment:line-148:git-column"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.credential",
+          "title": "Read/store Credentials",
+          "objective": "Identify the Git command used to read/store credentials.",
+          "scenario": "A repository task requires you to read/store credentials. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-credential-1",
+              "command": "git credential"
+            },
+            {
+              "id": "git-credential-cache-2",
+              "command": "git credential-cache"
+            },
+            {
+              "id": "git-credential-store-3",
+              "command": "git credential-store"
+            }
+          ],
+          "correctChoiceID": "git-credential-1",
+          "correctFeedback": "Correct. git credential is used to read/store credentials.",
+          "incorrectFeedback": "Use git credential to read/store credentials.",
+          "sourceReferences": [
+            "attachment:line-149:git-credential"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.helpers.credential-cache",
+          "title": "Cache Credentials in Memory",
+          "objective": "Identify the Git command used to cache credentials in memory.",
+          "scenario": "A repository task requires you to cache credentials in memory. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-credential-cache-1",
+              "command": "git credential-cache"
+            },
+            {
+              "id": "git-credential-store-2",
+              "command": "git credential-store"
+            },
+            {
+              "id": "git-fmt-merge-msg-3",
+              "command": "git fmt-merge-msg"
+            }
+          ],
+          "correctChoiceID": "git-credential-cache-1",
+          "correctFeedback": "Correct. git credential-cache is used to cache credentials in memory.",
+          "incorrectFeedback": "Use git credential-cache to cache credentials in memory.",
+          "sourceReferences": [
+            "attachment:line-150:git-credential-cache"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.helpers.credential-store",
+          "title": "Store Credentials on Disk",
+          "objective": "Identify the Git command used to store credentials on disk.",
+          "scenario": "A repository task requires you to store credentials on disk. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-credential-store-1",
+              "command": "git credential-store"
+            },
+            {
+              "id": "git-fmt-merge-msg-2",
+              "command": "git fmt-merge-msg"
+            },
+            {
+              "id": "git-hook-3",
+              "command": "git hook"
+            }
+          ],
+          "correctChoiceID": "git-credential-store-1",
+          "correctFeedback": "Correct. git credential-store is used to store credentials on disk.",
+          "incorrectFeedback": "Use git credential-store to store credentials on disk.",
+          "sourceReferences": [
+            "attachment:line-151:git-credential-store"
+          ],
+          "safetyLevel": "credentialOrServerOperation",
+          "safetyWarning": "This command handles credentials or exposes a Git service. Review access, storage, and network security before use."
+        },
+        {
+          "id": "git.helpers.fmt-merge-msg",
+          "title": "Generate Merge Commit Message",
+          "objective": "Identify the Git command used to generate merge commit message.",
+          "scenario": "A repository task requires you to generate merge commit message. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-fmt-merge-msg-1",
+              "command": "git fmt-merge-msg"
+            },
+            {
+              "id": "git-hook-2",
+              "command": "git hook"
+            },
+            {
+              "id": "git-interpret-trailers-3",
+              "command": "git interpret-trailers"
+            }
+          ],
+          "correctChoiceID": "git-fmt-merge-msg-1",
+          "correctFeedback": "Correct. git fmt-merge-msg is used to generate merge commit message.",
+          "incorrectFeedback": "Use git fmt-merge-msg to generate merge commit message.",
+          "sourceReferences": [
+            "attachment:line-152:git-fmt-merge-msg"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.hook",
+          "title": "Run Git Hooks",
+          "objective": "Identify the Git command used to run git hooks.",
+          "scenario": "A repository task requires you to run git hooks. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-hook-1",
+              "command": "git hook"
+            },
+            {
+              "id": "git-interpret-trailers-2",
+              "command": "git interpret-trailers"
+            },
+            {
+              "id": "git-mailinfo-3",
+              "command": "git mailinfo"
+            }
+          ],
+          "correctChoiceID": "git-hook-1",
+          "correctFeedback": "Correct. git hook is used to run git hooks.",
+          "incorrectFeedback": "Use git hook to run git hooks.",
+          "sourceReferences": [
+            "attachment:line-153:git-hook"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.interpret-trailers",
+          "title": "Parse/add Commit-message Trailers",
+          "objective": "Identify the Git command used to parse/add commit-message trailers.",
+          "scenario": "A repository task requires you to parse/add commit-message trailers. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-interpret-trailers-1",
+              "command": "git interpret-trailers"
+            },
+            {
+              "id": "git-mailinfo-2",
+              "command": "git mailinfo"
+            },
+            {
+              "id": "git-mailsplit-3",
+              "command": "git mailsplit"
+            }
+          ],
+          "correctChoiceID": "git-interpret-trailers-1",
+          "correctFeedback": "Correct. git interpret-trailers is used to parse/add commit-message trailers.",
+          "incorrectFeedback": "Use git interpret-trailers to parse/add commit-message trailers.",
+          "sourceReferences": [
+            "attachment:line-154:git-interpret-trailers"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.mailinfo",
+          "title": "Extract Patch/authorship from Email",
+          "objective": "Identify the Git command used to extract patch/authorship from email.",
+          "scenario": "A repository task requires you to extract patch/authorship from email. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-mailinfo-1",
+              "command": "git mailinfo"
+            },
+            {
+              "id": "git-mailsplit-2",
+              "command": "git mailsplit"
+            },
+            {
+              "id": "git-merge-one-file-3",
+              "command": "git merge-one-file"
+            }
+          ],
+          "correctChoiceID": "git-mailinfo-1",
+          "correctFeedback": "Correct. git mailinfo is used to extract patch/authorship from email.",
+          "incorrectFeedback": "Use git mailinfo to extract patch/authorship from email.",
+          "sourceReferences": [
+            "attachment:line-155:git-mailinfo"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.mailsplit",
+          "title": "Split Unix Mailbox",
+          "objective": "Identify the Git command used to split unix mailbox.",
+          "scenario": "A repository task requires you to split unix mailbox. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-mailsplit-1",
+              "command": "git mailsplit"
+            },
+            {
+              "id": "git-merge-one-file-2",
+              "command": "git merge-one-file"
+            },
+            {
+              "id": "git-patch-id-3",
+              "command": "git patch-id"
+            }
+          ],
+          "correctChoiceID": "git-mailsplit-1",
+          "correctFeedback": "Correct. git mailsplit is used to split unix mailbox.",
+          "incorrectFeedback": "Use git mailsplit to split unix mailbox.",
+          "sourceReferences": [
+            "attachment:line-156:git-mailsplit"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.merge-one-file",
+          "title": "Internal Merge Helper",
+          "objective": "Identify the Git command used to internal merge helper.",
+          "scenario": "A repository task requires you to internal merge helper. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-merge-one-file-1",
+              "command": "git merge-one-file"
+            },
+            {
+              "id": "git-patch-id-2",
+              "command": "git patch-id"
+            },
+            {
+              "id": "git-sh-i18n-3",
+              "command": "git sh-i18n"
+            }
+          ],
+          "correctChoiceID": "git-merge-one-file-1",
+          "correctFeedback": "Correct. git merge-one-file is used to internal merge helper.",
+          "incorrectFeedback": "Use git merge-one-file to internal merge helper.",
+          "sourceReferences": [
+            "attachment:line-157:git-merge-one-file"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.patch-id",
+          "title": "Calculate Unique Patch Id",
+          "objective": "Identify the Git command used to calculate unique patch id.",
+          "scenario": "A repository task requires you to calculate unique patch id. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-patch-id-1",
+              "command": "git patch-id"
+            },
+            {
+              "id": "git-sh-i18n-2",
+              "command": "git sh-i18n"
+            },
+            {
+              "id": "git-sh-setup-3",
+              "command": "git sh-setup"
+            }
+          ],
+          "correctChoiceID": "git-patch-id-1",
+          "correctFeedback": "Correct. git patch-id is used to calculate unique patch id.",
+          "incorrectFeedback": "Use git patch-id to calculate unique patch id.",
+          "sourceReferences": [
+            "attachment:line-158:git-patch-id"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.sh-i18n",
+          "title": "Shell-script Internationalization Helper",
+          "objective": "Identify the Git command used to shell-script internationalization helper.",
+          "scenario": "A repository task requires you to shell-script internationalization helper. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-sh-i18n-1",
+              "command": "git sh-i18n"
+            },
+            {
+              "id": "git-sh-setup-2",
+              "command": "git sh-setup"
+            },
+            {
+              "id": "git-stripspace-3",
+              "command": "git stripspace"
+            }
+          ],
+          "correctChoiceID": "git-sh-i18n-1",
+          "correctFeedback": "Correct. git sh-i18n is used to shell-script internationalization helper.",
+          "incorrectFeedback": "Use git sh-i18n to shell-script internationalization helper.",
+          "sourceReferences": [
+            "attachment:line-159:git-sh-i18n"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.sh-setup",
+          "title": "Common Git Shell Helper",
+          "objective": "Identify the Git command used to common git shell helper.",
+          "scenario": "A repository task requires you to common git shell helper. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-sh-setup-1",
+              "command": "git sh-setup"
+            },
+            {
+              "id": "git-stripspace-2",
+              "command": "git stripspace"
+            },
+            {
+              "id": "git-url-parse-3",
+              "command": "git url-parse"
+            }
+          ],
+          "correctChoiceID": "git-sh-setup-1",
+          "correctFeedback": "Correct. git sh-setup is used to common git shell helper.",
+          "incorrectFeedback": "Use git sh-setup to common git shell helper.",
+          "sourceReferences": [
+            "attachment:line-160:git-sh-setup"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.stripspace",
+          "title": "Remove Unnecessary Whitespace",
+          "objective": "Identify the Git command used to remove unnecessary whitespace.",
+          "scenario": "A repository task requires you to remove unnecessary whitespace. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-stripspace-1",
+              "command": "git stripspace"
+            },
+            {
+              "id": "git-url-parse-2",
+              "command": "git url-parse"
+            },
+            {
+              "id": "git-check-attr-3",
+              "command": "git check-attr"
+            }
+          ],
+          "correctChoiceID": "git-stripspace-1",
+          "correctFeedback": "Correct. git stripspace is used to remove unnecessary whitespace.",
+          "incorrectFeedback": "Use git stripspace to remove unnecessary whitespace.",
+          "sourceReferences": [
+            "attachment:line-161:git-stripspace"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.helpers.url-parse",
+          "title": "Parse Git Url Components",
+          "objective": "Identify the Git command used to parse git url components.",
+          "scenario": "A repository task requires you to parse git url components. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-url-parse-1",
+              "command": "git url-parse"
+            },
+            {
+              "id": "git-check-attr-2",
+              "command": "git check-attr"
+            },
+            {
+              "id": "git-check-ignore-3",
+              "command": "git check-ignore"
+            }
+          ],
+          "correctChoiceID": "git-url-parse-1",
+          "correctFeedback": "Correct. git url-parse is used to parse git url components.",
+          "incorrectFeedback": "Use git url-parse to parse git url components.",
+          "sourceReferences": [
+            "attachment:line-162:git-url-parse"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        }
+      ]
+    },
+    {
+      "id": "git.external-vcs",
+      "title": "External Version-Control Systems",
+      "summary": "Exchange history with other version-control systems and import formats.",
+      "lessons": [
+        {
+          "id": "git.external-vcs.svn",
+          "title": "Work with Svn Repositories",
+          "objective": "Identify the Git command used to work with svn repositories.",
+          "scenario": "A repository task requires you to work with svn repositories. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-svn-1",
+              "command": "git svn"
+            },
+            {
+              "id": "git-p4-2",
+              "command": "git p4"
+            },
+            {
+              "id": "git-archimport-3",
+              "command": "git archimport"
+            }
+          ],
+          "correctChoiceID": "git-svn-1",
+          "correctFeedback": "Correct. git svn is used to work with svn repositories.",
+          "incorrectFeedback": "Use git svn to work with svn repositories.",
+          "sourceReferences": [
+            "attachment:line-169:git-svn"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.external-vcs.p4",
+          "title": "Work with Perforce",
+          "objective": "Identify the Git command used to work with perforce.",
+          "scenario": "A repository task requires you to work with perforce. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-p4-1",
+              "command": "git p4"
+            },
+            {
+              "id": "git-archimport-2",
+              "command": "git archimport"
+            },
+            {
+              "id": "git-cvsimport-3",
+              "command": "git cvsimport"
+            }
+          ],
+          "correctChoiceID": "git-p4-1",
+          "correctFeedback": "Correct. git p4 is used to work with perforce.",
+          "incorrectFeedback": "Use git p4 to work with perforce.",
+          "sourceReferences": [
+            "attachment:line-170:git-p4"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.external-vcs.archimport",
+          "title": "Import Gnu Arch Repository",
+          "objective": "Identify the Git command used to import gnu arch repository.",
+          "scenario": "A repository task requires you to import gnu arch repository. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-archimport-1",
+              "command": "git archimport"
+            },
+            {
+              "id": "git-cvsimport-2",
+              "command": "git cvsimport"
+            },
+            {
+              "id": "git-cvsexportcommit-3",
+              "command": "git cvsexportcommit"
+            }
+          ],
+          "correctChoiceID": "git-archimport-1",
+          "correctFeedback": "Correct. git archimport is used to import gnu arch repository.",
+          "incorrectFeedback": "Use git archimport to import gnu arch repository.",
+          "sourceReferences": [
+            "attachment:line-171:git-archimport"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.external-vcs.cvsimport",
+          "title": "Import Cvs",
+          "objective": "Identify the Git command used to import cvs.",
+          "scenario": "A repository task requires you to import cvs. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-cvsimport-1",
+              "command": "git cvsimport"
+            },
+            {
+              "id": "git-cvsexportcommit-2",
+              "command": "git cvsexportcommit"
+            },
+            {
+              "id": "git-cvsserver-3",
+              "command": "git cvsserver"
+            }
+          ],
+          "correctChoiceID": "git-cvsimport-1",
+          "correctFeedback": "Correct. git cvsimport is used to import cvs.",
+          "incorrectFeedback": "Use git cvsimport to import cvs.",
+          "sourceReferences": [
+            "attachment:line-172:git-cvsimport"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.external-vcs.cvsexportcommit",
+          "title": "Export Git Commit to Cvs",
+          "objective": "Identify the Git command used to export git commit to cvs.",
+          "scenario": "A repository task requires you to export git commit to cvs. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-cvsexportcommit-1",
+              "command": "git cvsexportcommit"
+            },
+            {
+              "id": "git-cvsserver-2",
+              "command": "git cvsserver"
+            },
+            {
+              "id": "git-quiltimport-3",
+              "command": "git quiltimport"
+            }
+          ],
+          "correctChoiceID": "git-cvsexportcommit-1",
+          "correctFeedback": "Correct. git cvsexportcommit is used to export git commit to cvs.",
+          "incorrectFeedback": "Use git cvsexportcommit to export git commit to cvs.",
+          "sourceReferences": [
+            "attachment:line-173:git-cvsexportcommit"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.external-vcs.cvsserver",
+          "title": "Cvs Server Emulator",
+          "objective": "Identify the Git command used to git cvs server emulator.",
+          "scenario": "A repository task requires you to git cvs server emulator. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-cvsserver-1",
+              "command": "git cvsserver"
+            },
+            {
+              "id": "git-quiltimport-2",
+              "command": "git quiltimport"
+            },
+            {
+              "id": "git-fast-import-3",
+              "command": "git fast-import"
+            }
+          ],
+          "correctChoiceID": "git-cvsserver-1",
+          "correctFeedback": "Correct. git cvsserver is used to git cvs server emulator.",
+          "incorrectFeedback": "Use git cvsserver to git cvs server emulator.",
+          "sourceReferences": [
+            "attachment:line-174:git-cvsserver"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.external-vcs.quiltimport",
+          "title": "Import Quilt Patch Series",
+          "objective": "Identify the Git command used to import quilt patch series.",
+          "scenario": "A repository task requires you to import quilt patch series. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-quiltimport-1",
+              "command": "git quiltimport"
+            },
+            {
+              "id": "git-fast-import-2",
+              "command": "git fast-import"
+            },
+            {
+              "id": "git-fast-export-3",
+              "command": "git fast-export"
+            }
+          ],
+          "correctChoiceID": "git-quiltimport-1",
+          "correctFeedback": "Correct. git quiltimport is used to import quilt patch series.",
+          "incorrectFeedback": "Use git quiltimport to import quilt patch series.",
+          "sourceReferences": [
+            "attachment:line-175:git-quiltimport"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.external-vcs.fast-import",
+          "title": "High-speed Git Data Import",
+          "objective": "Identify the Git command used to high-speed git data import.",
+          "scenario": "A repository task requires you to high-speed git data import. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-fast-import-1",
+              "command": "git fast-import"
+            },
+            {
+              "id": "git-fast-export-2",
+              "command": "git fast-export"
+            },
+            {
+              "id": "git-svn-3",
+              "command": "git svn"
+            }
+          ],
+          "correctChoiceID": "git-fast-import-1",
+          "correctFeedback": "Correct. git fast-import is used to high-speed git data import.",
+          "incorrectFeedback": "Use git fast-import to high-speed git data import.",
+          "sourceReferences": [
+            "attachment:line-176:git-fast-import"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
+        },
+        {
+          "id": "git.external-vcs.fast-export",
+          "title": "Export Git Repository Data",
+          "objective": "Identify the Git command used to export git repository data.",
+          "scenario": "A repository task requires you to export git repository data. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-fast-export-1",
+              "command": "git fast-export"
+            },
+            {
+              "id": "git-svn-2",
+              "command": "git svn"
+            },
+            {
+              "id": "git-p4-3",
+              "command": "git p4"
+            }
+          ],
+          "correctChoiceID": "git-fast-export-1",
+          "correctFeedback": "Correct. git fast-export is used to export git repository data.",
+          "incorrectFeedback": "Use git fast-export to export git repository data.",
+          "sourceReferences": [
+            "attachment:line-177:git-fast-export"
+          ],
+          "safetyLevel": "experimentalOrSpecialized",
+          "safetyWarning": "This is a specialized or low-level command. Review the installed Git version documentation and test in a disposable repository first."
         }
       ]
     },
     {
       "id": "git.daily",
       "title": "Daily Git Workflow",
-      "summary": "The commands used in everyday work.",
+      "summary": "Handle common branch, commit, synchronization, and recovery tasks.",
       "lessons": [
         {
-          "id": "git.daily.reset-soft-head-1",
-          "title": "Undo a Commit and Keep the Changes Staged",
-          "objective": "Distinguish a soft reset from a hard reset.",
-          "scenario": "You committed too early. You want the commit undone but every change kept, still staged.",
-          "prompt": "Which command undoes the commit without losing work?",
+          "id": "git.daily.status",
+          "title": "Check Changes",
+          "objective": "Identify the Git command used to check changes.",
+          "scenario": "A repository task requires you to check changes. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
           "choices": [
             {
-              "id": "git-reset-soft",
+              "id": "git-status-1",
+              "command": "git status"
+            },
+            {
+              "id": "git-diff-2",
+              "command": "git diff"
+            },
+            {
+              "id": "git-add--3",
+              "command": "git add ."
+            }
+          ],
+          "correctChoiceID": "git-status-1",
+          "correctFeedback": "Correct. git status is used to check changes.",
+          "incorrectFeedback": "Use git status to check changes.",
+          "sourceReferences": [
+            "attachment:line-186:git-status"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.daily.diff",
+          "title": "See Differences",
+          "objective": "Identify the Git command used to see differences.",
+          "scenario": "A repository task requires you to see differences. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-diff-1",
+              "command": "git diff"
+            },
+            {
+              "id": "git-add--2",
+              "command": "git add ."
+            },
+            {
+              "id": "git-commit-m-message--3",
+              "command": "git commit -m \"message\""
+            }
+          ],
+          "correctChoiceID": "git-diff-1",
+          "correctFeedback": "Correct. git diff is used to see differences.",
+          "incorrectFeedback": "Use git diff to see differences.",
+          "sourceReferences": [
+            "attachment:line-187:git-diff"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.daily.add-",
+          "title": "Stage",
+          "objective": "Identify the Git command used to stage.",
+          "scenario": "A repository task requires you to stage. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-add--1",
+              "command": "git add ."
+            },
+            {
+              "id": "git-commit-m-message--2",
+              "command": "git commit -m \"message\""
+            },
+            {
+              "id": "git-pull-rebase-3",
+              "command": "git pull --rebase"
+            }
+          ],
+          "correctChoiceID": "git-add--1",
+          "correctFeedback": "Correct. git add . is used to stage.",
+          "incorrectFeedback": "Use git add . to stage.",
+          "sourceReferences": [
+            "attachment:line-188:git-add-"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.commit-m-message-",
+          "title": "Commit",
+          "objective": "Identify the Git command used to commit.",
+          "scenario": "A repository task requires you to commit. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-commit-m-message--1",
+              "command": "git commit -m \"message\""
+            },
+            {
+              "id": "git-pull-rebase-2",
+              "command": "git pull --rebase"
+            },
+            {
+              "id": "git-push-3",
+              "command": "git push"
+            }
+          ],
+          "correctChoiceID": "git-commit-m-message--1",
+          "correctFeedback": "Correct. git commit -m \"message\" is used to commit.",
+          "incorrectFeedback": "Use git commit -m \"message\" to commit.",
+          "sourceReferences": [
+            "attachment:line-189:git-commit-m-message-"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.daily.pull-rebase",
+          "title": "Update Branch",
+          "objective": "Identify the Git command used to update branch.",
+          "scenario": "A repository task requires you to update branch. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-pull-rebase-1",
+              "command": "git pull --rebase"
+            },
+            {
+              "id": "git-push-2",
+              "command": "git push"
+            },
+            {
+              "id": "git-branch-a-3",
+              "command": "git branch -a"
+            }
+          ],
+          "correctChoiceID": "git-pull-rebase-1",
+          "correctFeedback": "Correct. git pull --rebase is used to update branch.",
+          "incorrectFeedback": "Use git pull --rebase to update branch.",
+          "sourceReferences": [
+            "attachment:line-190:git-pull-rebase"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.push",
+          "title": "Push",
+          "objective": "Identify the Git command used to push.",
+          "scenario": "A repository task requires you to push. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-push-1",
+              "command": "git push"
+            },
+            {
+              "id": "git-branch-a-2",
+              "command": "git branch -a"
+            },
+            {
+              "id": "git-switch-c-feature-name-3",
+              "command": "git switch -c feature/name"
+            }
+          ],
+          "correctChoiceID": "git-push-1",
+          "correctFeedback": "Correct. git push is used to push.",
+          "incorrectFeedback": "Use git push to push.",
+          "sourceReferences": [
+            "attachment:line-191:git-push"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.branch-a",
+          "title": "See Branches",
+          "objective": "Identify the Git command used to see branches.",
+          "scenario": "A repository task requires you to see branches. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-branch-a-1",
+              "command": "git branch -a"
+            },
+            {
+              "id": "git-switch-c-feature-name-2",
+              "command": "git switch -c feature/name"
+            },
+            {
+              "id": "git-switch-branch-name-3",
+              "command": "git switch branch-name"
+            }
+          ],
+          "correctChoiceID": "git-branch-a-1",
+          "correctFeedback": "Correct. git branch -a is used to see branches.",
+          "incorrectFeedback": "Use git branch -a to see branches.",
+          "sourceReferences": [
+            "attachment:line-192:git-branch-a"
+          ],
+          "safetyLevel": "readOnly"
+        },
+        {
+          "id": "git.daily.switch-c-feature-name",
+          "title": "New Feature Branch",
+          "objective": "Identify the Git command used to new feature branch.",
+          "scenario": "A repository task requires you to new feature branch. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-switch-c-feature-name-1",
+              "command": "git switch -c feature/name"
+            },
+            {
+              "id": "git-switch-branch-name-2",
+              "command": "git switch branch-name"
+            },
+            {
+              "id": "git-merge-branch-name-3",
+              "command": "git merge branch-name"
+            }
+          ],
+          "correctChoiceID": "git-switch-c-feature-name-1",
+          "correctFeedback": "Correct. git switch -c feature/name is used to new feature branch.",
+          "incorrectFeedback": "Use git switch -c feature/name to new feature branch.",
+          "sourceReferences": [
+            "attachment:line-193:git-switch-c-feature-name"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.switch-branch-name",
+          "title": "Switch Branch",
+          "objective": "Identify the Git command used to switch branch.",
+          "scenario": "A repository task requires you to switch branch. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-switch-branch-name-1",
+              "command": "git switch branch-name"
+            },
+            {
+              "id": "git-merge-branch-name-2",
+              "command": "git merge branch-name"
+            },
+            {
+              "id": "git-rebase-develop-3",
+              "command": "git rebase develop"
+            }
+          ],
+          "correctChoiceID": "git-switch-branch-name-1",
+          "correctFeedback": "Correct. git switch branch-name is used to switch branch.",
+          "incorrectFeedback": "Use git switch branch-name to switch branch.",
+          "sourceReferences": [
+            "attachment:line-194:git-switch-branch-name"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.merge-branch-name",
+          "title": "Merge",
+          "objective": "Identify the Git command used to merge.",
+          "scenario": "A repository task requires you to merge. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-merge-branch-name-1",
+              "command": "git merge branch-name"
+            },
+            {
+              "id": "git-rebase-develop-2",
+              "command": "git rebase develop"
+            },
+            {
+              "id": "git-rebase-abort-3",
+              "command": "git rebase --abort"
+            }
+          ],
+          "correctChoiceID": "git-merge-branch-name-1",
+          "correctFeedback": "Correct. git merge branch-name is used to merge.",
+          "incorrectFeedback": "Use git merge branch-name to merge.",
+          "sourceReferences": [
+            "attachment:line-195:git-merge-branch-name"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.daily.rebase-develop",
+          "title": "Rebase",
+          "objective": "Identify the Git command used to rebase.",
+          "scenario": "A repository task requires you to rebase. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-rebase-develop-1",
+              "command": "git rebase develop"
+            },
+            {
+              "id": "git-rebase-abort-2",
+              "command": "git rebase --abort"
+            },
+            {
+              "id": "git-rebase-continue-3",
+              "command": "git rebase --continue"
+            }
+          ],
+          "correctChoiceID": "git-rebase-develop-1",
+          "correctFeedback": "Correct. git rebase develop is used to rebase.",
+          "incorrectFeedback": "Use git rebase develop to rebase.",
+          "sourceReferences": [
+            "attachment:line-196:git-rebase-develop"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.daily.rebase-abort",
+          "title": "Abort Rebase",
+          "objective": "Identify the Git command used to abort rebase.",
+          "scenario": "A repository task requires you to abort rebase. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-rebase-abort-1",
+              "command": "git rebase --abort"
+            },
+            {
+              "id": "git-rebase-continue-2",
+              "command": "git rebase --continue"
+            },
+            {
+              "id": "git-cherry-pick-commit-id-3",
+              "command": "git cherry-pick COMMIT_ID"
+            }
+          ],
+          "correctChoiceID": "git-rebase-abort-1",
+          "correctFeedback": "Correct. git rebase --abort is used to abort rebase.",
+          "incorrectFeedback": "Use git rebase --abort to abort rebase.",
+          "sourceReferences": [
+            "attachment:line-197:git-rebase-abort"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.daily.rebase-continue",
+          "title": "Continue Rebase",
+          "objective": "Identify the Git command used to continue rebase.",
+          "scenario": "A repository task requires you to continue rebase. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-rebase-continue-1",
+              "command": "git rebase --continue"
+            },
+            {
+              "id": "git-cherry-pick-commit-id-2",
+              "command": "git cherry-pick COMMIT_ID"
+            },
+            {
+              "id": "git-stash-3",
+              "command": "git stash"
+            }
+          ],
+          "correctChoiceID": "git-rebase-continue-1",
+          "correctFeedback": "Correct. git rebase --continue is used to continue rebase.",
+          "incorrectFeedback": "Use git rebase --continue to continue rebase.",
+          "sourceReferences": [
+            "attachment:line-198:git-rebase-continue"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.daily.cherry-pick-commit-id",
+          "title": "Pick Commit",
+          "objective": "Identify the Git command used to pick commit.",
+          "scenario": "A repository task requires you to pick commit. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-cherry-pick-commit-id-1",
+              "command": "git cherry-pick COMMIT_ID"
+            },
+            {
+              "id": "git-stash-2",
+              "command": "git stash"
+            },
+            {
+              "id": "git-stash-pop-3",
+              "command": "git stash pop"
+            }
+          ],
+          "correctChoiceID": "git-cherry-pick-commit-id-1",
+          "correctFeedback": "Correct. git cherry-pick COMMIT_ID is used to pick commit.",
+          "incorrectFeedback": "Use git cherry-pick COMMIT_ID to pick commit.",
+          "sourceReferences": [
+            "attachment:line-199:git-cherry-pick-commit-id"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.daily.stash",
+          "title": "Temporarily Save Changes",
+          "objective": "Identify the Git command used to temporarily save changes.",
+          "scenario": "A repository task requires you to temporarily save changes. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-stash-1",
+              "command": "git stash"
+            },
+            {
+              "id": "git-stash-pop-2",
+              "command": "git stash pop"
+            },
+            {
+              "id": "git-restore--3",
+              "command": "git restore ."
+            }
+          ],
+          "correctChoiceID": "git-stash-1",
+          "correctFeedback": "Correct. git stash is used to temporarily save changes.",
+          "incorrectFeedback": "Use git stash to temporarily save changes.",
+          "sourceReferences": [
+            "attachment:line-200:git-stash"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.stash-pop",
+          "title": "Restore Stash",
+          "objective": "Identify the Git command used to restore stash.",
+          "scenario": "A repository task requires you to restore stash. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-stash-pop-1",
+              "command": "git stash pop"
+            },
+            {
+              "id": "git-restore--2",
+              "command": "git restore ."
+            },
+            {
+              "id": "git-restore-staged--3",
+              "command": "git restore --staged ."
+            }
+          ],
+          "correctChoiceID": "git-stash-pop-1",
+          "correctFeedback": "Correct. git stash pop is used to restore stash.",
+          "incorrectFeedback": "Use git stash pop to restore stash.",
+          "sourceReferences": [
+            "attachment:line-201:git-stash-pop"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.restore-",
+          "title": "Undo Local File Changes",
+          "objective": "Identify the Git command used to undo local file changes.",
+          "scenario": "A repository task requires you to undo local file changes. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-restore--1",
+              "command": "git restore ."
+            },
+            {
+              "id": "git-restore-staged--2",
+              "command": "git restore --staged ."
+            },
+            {
+              "id": "git-reset-soft-head-1-3",
+              "command": "git reset --soft HEAD~1"
+            }
+          ],
+          "correctChoiceID": "git-restore--1",
+          "correctFeedback": "Correct. git restore . is used to undo local file changes.",
+          "incorrectFeedback": "Use git restore . to undo local file changes.",
+          "sourceReferences": [
+            "attachment:line-202:git-restore-"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.restore-staged-",
+          "title": "Unstage",
+          "objective": "Identify the Git command used to unstage.",
+          "scenario": "A repository task requires you to unstage. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-restore-staged--1",
+              "command": "git restore --staged ."
+            },
+            {
+              "id": "git-reset-soft-head-1-2",
               "command": "git reset --soft HEAD~1"
             },
             {
-              "id": "git-reset-hard",
+              "id": "git-reset-hard-head-1-3",
+              "command": "git reset --hard HEAD~1"
+            }
+          ],
+          "correctChoiceID": "git-restore-staged--1",
+          "correctFeedback": "Correct. git restore --staged . is used to unstage.",
+          "incorrectFeedback": "Use git restore --staged . to unstage.",
+          "sourceReferences": [
+            "attachment:line-203:git-restore-staged-"
+          ],
+          "safetyLevel": "workingTreeMutation"
+        },
+        {
+          "id": "git.daily.reset-soft-head-1",
+          "title": "Undo Commit, Keep Changes",
+          "objective": "Identify the Git command used to undo commit, keep changes.",
+          "scenario": "A repository task requires you to undo commit, keep changes. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-reset-soft-head-1-1",
+              "command": "git reset --soft HEAD~1"
+            },
+            {
+              "id": "git-reset-hard-head-1-2",
               "command": "git reset --hard HEAD~1"
             },
             {
-              "id": "git-revert-head",
-              "command": "git revert HEAD"
+              "id": "git-revert-commit-id-3",
+              "command": "git revert COMMIT_ID"
             }
           ],
-          "correctChoiceID": "git-reset-soft",
-          "correctFeedback": "Correct. git reset --soft HEAD~1 moves the branch back one commit and keeps the changes staged.",
-          "incorrectFeedback": "git reset --soft HEAD~1 undoes the commit while keeping your changes staged.",
+          "correctChoiceID": "git-reset-soft-head-1-1",
+          "correctFeedback": "Correct. git reset --soft HEAD~1 is used to undo commit, keep changes.",
+          "incorrectFeedback": "Use git reset --soft HEAD~1 to undo commit, keep changes.",
           "sourceReferences": [
-            "plan:section-2:git-reset-soft"
+            "attachment:line-204:git-reset-soft-head-1"
           ],
           "safetyLevel": "historyMutation",
-          "safetyWarning": "Rewriting history affects commits you may have shared. Confirm the branch is unpublished before resetting."
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
         },
         {
           "id": "git.daily.reset-hard-head-1",
-          "title": "Discard a Commit and Its Changes",
-          "objective": "Recognize the destructive reset form.",
-          "scenario": "A commit and everything in it must be thrown away on a local branch you have never pushed.",
-          "prompt": "Which command discards both the commit and its changes?",
+          "title": "Undo Commit + Changes ⚠️",
+          "objective": "Identify the Git command used to undo commit + changes ⚠️.",
+          "scenario": "A repository task requires you to undo commit + changes ⚠️. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
           "choices": [
             {
-              "id": "git-reset-hard",
+              "id": "git-reset-hard-head-1-1",
               "command": "git reset --hard HEAD~1"
             },
             {
-              "id": "git-reset-soft",
-              "command": "git reset --soft HEAD~1"
+              "id": "git-revert-commit-id-2",
+              "command": "git revert COMMIT_ID"
             },
             {
-              "id": "git-restore-staged",
-              "command": "git restore --staged ."
+              "id": "git-reflog-3",
+              "command": "git reflog"
             }
           ],
-          "correctChoiceID": "git-reset-hard",
-          "correctFeedback": "Correct. git reset --hard HEAD~1 removes the commit and the changes it contained.",
-          "incorrectFeedback": "git reset --hard HEAD~1 is the form that also discards the changes. The soft form keeps them.",
+          "correctChoiceID": "git-reset-hard-head-1-1",
+          "correctFeedback": "Correct. git reset --hard HEAD~1 is used to undo commit + changes ⚠️.",
+          "incorrectFeedback": "Use git reset --hard HEAD~1 to undo commit + changes ⚠️.",
           "sourceReferences": [
-            "plan:section-2:git-reset-hard"
+            "attachment:line-205:git-reset-hard-head-1"
+          ],
+          "safetyLevel": "destructiveCleanup",
+          "safetyWarning": "This command can permanently remove repository data. Verify recoverability and the exact target before proceeding."
+        },
+        {
+          "id": "git.daily.revert-commit-id",
+          "title": "Safely Undo Pushed Commit",
+          "objective": "Identify the Git command used to safely undo pushed commit.",
+          "scenario": "A repository task requires you to safely undo pushed commit. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-revert-commit-id-1",
+              "command": "git revert COMMIT_ID"
+            },
+            {
+              "id": "git-reflog-2",
+              "command": "git reflog"
+            },
+            {
+              "id": "git-log-oneline-graph-decorate-all-3",
+              "command": "git log --oneline --graph --decorate --all"
+            }
+          ],
+          "correctChoiceID": "git-revert-commit-id-1",
+          "correctFeedback": "Correct. git revert COMMIT_ID is used to safely undo pushed commit.",
+          "incorrectFeedback": "Use git revert COMMIT_ID to safely undo pushed commit.",
+          "sourceReferences": [
+            "attachment:line-206:git-revert-commit-id"
           ],
           "safetyLevel": "historyMutation",
-          "safetyWarning": "This permanently discards uncommitted and committed work. There is no undo once the objects are pruned."
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
         },
         {
-          "id": "git.daily.restore-worktree",
-          "title": "Discard Working Tree Changes",
-          "objective": "Identify the command that restores tracked files.",
-          "scenario": "Edits across the working tree are wrong and should return to the last commit, leaving the index alone.",
-          "prompt": "Which command restores the working tree?",
+          "id": "git.daily.reflog",
+          "title": "Recover Lost Commit",
+          "objective": "Identify the Git command used to recover lost commit.",
+          "scenario": "A repository task requires you to recover lost commit. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
           "choices": [
             {
-              "id": "git-restore-dot",
-              "command": "git restore ."
+              "id": "git-reflog-1",
+              "command": "git reflog"
             },
             {
-              "id": "git-restore-staged-dot",
-              "command": "git restore --staged ."
+              "id": "git-log-oneline-graph-decorate-all-2",
+              "command": "git log --oneline --graph --decorate --all"
             },
             {
-              "id": "git-clean-fd",
-              "command": "git clean -fd"
+              "id": "git-branch-d-branch-name-3",
+              "command": "git branch -d branch-name"
             }
           ],
-          "correctChoiceID": "git-restore-dot",
-          "correctFeedback": "Correct. git restore . returns tracked files in the working tree to their committed state.",
-          "incorrectFeedback": "git restore . restores the working tree. The --staged form unstages instead.",
+          "correctChoiceID": "git-reflog-1",
+          "correctFeedback": "Correct. git reflog is used to recover lost commit.",
+          "incorrectFeedback": "Use git reflog to recover lost commit.",
           "sourceReferences": [
-            "plan:section-2:git-restore"
+            "attachment:line-207:git-reflog"
           ],
-          "safetyLevel": "workingTreeMutation"
+          "safetyLevel": "readOnly"
         },
         {
-          "id": "git.daily.restore-staged",
-          "title": "Unstage Everything",
-          "objective": "Distinguish restoring from unstaging.",
-          "scenario": "Files were staged by mistake. The edits must stay, but nothing should be staged.",
-          "prompt": "Which command unstages without touching the edits?",
+          "id": "git.daily.log-oneline-graph-decorate-all",
+          "title": "Pretty History",
+          "objective": "Identify the Git command used to pretty history.",
+          "scenario": "A repository task requires you to pretty history. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
           "choices": [
             {
-              "id": "git-restore-staged-dot",
-              "command": "git restore --staged ."
+              "id": "git-log-oneline-graph-decorate-all-1",
+              "command": "git log --oneline --graph --decorate --all"
             },
             {
-              "id": "git-restore-dot",
-              "command": "git restore ."
+              "id": "git-branch-d-branch-name-2",
+              "command": "git branch -d branch-name"
             },
             {
-              "id": "git-reset-hard",
-              "command": "git reset --hard HEAD~1"
+              "id": "git-push-origin-delete-branch-name-3",
+              "command": "git push origin --delete branch-name"
             }
           ],
-          "correctChoiceID": "git-restore-staged-dot",
-          "correctFeedback": "Correct. git restore --staged . removes files from the index and leaves the working tree untouched.",
-          "incorrectFeedback": "git restore --staged . unstages. Without --staged the command overwrites your edits instead.",
+          "correctChoiceID": "git-log-oneline-graph-decorate-all-1",
+          "correctFeedback": "Correct. git log --oneline --graph --decorate --all is used to pretty history.",
+          "incorrectFeedback": "Use git log --oneline --graph --decorate --all to pretty history.",
           "sourceReferences": [
-            "plan:section-2:git-restore-staged"
+            "attachment:line-208:git-log-oneline-graph-decorate-all"
           ],
-          "safetyLevel": "workingTreeMutation"
+          "safetyLevel": "readOnly"
         },
         {
-          "id": "git.daily.switch-branch",
-          "title": "Move to an Existing Branch",
-          "objective": "Identify the modern checkout replacement.",
-          "scenario": "A branch already exists and you need to work on it.",
-          "prompt": "Which command switches to it?",
+          "id": "git.daily.branch-d-branch-name",
+          "title": "Delete Local Branch",
+          "objective": "Identify the Git command used to delete local branch.",
+          "scenario": "A repository task requires you to delete local branch. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
           "choices": [
             {
-              "id": "git-switch",
-              "command": "git switch branch-name"
+              "id": "git-branch-d-branch-name-1",
+              "command": "git branch -d branch-name"
             },
             {
-              "id": "git-switch-c",
-              "command": "git switch -c feature/name"
+              "id": "git-push-origin-delete-branch-name-2",
+              "command": "git push origin --delete branch-name"
             },
             {
-              "id": "git-restore-dot",
-              "command": "git restore ."
+              "id": "git-tag-a-v1-0-0-m-v1-0-0--3",
+              "command": "git tag -a v1.0.0 -m \"v1.0.0\""
             }
           ],
-          "correctChoiceID": "git-switch",
-          "correctFeedback": "Correct. git switch branch-name moves to a branch that already exists.",
-          "incorrectFeedback": "git switch branch-name switches to an existing branch. The -c form creates a new one.",
+          "correctChoiceID": "git-branch-d-branch-name-1",
+          "correctFeedback": "Correct. git branch -d branch-name is used to delete local branch.",
+          "incorrectFeedback": "Use git branch -d branch-name to delete local branch.",
           "sourceReferences": [
-            "plan:section-2:git-switch"
+            "attachment:line-209:git-branch-d-branch-name"
           ],
-          "safetyLevel": "workingTreeMutation"
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
         },
         {
-          "id": "git.daily.switch-create",
-          "title": "Create and Move to a Branch",
-          "objective": "Identify the branch-creating switch form.",
-          "scenario": "You are starting a feature and the branch does not exist yet.",
-          "prompt": "Which command creates the branch and moves to it?",
+          "id": "git.daily.push-origin-delete-branch-name",
+          "title": "Delete Remote Branch",
+          "objective": "Identify the Git command used to delete remote branch.",
+          "scenario": "A repository task requires you to delete remote branch. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
           "choices": [
             {
-              "id": "git-switch-c",
-              "command": "git switch -c feature/name"
+              "id": "git-push-origin-delete-branch-name-1",
+              "command": "git push origin --delete branch-name"
             },
             {
-              "id": "git-switch",
-              "command": "git switch branch-name"
+              "id": "git-tag-a-v1-0-0-m-v1-0-0--2",
+              "command": "git tag -a v1.0.0 -m \"v1.0.0\""
             },
             {
-              "id": "git-bundle-create-all",
-              "command": "git bundle create repo.bundle --all"
+              "id": "git-push-tags-3",
+              "command": "git push --tags"
             }
           ],
-          "correctChoiceID": "git-switch-c",
-          "correctFeedback": "Correct. git switch -c feature/name creates the branch and switches to it.",
-          "incorrectFeedback": "The -c option is what creates the branch: git switch -c feature/name.",
+          "correctChoiceID": "git-push-origin-delete-branch-name-1",
+          "correctFeedback": "Correct. git push origin --delete branch-name is used to delete remote branch.",
+          "incorrectFeedback": "Use git push origin --delete branch-name to delete remote branch.",
           "sourceReferences": [
-            "plan:section-2:git-switch-c"
+            "attachment:line-210:git-push-origin-delete-branch-name"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.daily.tag-a-v1-0-0-m-v1-0-0-",
+          "title": "Create Release Tag",
+          "objective": "Identify the Git command used to create release tag.",
+          "scenario": "A repository task requires you to create release tag. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-tag-a-v1-0-0-m-v1-0-0--1",
+              "command": "git tag -a v1.0.0 -m \"v1.0.0\""
+            },
+            {
+              "id": "git-push-tags-2",
+              "command": "git push --tags"
+            },
+            {
+              "id": "git-status-3",
+              "command": "git status"
+            }
+          ],
+          "correctChoiceID": "git-tag-a-v1-0-0-m-v1-0-0--1",
+          "correctFeedback": "Correct. git tag -a v1.0.0 -m \"v1.0.0\" is used to create release tag.",
+          "incorrectFeedback": "Use git tag -a v1.0.0 -m \"v1.0.0\" to create release tag.",
+          "sourceReferences": [
+            "attachment:line-211:git-tag-a-v1-0-0-m-v1-0-0-"
+          ],
+          "safetyLevel": "historyMutation",
+          "safetyWarning": "This command changes commit or reference history. Confirm the target and whether the history has been shared before proceeding."
+        },
+        {
+          "id": "git.daily.push-tags",
+          "title": "Push Tags",
+          "objective": "Identify the Git command used to push tags.",
+          "scenario": "A repository task requires you to push tags. Choose the exact command from the attachment that completes this task.",
+          "prompt": "Which Git command should you use?",
+          "choices": [
+            {
+              "id": "git-push-tags-1",
+              "command": "git push --tags"
+            },
+            {
+              "id": "git-status-2",
+              "command": "git status"
+            },
+            {
+              "id": "git-diff-3",
+              "command": "git diff"
+            }
+          ],
+          "correctChoiceID": "git-push-tags-1",
+          "correctFeedback": "Correct. git push --tags is used to push tags.",
+          "incorrectFeedback": "Use git push --tags to push tags.",
+          "sourceReferences": [
+            "attachment:line-212:git-push-tags"
           ],
           "safetyLevel": "workingTreeMutation"
         }

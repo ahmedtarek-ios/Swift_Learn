@@ -11,7 +11,9 @@ struct GitLearningTrackTests {
 
         try ValidateGitCommandCatalogUseCase().execute(catalog)
 
-        #expect(catalog.lessons.isEmpty == false)
+        #expect(catalog.sourceID == "git-commands-attachment-v1")
+        #expect(catalog.categories.count == 11)
+        #expect(catalog.lessonCount == 139)
         #expect(Set(catalog.lessons.map(\.id)).count == catalog.lessonCount)
         #expect(
             Set(catalog.lessons.map(\.canonicalCommand)).count == catalog.lessonCount
@@ -19,7 +21,7 @@ struct GitLearningTrackTests {
         for lesson in catalog.lessons {
             #expect(lesson.scenario.isEmpty == false)
             #expect(lesson.prompt.isEmpty == false)
-            #expect(lesson.choices.count >= 2)
+            #expect(lesson.choices.count == 3)
             #expect(lesson.correctFeedback.isEmpty == false)
             #expect(lesson.incorrectFeedback.isEmpty == false)
             #expect(lesson.sourceReferences.isEmpty == false)
@@ -99,6 +101,19 @@ struct GitLearningTrackTests {
         #expect(track.isCompleted(lessonID: first.id))
         #expect(track.isUnlocked(lessonID: catalog.lessons[1].id))
         #expect(try progress.attemptCount() == 1)
+    }
+
+    @Test
+    func completedTrackHasNoCurrentQuestion() throws {
+        let catalog = try bundledCatalog()
+        let track = GitLearningTrack(
+            catalog: catalog,
+            completedLessonIDs: Set(catalog.lessons.map(\.id))
+        )
+
+        #expect(track.isTrackComplete)
+        #expect(track.currentLesson == nil)
+        #expect(track.progress == 1)
     }
 
     @Test
@@ -224,6 +239,61 @@ struct GitLearningTrackTests {
         #expect(try git.loadCompletedLessonIDs() == ["git.maintenance.gc"])
     }
 
+    @Test
+    func versionSevenStoreMigratesWithoutLosingExistingRecords() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(
+            path: "SwiftLearnGitMigration-\(UUID().uuidString)",
+            directoryHint: .isDirectory
+        )
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let storeURL = directory.appending(path: "SwiftLearn.store")
+
+        try createVersionSevenStore(at: storeURL)
+
+        let upgraded = try AppContainer(
+            storageName: "GitMigrationVerification",
+            storageURL: storeURL
+        )
+        let context = upgraded.modelContainer.mainContext
+        let swiftProgress = try context.fetch(FetchDescriptor<LessonProgressRecord>())
+        let swiftAttempts = try context.fetch(FetchDescriptor<LearningAttemptRecord>())
+        let profiles = try context.fetch(FetchDescriptor<LearnerProfileRecord>())
+        let avatarImages = try context.fetch(FetchDescriptor<LearnerAvatarImageRecord>())
+        let projectSubmissions = try context.fetch(
+            FetchDescriptor<LearningProjectSubmissionRecord>()
+        )
+        let bossCompletions = try context.fetch(
+            FetchDescriptor<BossChallengeCompletionRecord>()
+        )
+        let badgeShowcases = try context.fetch(
+            FetchDescriptor<LearnerBadgeShowcaseRecord>()
+        )
+        let syncStates = try context.fetch(FetchDescriptor<LearningSyncStateRecord>())
+        let syncReceipts = try context.fetch(
+            FetchDescriptor<LearningSyncEventReceiptRecord>()
+        )
+
+        #expect(swiftProgress.map(\.lessonID) == ["swift.bindings.constants"])
+        #expect(swiftProgress.first?.learningTrackID == .swift)
+        #expect(swiftAttempts.map(\.lessonID) == ["swift.bindings.constants"])
+        #expect(swiftAttempts.first?.learningTrackID == .swift)
+        #expect(profiles.map(\.displayName) == ["Migration Learner"])
+        #expect(profiles.first?.avatarRawValue == "custom")
+        #expect(avatarImages.map(\.imageData) == [Data([0xCA, 0xFE])])
+        #expect(projectSubmissions.map(\.projectID) == ["swift.project.migration"])
+        #expect(projectSubmissions.first?.validationResultsData == Data([0x01, 0x02]))
+        #expect(bossCompletions.map(\.challengeID) == ["swift.boss.migration"])
+        #expect(badgeShowcases.map(\.achievementID) == ["swift.badge.migration"])
+        #expect(syncStates.map(\.resetGeneration) == [7])
+        #expect(syncReceipts.map(\.resetGeneration) == [7])
+        #expect(try context.fetch(FetchDescriptor<GitLessonProgressRecord>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<GitAttemptRecord>()).isEmpty)
+    }
+
     // MARK: - Fixtures
 
     private func bundledData() throws -> Data {
@@ -240,6 +310,82 @@ struct GitLearningTrackTests {
 
     private func bundledCatalog() throws -> GitCommandCatalog {
         try BundledGitCommandRepository(data: try bundledData()).loadCatalog()
+    }
+
+    private func createVersionSevenStore(at url: URL) throws {
+        let schema = Schema(versionedSchema: SwiftLearnSchemaV7.self)
+        let configuration = ModelConfiguration(
+            "GitMigrationVerification",
+            schema: schema,
+            url: url,
+            cloudKitDatabase: .none
+        )
+        let container = try ModelContainer(
+            for: schema,
+            configurations: [configuration]
+        )
+        let context = container.mainContext
+        context.insert(
+            LessonProgressRecord(
+                lessonID: "swift.bindings.constants",
+                completedAt: Date(timeIntervalSince1970: 1)
+            )
+        )
+        let attemptID = try #require(
+            UUID(uuidString: "00000000-0000-0000-0000-0000000000B7")
+        )
+        context.insert(
+            LearningAttemptRecord(
+                id: attemptID,
+                lessonID: "swift.bindings.constants",
+                skillID: "swift.bindings.constants",
+                activityID: "swift.bindings.constants",
+                outcomeRawValue: "correct",
+                errorCategoryRawValue: nil,
+                recordedAt: Date(timeIntervalSince1970: 2)
+            )
+        )
+        context.insert(
+            LearnerProfileRecord(
+                displayName: "Migration Learner",
+                avatarRawValue: "custom",
+                appearanceRawValue: "dark",
+                motionPreferenceRawValue: "reduced"
+            )
+        )
+        context.insert(LearnerAvatarImageRecord(imageData: Data([0xCA, 0xFE])))
+        let submissionID = try #require(
+            UUID(uuidString: "00000000-0000-0000-0000-0000000000C7")
+        )
+        context.insert(
+            LearningProjectSubmissionRecord(
+                id: submissionID,
+                projectID: "swift.project.migration",
+                validationResultsData: Data([0x01, 0x02]),
+                submittedAt: Date(timeIntervalSince1970: 3)
+            )
+        )
+        context.insert(
+            BossChallengeCompletionRecord(
+                challengeID: "swift.boss.migration",
+                levelID: "swift.level.migration",
+                completedAt: Date(timeIntervalSince1970: 4)
+            )
+        )
+        context.insert(
+            LearnerBadgeShowcaseRecord(achievementID: "swift.badge.migration")
+        )
+        context.insert(LearningSyncStateRecord(resetGeneration: 7))
+        let receiptID = try #require(
+            UUID(uuidString: "00000000-0000-0000-0000-0000000000D7")
+        )
+        context.insert(
+            LearningSyncEventReceiptRecord(
+                eventID: receiptID,
+                resetGeneration: 7
+            )
+        )
+        try context.save()
     }
 
     private func makeCatalog(lessons: [GitCommandLesson]) -> GitCommandCatalog {

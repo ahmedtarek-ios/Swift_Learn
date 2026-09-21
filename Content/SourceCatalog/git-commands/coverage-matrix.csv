@@ -1,0 +1,140 @@
+lesson_id,command,practical_scenario,choice_count,correct_choice_valid,source_reference_count,safety_warning_valid
+git.bundles.bundle-create-repo-bundle-all,git bundle create repo.bundle --all,true,3,true,1,true
+git.maintenance.gc,git gc,true,3,true,1,true
+git.maintenance.maintenance,git maintenance,true,3,true,1,true
+git.maintenance.fsck,git fsck,true,3,true,1,true
+git.maintenance.count-objects,git count-objects,true,3,true,1,true
+git.maintenance.repack,git repack,true,3,true,1,true
+git.maintenance.prune,git prune,true,3,true,1,true
+git.maintenance.pack-refs,git pack-refs,true,3,true,1,true
+git.patches.diff-file-patch,git diff > file.patch,true,3,true,1,true
+git.patches.apply-file-patch,git apply file.patch,true,3,true,1,true
+git.patches.format-patch,git format-patch,true,3,true,1,true
+git.patches.am,git am,true,3,true,1,true
+git.patches.request-pull,git request-pull,true,3,true,1,true
+git.patches.send-email,git send-email,true,3,true,1,true
+git.notes.notes-add,git notes add,true,3,true,1,true
+git.notes.notes-show,git notes show,true,3,true,1,true
+git.notes.notes-edit,git notes edit,true,3,true,1,true
+git.notes.notes-remove,git notes remove,true,3,true,1,true
+git.notes.notes-list,git notes list,true,3,true,1,true
+git.information.describe,git describe,true,3,true,1,true
+git.information.shortlog,git shortlog,true,3,true,1,true
+git.information.show-branch,git show-branch,true,3,true,1,true
+git.information.ls-remote,git ls-remote,true,3,true,2,true
+git.information.verify-commit,git verify-commit,true,3,true,1,true
+git.information.verify-tag,git verify-tag,true,3,true,1,true
+git.information.whatchanged,git whatchanged,true,3,true,1,true
+git.information.annotate,git annotate,true,3,true,1,true
+git.information.version,git version,true,3,true,1,true
+git.information.instaweb,git instaweb,true,3,true,1,true
+git.objects-index.apply,git apply,true,3,true,1,true
+git.objects-index.checkout-index,git checkout-index,true,3,true,1,true
+git.objects-index.commit-graph,git commit-graph,true,3,true,1,true
+git.objects-index.commit-tree,git commit-tree,true,3,true,1,true
+git.objects-index.hash-object,git hash-object,true,3,true,1,true
+git.objects-index.index-pack,git index-pack,true,3,true,1,true
+git.objects-index.merge-file,git merge-file,true,3,true,1,true
+git.objects-index.merge-index,git merge-index,true,3,true,1,true
+git.objects-index.mktag,git mktag,true,3,true,1,true
+git.objects-index.mktree,git mktree,true,3,true,1,true
+git.objects-index.multi-pack-index,git multi-pack-index,true,3,true,1,true
+git.objects-index.pack-objects,git pack-objects,true,3,true,1,true
+git.objects-index.prune-packed,git prune-packed,true,3,true,1,true
+git.objects-index.read-tree,git read-tree,true,3,true,1,true
+git.objects-index.replay,git replay,true,3,true,1,true
+git.objects-index.symbolic-ref,git symbolic-ref,true,3,true,1,true
+git.objects-index.unpack-objects,git unpack-objects,true,3,true,1,true
+git.objects-index.update-index,git update-index,true,3,true,1,true
+git.objects-index.update-ref,git update-ref,true,3,true,1,true
+git.objects-index.write-tree,git write-tree,true,3,true,1,true
+git.inspection.cat-file,git cat-file,true,3,true,1,true
+git.inspection.cherry,git cherry,true,3,true,1,true
+git.inspection.diff-files,git diff-files,true,3,true,1,true
+git.inspection.diff-index,git diff-index,true,3,true,1,true
+git.inspection.diff-pairs,git diff-pairs,true,3,true,1,true
+git.inspection.diff-tree,git diff-tree,true,3,true,1,true
+git.inspection.for-each-ref,git for-each-ref,true,3,true,1,true
+git.inspection.for-each-repo,git for-each-repo,true,3,true,1,true
+git.inspection.format-rev,git format-rev,true,3,true,1,true
+git.inspection.get-tar-commit-id,git get-tar-commit-id,true,3,true,1,true
+git.inspection.last-modified,git last-modified,true,3,true,1,true
+git.inspection.ls-files,git ls-files,true,3,true,1,true
+git.inspection.ls-tree,git ls-tree,true,3,true,1,true
+git.inspection.merge-base,git merge-base,true,3,true,1,true
+git.inspection.name-rev,git name-rev,true,3,true,1,true
+git.inspection.pack-redundant,git pack-redundant,true,3,true,1,true
+git.inspection.repo,git repo,true,3,true,1,true
+git.inspection.rev-list,git rev-list,true,3,true,1,true
+git.inspection.rev-parse,git rev-parse,true,3,true,1,true
+git.inspection.show-index,git show-index,true,3,true,1,true
+git.inspection.show-ref,git show-ref,true,3,true,1,true
+git.inspection.unpack-file,git unpack-file,true,3,true,1,true
+git.inspection.var,git var,true,3,true,1,true
+git.inspection.verify-pack,git verify-pack,true,3,true,1,true
+git.server-protocol.daemon,git daemon,true,3,true,1,true
+git.server-protocol.fetch-pack,git fetch-pack,true,3,true,1,true
+git.server-protocol.http-backend,git http-backend,true,3,true,1,true
+git.server-protocol.send-pack,git send-pack,true,3,true,1,true
+git.server-protocol.update-server-info,git update-server-info,true,3,true,1,true
+git.server-protocol.http-fetch,git http-fetch,true,3,true,1,true
+git.server-protocol.http-push,git http-push,true,3,true,1,true
+git.server-protocol.receive-pack,git receive-pack,true,3,true,1,true
+git.server-protocol.shell,git shell,true,3,true,1,true
+git.server-protocol.upload-archive,git upload-archive,true,3,true,1,true
+git.server-protocol.upload-pack,git upload-pack,true,3,true,1,true
+git.helpers.check-attr,git check-attr,true,3,true,1,true
+git.helpers.check-ignore,git check-ignore,true,3,true,1,true
+git.helpers.check-mailmap,git check-mailmap,true,3,true,1,true
+git.helpers.check-ref-format,git check-ref-format,true,3,true,1,true
+git.helpers.column,git column,true,3,true,1,true
+git.helpers.credential,git credential,true,3,true,1,true
+git.helpers.credential-cache,git credential-cache,true,3,true,1,true
+git.helpers.credential-store,git credential-store,true,3,true,1,true
+git.helpers.fmt-merge-msg,git fmt-merge-msg,true,3,true,1,true
+git.helpers.hook,git hook,true,3,true,1,true
+git.helpers.interpret-trailers,git interpret-trailers,true,3,true,1,true
+git.helpers.mailinfo,git mailinfo,true,3,true,1,true
+git.helpers.mailsplit,git mailsplit,true,3,true,1,true
+git.helpers.merge-one-file,git merge-one-file,true,3,true,1,true
+git.helpers.patch-id,git patch-id,true,3,true,1,true
+git.helpers.sh-i18n,git sh-i18n,true,3,true,1,true
+git.helpers.sh-setup,git sh-setup,true,3,true,1,true
+git.helpers.stripspace,git stripspace,true,3,true,1,true
+git.helpers.url-parse,git url-parse,true,3,true,1,true
+git.external-vcs.svn,git svn,true,3,true,1,true
+git.external-vcs.p4,git p4,true,3,true,1,true
+git.external-vcs.archimport,git archimport,true,3,true,1,true
+git.external-vcs.cvsimport,git cvsimport,true,3,true,1,true
+git.external-vcs.cvsexportcommit,git cvsexportcommit,true,3,true,1,true
+git.external-vcs.cvsserver,git cvsserver,true,3,true,1,true
+git.external-vcs.quiltimport,git quiltimport,true,3,true,1,true
+git.external-vcs.fast-import,git fast-import,true,3,true,1,true
+git.external-vcs.fast-export,git fast-export,true,3,true,1,true
+git.daily.status,git status,true,3,true,1,true
+git.daily.diff,git diff,true,3,true,1,true
+git.daily.add-,git add .,true,3,true,1,true
+git.daily.commit-m-message-,"git commit -m ""message""",true,3,true,1,true
+git.daily.pull-rebase,git pull --rebase,true,3,true,1,true
+git.daily.push,git push,true,3,true,1,true
+git.daily.branch-a,git branch -a,true,3,true,1,true
+git.daily.switch-c-feature-name,git switch -c feature/name,true,3,true,1,true
+git.daily.switch-branch-name,git switch branch-name,true,3,true,1,true
+git.daily.merge-branch-name,git merge branch-name,true,3,true,1,true
+git.daily.rebase-develop,git rebase develop,true,3,true,1,true
+git.daily.rebase-abort,git rebase --abort,true,3,true,1,true
+git.daily.rebase-continue,git rebase --continue,true,3,true,1,true
+git.daily.cherry-pick-commit-id,git cherry-pick COMMIT_ID,true,3,true,1,true
+git.daily.stash,git stash,true,3,true,1,true
+git.daily.stash-pop,git stash pop,true,3,true,1,true
+git.daily.restore-,git restore .,true,3,true,1,true
+git.daily.restore-staged-,git restore --staged .,true,3,true,1,true
+git.daily.reset-soft-head-1,git reset --soft HEAD~1,true,3,true,1,true
+git.daily.reset-hard-head-1,git reset --hard HEAD~1,true,3,true,1,true
+git.daily.revert-commit-id,git revert COMMIT_ID,true,3,true,1,true
+git.daily.reflog,git reflog,true,3,true,1,true
+git.daily.log-oneline-graph-decorate-all,git log --oneline --graph --decorate --all,true,3,true,1,true
+git.daily.branch-d-branch-name,git branch -d branch-name,true,3,true,1,true
+git.daily.push-origin-delete-branch-name,git push origin --delete branch-name,true,3,true,1,true
+git.daily.tag-a-v1-0-0-m-v1-0-0-,"git tag -a v1.0.0 -m ""v1.0.0""",true,3,true,1,true
+git.daily.push-tags,git push --tags,true,3,true,1,true

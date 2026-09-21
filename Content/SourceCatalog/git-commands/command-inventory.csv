@@ -1,0 +1,140 @@
+command,lesson_id,category_id,description,first_source_line,duplicate_source_lines,safety_level
+git bundle create repo.bundle --all,git.bundles.bundle-create-repo-bundle-all,git.bundles,Create a portable bundle containing every repository reference,1,"",readOnly
+git gc,git.maintenance.gc,git.maintenance,Clean/optimize repository,9,"",destructiveCleanup
+git maintenance,git.maintenance.maintenance,git.maintenance,Run repository maintenance tasks,10,"",readOnly
+git fsck,git.maintenance.fsck,git.maintenance,Check repository object integrity,11,"",readOnly
+git count-objects,git.maintenance.count-objects,git.maintenance,Show object count/disk usage,12,"",readOnly
+git repack,git.maintenance.repack,git.maintenance,Repack repository objects,13,"",destructiveCleanup
+git prune,git.maintenance.prune,git.maintenance,Delete unreachable objects,14,"",destructiveCleanup
+git pack-refs,git.maintenance.pack-refs,git.maintenance,Pack refs for efficiency,15,"",readOnly
+git diff > file.patch,git.patches.diff-file-patch,git.patches,Create basic patch,22,"",readOnly
+git apply file.patch,git.patches.apply-file-patch,git.patches,Apply patch,23,"",workingTreeMutation
+git format-patch,git.patches.format-patch,git.patches,Generate patches from commits,24,"",historyMutation
+git am,git.patches.am,git.patches,Apply commits from mailbox patches,25,"",historyMutation
+git request-pull,git.patches.request-pull,git.patches,Generate pull-request summary,26,"",readOnly
+git send-email,git.patches.send-email,git.patches,Email patches,27,"",readOnly
+git notes add,git.notes.notes-add,git.notes,Attach note to Git object,40,"",historyMutation
+git notes show,git.notes.notes-show,git.notes,Show note,41,"",readOnly
+git notes edit,git.notes.notes-edit,git.notes,Edit note,42,"",historyMutation
+git notes remove,git.notes.notes-remove,git.notes,Remove note,43,"",historyMutation
+git notes list,git.notes.notes-list,git.notes,List notes,44,"",readOnly
+git describe,git.information.describe,git.information,Create human-readable description from tags,50,"",readOnly
+git shortlog,git.information.shortlog,git.information,Summarize commit history by author,51,"",readOnly
+git show-branch,git.information.show-branch,git.information,Show branches and commits,52,"",readOnly
+git ls-remote,git.information.ls-remote,git.information,List refs on remote server,53,108,readOnly
+git verify-commit,git.information.verify-commit,git.information,Verify GPG-signed commit,54,"",readOnly
+git verify-tag,git.information.verify-tag,git.information,Verify signed tag,55,"",readOnly
+git whatchanged,git.information.whatchanged,git.information,Show history with commit differences,56,"",readOnly
+git annotate,git.information.annotate,git.information,Similar to blame,57,"",readOnly
+git version,git.information.version,git.information,Show Git version,58,"",readOnly
+git instaweb,git.information.instaweb,git.information,Browse repository using gitweb,59,"",readOnly
+git apply,git.objects-index.apply,git.objects-index,Apply patch to files/index,70,"",experimentalOrSpecialized
+git checkout-index,git.objects-index.checkout-index,git.objects-index,Copy files from index to working tree,71,"",experimentalOrSpecialized
+git commit-graph,git.objects-index.commit-graph,git.objects-index,Write/verify commit graph,72,"",experimentalOrSpecialized
+git commit-tree,git.objects-index.commit-tree,git.objects-index,Create commit object manually,73,"",experimentalOrSpecialized
+git hash-object,git.objects-index.hash-object,git.objects-index,Calculate an object ID / create object,74,"",experimentalOrSpecialized
+git index-pack,git.objects-index.index-pack,git.objects-index,Create index for pack file,75,"",experimentalOrSpecialized
+git merge-file,git.objects-index.merge-file,git.objects-index,Three-way merge individual files,76,"",experimentalOrSpecialized
+git merge-index,git.objects-index.merge-index,git.objects-index,Merge files requiring merging,77,"",experimentalOrSpecialized
+git mktag,git.objects-index.mktag,git.objects-index,Create validated tag object,78,"",experimentalOrSpecialized
+git mktree,git.objects-index.mktree,git.objects-index,Build tree object,79,"",experimentalOrSpecialized
+git multi-pack-index,git.objects-index.multi-pack-index,git.objects-index,Manage multi-pack indexes,80,"",experimentalOrSpecialized
+git pack-objects,git.objects-index.pack-objects,git.objects-index,Create packed object archive,81,"",experimentalOrSpecialized
+git prune-packed,git.objects-index.prune-packed,git.objects-index,Remove objects already stored in packs,82,"",destructiveCleanup
+git read-tree,git.objects-index.read-tree,git.objects-index,Read tree into index,83,"",experimentalOrSpecialized
+git replay,git.objects-index.replay,git.objects-index,Experimental commit replay,84,"",experimentalOrSpecialized
+git symbolic-ref,git.objects-index.symbolic-ref,git.objects-index,Read/change symbolic refs,85,"",experimentalOrSpecialized
+git unpack-objects,git.objects-index.unpack-objects,git.objects-index,Unpack packed Git objects,86,"",experimentalOrSpecialized
+git update-index,git.objects-index.update-index,git.objects-index,Manipulate index,87,"",experimentalOrSpecialized
+git update-ref,git.objects-index.update-ref,git.objects-index,Safely update refs,88,"",experimentalOrSpecialized
+git write-tree,git.objects-index.write-tree,git.objects-index,Create tree from current index,89,"",experimentalOrSpecialized
+git cat-file,git.inspection.cat-file,git.inspection,Inspect Git objects,96,"",experimentalOrSpecialized
+git cherry,git.inspection.cherry,git.inspection,Find commits not applied upstream,97,"",experimentalOrSpecialized
+git diff-files,git.inspection.diff-files,git.inspection,Compare working tree with index,98,"",experimentalOrSpecialized
+git diff-index,git.inspection.diff-index,git.inspection,Compare tree with index/working tree,99,"",experimentalOrSpecialized
+git diff-pairs,git.inspection.diff-pairs,git.inspection,Compare supplied blob pairs,100,"",experimentalOrSpecialized
+git diff-tree,git.inspection.diff-tree,git.inspection,Compare tree objects,101,"",experimentalOrSpecialized
+git for-each-ref,git.inspection.for-each-ref,git.inspection,Iterate over Git refs,102,"",experimentalOrSpecialized
+git for-each-repo,git.inspection.for-each-repo,git.inspection,Run command over multiple repositories,103,"",experimentalOrSpecialized
+git format-rev,git.inspection.format-rev,git.inspection,Experimental revision formatter,104,"",experimentalOrSpecialized
+git get-tar-commit-id,git.inspection.get-tar-commit-id,git.inspection,Extract commit ID from Git archive,105,"",experimentalOrSpecialized
+git last-modified,git.inspection.last-modified,git.inspection,Experimental last-modified information,106,"",experimentalOrSpecialized
+git ls-files,git.inspection.ls-files,git.inspection,Show files known to index,107,"",experimentalOrSpecialized
+git ls-tree,git.inspection.ls-tree,git.inspection,Show contents of tree object,109,"",experimentalOrSpecialized
+git merge-base,git.inspection.merge-base,git.inspection,Find common ancestor,110,"",experimentalOrSpecialized
+git name-rev,git.inspection.name-rev,git.inspection,Convert commit IDs to symbolic names,111,"",experimentalOrSpecialized
+git pack-redundant,git.inspection.pack-redundant,git.inspection,Find redundant pack files,112,"",destructiveCleanup
+git repo,git.inspection.repo,git.inspection,Retrieve repository information,113,"",experimentalOrSpecialized
+git rev-list,git.inspection.rev-list,git.inspection,List commit objects,114,"",experimentalOrSpecialized
+git rev-parse,git.inspection.rev-parse,git.inspection,Parse revisions/parameters,115,"",experimentalOrSpecialized
+git show-index,git.inspection.show-index,git.inspection,Show pack index,116,"",experimentalOrSpecialized
+git show-ref,git.inspection.show-ref,git.inspection,Show local refs,117,"",experimentalOrSpecialized
+git unpack-file,git.inspection.unpack-file,git.inspection,Create temporary file from blob,118,"",experimentalOrSpecialized
+git var,git.inspection.var,git.inspection,Show Git logical variables,119,"",experimentalOrSpecialized
+git verify-pack,git.inspection.verify-pack,git.inspection,Validate pack files,120,"",experimentalOrSpecialized
+git daemon,git.server-protocol.daemon,git.server-protocol,Run simple Git server,127,"",credentialOrServerOperation
+git fetch-pack,git.server-protocol.fetch-pack,git.server-protocol,Receive objects from another repository,128,"",credentialOrServerOperation
+git http-backend,git.server-protocol.http-backend,git.server-protocol,Server-side Git-over-HTTP implementation,129,"",credentialOrServerOperation
+git send-pack,git.server-protocol.send-pack,git.server-protocol,Send objects to remote repository,130,"",credentialOrServerOperation
+git update-server-info,git.server-protocol.update-server-info,git.server-protocol,Update information used by basic HTTP servers,131,"",credentialOrServerOperation
+git http-fetch,git.server-protocol.http-fetch,git.server-protocol,Fetch repository over HTTP,132,"",credentialOrServerOperation
+git http-push,git.server-protocol.http-push,git.server-protocol,Push over HTTP/DAV,133,"",credentialOrServerOperation
+git receive-pack,git.server-protocol.receive-pack,git.server-protocol,Server-side receive operation for push,134,"",credentialOrServerOperation
+git shell,git.server-protocol.shell,git.server-protocol,Restricted SSH shell for Git,135,"",credentialOrServerOperation
+git upload-archive,git.server-protocol.upload-archive,git.server-protocol,Serve remote archive requests,136,"",credentialOrServerOperation
+git upload-pack,git.server-protocol.upload-pack,git.server-protocol,Server-side fetch/clone service,137,"",credentialOrServerOperation
+git check-attr,git.helpers.check-attr,git.helpers,Inspect `.gitattributes`,144,"",experimentalOrSpecialized
+git check-ignore,git.helpers.check-ignore,git.helpers,Check/debug `.gitignore` rules,145,"",experimentalOrSpecialized
+git check-mailmap,git.helpers.check-mailmap,git.helpers,Resolve canonical author identity,146,"",experimentalOrSpecialized
+git check-ref-format,git.helpers.check-ref-format,git.helpers,Validate branch/ref name,147,"",experimentalOrSpecialized
+git column,git.helpers.column,git.helpers,Format output into columns,148,"",experimentalOrSpecialized
+git credential,git.helpers.credential,git.helpers,Read/store credentials,149,"",credentialOrServerOperation
+git credential-cache,git.helpers.credential-cache,git.helpers,Cache credentials in memory,150,"",credentialOrServerOperation
+git credential-store,git.helpers.credential-store,git.helpers,Store credentials on disk,151,"",credentialOrServerOperation
+git fmt-merge-msg,git.helpers.fmt-merge-msg,git.helpers,Generate merge commit message,152,"",experimentalOrSpecialized
+git hook,git.helpers.hook,git.helpers,Run Git hooks,153,"",experimentalOrSpecialized
+git interpret-trailers,git.helpers.interpret-trailers,git.helpers,Parse/add commit-message trailers,154,"",experimentalOrSpecialized
+git mailinfo,git.helpers.mailinfo,git.helpers,Extract patch/authorship from email,155,"",experimentalOrSpecialized
+git mailsplit,git.helpers.mailsplit,git.helpers,Split Unix mailbox,156,"",experimentalOrSpecialized
+git merge-one-file,git.helpers.merge-one-file,git.helpers,Internal merge helper,157,"",experimentalOrSpecialized
+git patch-id,git.helpers.patch-id,git.helpers,Calculate unique patch ID,158,"",experimentalOrSpecialized
+git sh-i18n,git.helpers.sh-i18n,git.helpers,Shell-script internationalization helper,159,"",experimentalOrSpecialized
+git sh-setup,git.helpers.sh-setup,git.helpers,Common Git shell helper,160,"",experimentalOrSpecialized
+git stripspace,git.helpers.stripspace,git.helpers,Remove unnecessary whitespace,161,"",experimentalOrSpecialized
+git url-parse,git.helpers.url-parse,git.helpers,Parse Git URL components,162,"",experimentalOrSpecialized
+git svn,git.external-vcs.svn,git.external-vcs,Work with SVN repositories,169,"",experimentalOrSpecialized
+git p4,git.external-vcs.p4,git.external-vcs,Work with Perforce,170,"",experimentalOrSpecialized
+git archimport,git.external-vcs.archimport,git.external-vcs,Import GNU Arch repository,171,"",experimentalOrSpecialized
+git cvsimport,git.external-vcs.cvsimport,git.external-vcs,Import CVS,172,"",experimentalOrSpecialized
+git cvsexportcommit,git.external-vcs.cvsexportcommit,git.external-vcs,Export Git commit to CVS,173,"",experimentalOrSpecialized
+git cvsserver,git.external-vcs.cvsserver,git.external-vcs,Git CVS server emulator,174,"",experimentalOrSpecialized
+git quiltimport,git.external-vcs.quiltimport,git.external-vcs,Import quilt patch series,175,"",experimentalOrSpecialized
+git fast-import,git.external-vcs.fast-import,git.external-vcs,High-speed Git data import,176,"",experimentalOrSpecialized
+git fast-export,git.external-vcs.fast-export,git.external-vcs,Export Git repository data,177,"",experimentalOrSpecialized
+git status,git.daily.status,git.daily,Check changes,186,"",readOnly
+git diff,git.daily.diff,git.daily,See differences,187,"",readOnly
+git add .,git.daily.add-,git.daily,Stage,188,"",workingTreeMutation
+"git commit -m ""message""",git.daily.commit-m-message-,git.daily,Commit,189,"",historyMutation
+git pull --rebase,git.daily.pull-rebase,git.daily,Update branch,190,"",workingTreeMutation
+git push,git.daily.push,git.daily,Push,191,"",workingTreeMutation
+git branch -a,git.daily.branch-a,git.daily,See branches,192,"",readOnly
+git switch -c feature/name,git.daily.switch-c-feature-name,git.daily,New feature branch,193,"",workingTreeMutation
+git switch branch-name,git.daily.switch-branch-name,git.daily,Switch branch,194,"",workingTreeMutation
+git merge branch-name,git.daily.merge-branch-name,git.daily,Merge,195,"",historyMutation
+git rebase develop,git.daily.rebase-develop,git.daily,Rebase,196,"",historyMutation
+git rebase --abort,git.daily.rebase-abort,git.daily,Abort rebase,197,"",historyMutation
+git rebase --continue,git.daily.rebase-continue,git.daily,Continue rebase,198,"",historyMutation
+git cherry-pick COMMIT_ID,git.daily.cherry-pick-commit-id,git.daily,Pick commit,199,"",historyMutation
+git stash,git.daily.stash,git.daily,Temporarily save changes,200,"",workingTreeMutation
+git stash pop,git.daily.stash-pop,git.daily,Restore stash,201,"",workingTreeMutation
+git restore .,git.daily.restore-,git.daily,Undo local file changes,202,"",workingTreeMutation
+git restore --staged .,git.daily.restore-staged-,git.daily,Unstage,203,"",workingTreeMutation
+git reset --soft HEAD~1,git.daily.reset-soft-head-1,git.daily,"Undo commit, keep changes",204,"",historyMutation
+git reset --hard HEAD~1,git.daily.reset-hard-head-1,git.daily,Undo commit + changes ⚠️,205,"",destructiveCleanup
+git revert COMMIT_ID,git.daily.revert-commit-id,git.daily,Safely undo pushed commit,206,"",historyMutation
+git reflog,git.daily.reflog,git.daily,Recover lost commit,207,"",readOnly
+git log --oneline --graph --decorate --all,git.daily.log-oneline-graph-decorate-all,git.daily,Pretty history,208,"",readOnly
+git branch -d branch-name,git.daily.branch-d-branch-name,git.daily,Delete local branch,209,"",historyMutation
+git push origin --delete branch-name,git.daily.push-origin-delete-branch-name,git.daily,Delete remote branch,210,"",historyMutation
+"git tag -a v1.0.0 -m ""v1.0.0""",git.daily.tag-a-v1-0-0-m-v1-0-0-,git.daily,Create release tag,211,"",historyMutation
+git push --tags,git.daily.push-tags,git.daily,Push tags,212,"",workingTreeMutation

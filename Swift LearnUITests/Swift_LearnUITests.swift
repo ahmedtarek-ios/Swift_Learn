@@ -1433,13 +1433,13 @@ final class Swift_LearnUITests: XCTestCase {
         )
         let summary = app.staticTexts["git-progress-summary"].firstMatch
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        assertSummary(summary, equals: "0 of 8 commands", in: app)
+        assertSummary(summary, equals: "0 of 139 commands", in: app)
 
         XCTAssertTrue(app.staticTexts["git-question-title"].firstMatch.exists)
         XCTAssertTrue(app.staticTexts["git-question-scenario"].firstMatch.exists)
         XCTAssertTrue(app.staticTexts["git-question-instruction"].firstMatch.exists)
 
-        let wrong = app.buttons["git-choice-git-archive"].firstMatch
+        let wrong = app.buttons["git-choice-git-gc-2"].firstMatch
         revealInteractive(wrong, in: app)
         activate(wrong)
         let submit = app.buttons["submit-git-answer"].firstMatch
@@ -1447,13 +1447,15 @@ final class Swift_LearnUITests: XCTestCase {
         activate(submit)
         let feedback = app.descendants(matching: .any)["git-answer-feedback"].firstMatch
         XCTAssertTrue(feedback.waitForExistence(timeout: 5))
-        assertSummary(summary, equals: "0 of 8 commands", in: app)
+        assertSummary(summary, equals: "0 of 139 commands", in: app)
 
         let retry = app.buttons["retry-git-question"].firstMatch
         revealInteractive(retry, in: app)
         activate(retry)
 
-        let correct = app.buttons["git-choice-git-bundle-create-all"].firstMatch
+        let correct = app.buttons[
+            "git-choice-git-bundle-create-repo-bundle-all-1"
+        ].firstMatch
         revealInteractive(correct, in: app)
         activate(correct)
         revealInteractive(submit, in: app)
@@ -1462,7 +1464,7 @@ final class Swift_LearnUITests: XCTestCase {
             app.descendants(matching: .any)["git-answer-feedback"]
                 .firstMatch.waitForExistence(timeout: 5)
         )
-        assertSummary(summary, equals: "1 of 8 commands", in: app)
+        assertSummary(summary, equals: "1 of 139 commands", in: app)
 
         let next = app.buttons["continue-next-git-question"].firstMatch
         revealInteractive(next, in: app)
@@ -1499,13 +1501,15 @@ final class Swift_LearnUITests: XCTestCase {
         openTab("git-tab", label: "Git", in: app, tvDirection: .right)
         let summary = app.staticTexts["git-progress-summary"].firstMatch
         XCTAssertTrue(summary.waitForExistence(timeout: 10))
-        let correct = app.buttons["git-choice-git-bundle-create-all"].firstMatch
+        let correct = app.buttons[
+            "git-choice-git-bundle-create-repo-bundle-all-1"
+        ].firstMatch
         revealInteractive(correct, in: app)
         activate(correct)
         let submitGit = app.buttons["submit-git-answer"].firstMatch
         revealInteractive(submitGit, in: app)
         activate(submitGit)
-        assertSummary(summary, equals: "1 of 8 commands", in: app)
+        assertSummary(summary, equals: "1 of 139 commands", in: app)
 
         let reset = app.buttons["reset-git-progress"].firstMatch
         revealInteractive(reset, in: app)
@@ -1513,7 +1517,7 @@ final class Swift_LearnUITests: XCTestCase {
         let cancel = confirmationButton(labeled: "Cancel", in: app)
         XCTAssertTrue(cancel.waitForExistence(timeout: 5))
         activate(cancel)
-        assertSummary(summary, equals: "1 of 8 commands", in: app)
+        assertSummary(summary, equals: "1 of 139 commands", in: app)
 
         revealInteractive(reset, in: app)
         activate(reset)
@@ -1525,12 +1529,70 @@ final class Swift_LearnUITests: XCTestCase {
             app.descendants(matching: .any)["git-progress-reset-success"]
                 .firstMatch.waitForExistence(timeout: 10)
         )
-        assertSummary(summary, equals: "0 of 8 commands", in: app)
+        assertSummary(summary, equals: "0 of 139 commands", in: app)
 
         openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
         let restoredLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
         reveal(restoredLesson, in: app)
         assertValue(restoredLesson, equals: "Completed", in: app)
+    }
+
+    @MainActor
+    func testGitFinalCommandShowsCompletionCard() {
+        let app = launchApp(gitFinalFixture: true)
+        openTab("git-tab", label: "Git", in: app, tvDirection: .right)
+
+        let summary = app.staticTexts["git-progress-summary"].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 10))
+        assertSummary(summary, equals: "138 of 139 commands", in: app)
+
+        let correct = app.buttons["git-choice-git-push-tags-1"].firstMatch
+        revealInteractive(correct, in: app)
+        activate(correct)
+        let submit = app.buttons["submit-git-answer"].firstMatch
+        revealInteractive(submit, in: app)
+        activate(submit)
+        assertSummary(summary, equals: "139 of 139 commands", in: app)
+
+        let finish = app.buttons["continue-next-git-question"].firstMatch
+        XCTAssertTrue(finish.waitForExistence(timeout: 5))
+        XCTAssertEqual(finish.label, "Finish Git Track")
+        revealInteractive(finish, in: app)
+        activate(finish)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["git-track-complete"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    func testGitProgressSurvivesRelaunch() {
+        let app = launchApp(persistsData: true)
+        openTab("git-tab", label: "Git", in: app, tvDirection: .right)
+
+        let correct = app.buttons[
+            "git-choice-git-bundle-create-repo-bundle-all-1"
+        ].firstMatch
+        revealInteractive(correct, in: app)
+        activate(correct)
+        let submit = app.buttons["submit-git-answer"].firstMatch
+        revealInteractive(submit, in: app)
+        activate(submit)
+        assertSummary(
+            app.staticTexts["git-progress-summary"].firstMatch,
+            equals: "1 of 139 commands",
+            in: app
+        )
+        app.terminate()
+
+        let relaunched = launchApp(
+            persistsData: true,
+            resetsPersistentData: false
+        )
+        openTab("git-tab", label: "Git", in: relaunched, tvDirection: .right)
+        let summary = relaunched.staticTexts["git-progress-summary"].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 10))
+        assertSummary(summary, equals: "1 of 139 commands", in: relaunched)
     }
 
     @MainActor
@@ -1556,6 +1618,7 @@ final class Swift_LearnUITests: XCTestCase {
     private func launchApp(
         skipIntro: Bool = true,
         persistsData: Bool = false,
+        resetsPersistentData: Bool = true,
         reviewFixture: Bool = false,
         activityFixture: Bool = false,
         codeOrderingFixture: Bool = false,
@@ -1563,6 +1626,7 @@ final class Swift_LearnUITests: XCTestCase {
         bossFixture: Bool = false,
         levelCompletionFixture: Bool = false,
         projectFixture: Bool = false,
+        gitFinalFixture: Bool = false,
         failsFirstBossCompletionSave: Bool = false,
         discoveryQuery: String = "",
         rightToLeft: Bool = false
@@ -1574,7 +1638,9 @@ final class Swift_LearnUITests: XCTestCase {
         }
         if persistsData {
             app.launchArguments.append("--ui-testing-persistent")
-            app.launchArguments.append("--reset-ui-testing-data")
+            if resetsPersistentData {
+                app.launchArguments.append("--reset-ui-testing-data")
+            }
         }
         if reviewFixture {
             app.launchArguments.append("--ui-testing-review-fixture")
@@ -1596,6 +1662,9 @@ final class Swift_LearnUITests: XCTestCase {
         }
         if projectFixture {
             app.launchArguments.append("--ui-testing-project-fixture")
+        }
+        if gitFinalFixture {
+            app.launchArguments.append("--ui-testing-git-final-fixture")
         }
         if failsFirstBossCompletionSave {
             app.launchArguments.append(

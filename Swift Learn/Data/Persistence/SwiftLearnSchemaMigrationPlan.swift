@@ -85,8 +85,8 @@ enum SwiftLearnSchemaV7: VersionedSchema {
     ]
 }
 
-/// Adds the Git track: explicit `trackID` on existing records, which migrates
-/// to `swift`, plus Git-only progress and attempt records.
+/// Adds isolated Git progress and attempt entities without changing the
+/// existing Swift record schemas.
 enum SwiftLearnSchemaV8: VersionedSchema {
     static let versionIdentifier = Schema.Version(8, 0, 0)
     static let models: [any PersistentModel.Type] = [

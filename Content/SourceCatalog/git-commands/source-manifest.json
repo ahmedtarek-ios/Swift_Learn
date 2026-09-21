@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "sourceID": "git-commands-attachment-v1",
+  "sourceFile": "pasted-text.txt",
+  "sourceSHA256": "dede2389c3bfa0d3515470b122145f0027c2ae8e7adbfcc1897bd968fd5680ac",
+  "canonicalCommandCount": 139,
+  "sourceAppearanceCount": 140,
+  "duplicateCanonicalCommands": 1,
+  "categoryCount": 11,
+  "categories": [
+    {
+      "id": "git.bundles",
+      "lessonCount": 1
+    },
+    {
+      "id": "git.maintenance",
+      "lessonCount": 7
+    },
+    {
+      "id": "git.patches",
+      "lessonCount": 6
+    },
+    {
+      "id": "git.notes",
+      "lessonCount": 5
+    },
+    {
+      "id": "git.information",
+      "lessonCount": 10
+    },
+    {
+      "id": "git.objects-index",
+      "lessonCount": 20
+    },
+    {
+      "id": "git.inspection",
+      "lessonCount": 24
+    },
+    {
+      "id": "git.server-protocol",
+      "lessonCount": 11
+    },
+    {
+      "id": "git.helpers",
+      "lessonCount": 19
+    },
+    {
+      "id": "git.external-vcs",
+      "lessonCount": 9
+    },
+    {
+      "id": "git.daily",
+      "lessonCount": 27
+    }
+  ],
+  "excludedExamples": [
+    "git format-patch main..feature/login"
+  ],
+  "excludedProseReferences": [
+    "git help --all"
+  ]
+}

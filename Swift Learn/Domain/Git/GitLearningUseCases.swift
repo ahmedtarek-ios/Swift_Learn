@@ -65,7 +65,6 @@ struct GitLearningTrack: Equatable, Sendable {
 
     var currentLesson: GitCommandLesson? {
         catalog.lessons.first { !completedLessonIDs.contains($0.id) }
-            ?? catalog.lessons.last
     }
 
     var isTrackComplete: Bool {

@@ -46,6 +46,7 @@ final class AppContainer {
         seedsBossFixture: Bool = false,
         seedsLevelCompletionFixture: Bool = false,
         seedsProjectFixture: Bool = false,
+        seedsGitFinalFixture: Bool = false,
         failsFirstBossCompletionSave: Bool = false,
         initialDiscoveryQuery: String = "",
         clock: any LearningClock = SystemLearningClock(),
@@ -320,6 +321,12 @@ final class AppContainer {
         let gitTrackRepository = SwiftDataGitTrackRepository(
             modelContext: modelContainer.mainContext
         )
+        if seedsGitFinalFixture {
+            let gitCatalog = try gitContentRepository.loadCatalog()
+            for lesson in gitCatalog.lessons.dropLast() {
+                try gitTrackRepository.markCompleted(lessonID: lesson.id)
+            }
+        }
         gitLearningViewModel = GitLearningViewModel(
             loadTrack: LoadGitLearningTrackUseCase(
                 contentRepository: gitContentRepository,

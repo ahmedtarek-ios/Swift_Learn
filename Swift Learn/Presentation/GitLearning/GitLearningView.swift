@@ -151,9 +151,10 @@ struct GitLearningView: View {
             .accessibilityIdentifier("git-answer-feedback")
 
             if result.isCorrect {
-                Button("Next Command") { viewModel.continueToNextQuestion() }
+                Button(viewModel.nextLesson == nil ? "Finish Git Track" : "Next Command") {
+                    viewModel.continueToNextQuestion()
+                }
                     .buttonStyle(.borderedProminent)
-                    .disabled(viewModel.nextLesson == nil)
                     .accessibilityIdentifier("continue-next-git-question")
             } else {
                 Button("Try Again") { viewModel.retryCurrentQuestion() }

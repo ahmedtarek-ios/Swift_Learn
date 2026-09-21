@@ -86,8 +86,25 @@ struct GitLearningViewModelTests {
     }
 
     @Test
+    func completingFinalQuestionRevealsTrackCompletion() throws {
+        let harness = try Harness(completedLessonCount: 138)
+        harness.viewModel.load()
+        let finalLesson = try #require(harness.catalog.lessons.last)
+
+        #expect(harness.viewModel.currentLesson?.id == finalLesson.id)
+        harness.viewModel.select(choiceID: finalLesson.correctChoiceID)
+        harness.viewModel.submit()
+
+        #expect(harness.viewModel.track?.isTrackComplete == true)
+        #expect(harness.viewModel.nextLesson == nil)
+        harness.viewModel.continueToNextQuestion()
+        #expect(harness.viewModel.currentLesson == nil)
+        #expect(harness.viewModel.isTrackComplete)
+    }
+
+    @Test
     func resetCancellationChangesNothing() throws {
-        let harness = try Harness(completedLessonIDs: ["git.bundles.create-all"])
+        let harness = try Harness(completedLessonCount: 1)
         harness.viewModel.load()
 
         harness.viewModel.requestReset()
@@ -100,7 +117,7 @@ struct GitLearningViewModelTests {
 
     @Test
     func confirmedResetClearsGitProgressAndReloadsTheFirstQuestion() throws {
-        let harness = try Harness(completedLessonIDs: ["git.bundles.create-all"])
+        let harness = try Harness(completedLessonCount: 1)
         harness.viewModel.load()
 
         harness.viewModel.requestReset()
@@ -117,7 +134,7 @@ struct GitLearningViewModelTests {
     @Test
     func resetFailureKeepsProgressAndExposesAnError() throws {
         let harness = try Harness(
-            completedLessonIDs: ["git.bundles.create-all"],
+            completedLessonCount: 1,
             resetRepository: FailingGitResetRepository()
         )
         harness.viewModel.load()
@@ -140,7 +157,7 @@ struct GitLearningViewModelTests {
         let viewModel: GitLearningViewModel
 
         init(
-            completedLessonIDs: Set<String> = [],
+            completedLessonCount: Int = 0,
             resetRepository: (any GitTrackResetRepository)? = nil
         ) throws {
             let bundle = Bundle(for: GitViewModelBundleToken.self)
@@ -154,7 +171,12 @@ struct GitLearningViewModelTests {
             let data = try Data(contentsOf: url)
             let content = BundledGitCommandRepository(data: data)
             catalog = try content.loadCatalog()
-            let store = InMemoryGitTrackRepository(completedLessonIDs: completedLessonIDs)
+            let completedLessonIDs = Set(
+                catalog.lessons.prefix(completedLessonCount).map(\.id)
+            )
+            let store = InMemoryGitTrackRepository(
+                completedLessonIDs: completedLessonIDs
+            )
             viewModel = GitLearningViewModel(
                 loadTrack: LoadGitLearningTrackUseCase(
                     contentRepository: content,
