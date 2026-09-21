@@ -49,6 +49,9 @@ struct Swift_LearnApp: App {
         let seedsGitFinalFixture = processInfo.arguments.contains(
             "--ui-testing-git-final-fixture"
         )
+        let failsGitReset = processInfo.arguments.contains(
+            "--ui-testing-fail-git-reset"
+        )
         let failsFirstBossCompletionSave = processInfo.arguments.contains(
             "--ui-testing-fail-first-boss-completion-save"
         )
@@ -81,6 +84,7 @@ struct Swift_LearnApp: App {
                 seedsLevelCompletionFixture: seedsLevelCompletionFixture,
                 seedsProjectFixture: seedsProjectFixture,
                 seedsGitFinalFixture: seedsGitFinalFixture,
+                failsGitReset: failsGitReset,
                 failsFirstBossCompletionSave: failsFirstBossCompletionSave,
                 initialDiscoveryQuery: initialDiscoveryQuery,
                 clock: clock,

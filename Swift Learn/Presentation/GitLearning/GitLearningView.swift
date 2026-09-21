@@ -226,12 +226,16 @@ struct GitLearningView: View {
             case .succeeded:
                 Label("Git progress reset", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Git progress reset")
                     .accessibilityIdentifier("git-progress-reset-success")
                 Button("Done") { viewModel.acknowledgeResetOutcome() }
                     .accessibilityIdentifier("dismiss-git-reset-outcome")
             case let .failed(message):
                 Label(message, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(message)
                     .accessibilityIdentifier("git-progress-reset-error")
                 Button("Done") { viewModel.acknowledgeResetOutcome() }
                     .accessibilityIdentifier("dismiss-git-reset-outcome")

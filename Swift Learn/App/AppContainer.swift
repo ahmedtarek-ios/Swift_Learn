@@ -47,6 +47,7 @@ final class AppContainer {
         seedsLevelCompletionFixture: Bool = false,
         seedsProjectFixture: Bool = false,
         seedsGitFinalFixture: Bool = false,
+        failsGitReset: Bool = false,
         failsFirstBossCompletionSave: Bool = false,
         initialDiscoveryQuery: String = "",
         clock: any LearningClock = SystemLearningClock(),
@@ -321,6 +322,9 @@ final class AppContainer {
         let gitTrackRepository = SwiftDataGitTrackRepository(
             modelContext: modelContainer.mainContext
         )
+        let gitResetRepository: any GitTrackResetRepository = failsGitReset
+            ? FailingGitTrackResetRepository()
+            : gitTrackRepository
         if seedsGitFinalFixture {
             let gitCatalog = try gitContentRepository.loadCatalog()
             for lesson in gitCatalog.lessons.dropLast() {
@@ -339,7 +343,7 @@ final class AppContainer {
                 clock: clock
             ),
             resetProgress: ResetGitTrackProgressUseCase(
-                repository: gitTrackRepository
+                repository: gitResetRepository
             )
         )
 #if os(iOS)
@@ -444,6 +448,7 @@ private enum AppContainerError: LocalizedError {
     case bossFixtureUnavailable
     case levelCompletionFixtureUnavailable
     case bossCompletionFixtureFailure
+    case gitResetFixtureFailure
     case projectFixtureUnavailable
 
     var errorDescription: String? {
@@ -456,9 +461,17 @@ private enum AppContainerError: LocalizedError {
             "The UI-test level-completion fixture needs at least two lessons."
         case .bossCompletionFixtureFailure:
             "The UI-test boss achievement could not be saved."
+        case .gitResetFixtureFailure:
+            "The UI-test Git reset is unavailable."
         case .projectFixtureUnavailable:
             "The guided project fixture is unavailable."
         }
+    }
+}
+
+private struct FailingGitTrackResetRepository: GitTrackResetRepository {
+    func resetGitProgress() throws {
+        throw AppContainerError.gitResetFixtureFailure
     }
 }
 

@@ -1566,6 +1566,40 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
+    func testGitResetFailureKeepsProgressAndShowsAccessibleError() {
+        let app = launchApp(failsGitReset: true)
+        openTab("git-tab", label: "Git", in: app, tvDirection: .right)
+
+        let summary = app.staticTexts["git-progress-summary"].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 10))
+        let correct = app.buttons[
+            "git-choice-git-bundle-create-repo-bundle-all-1"
+        ].firstMatch
+        revealInteractive(correct, in: app)
+        activate(correct)
+        let submit = app.buttons["submit-git-answer"].firstMatch
+        revealInteractive(submit, in: app)
+        activate(submit)
+        assertSummary(summary, equals: "1 of 139 commands", in: app)
+
+        let reset = app.buttons["reset-git-progress"].firstMatch
+        revealInteractive(reset, in: app)
+        activate(reset)
+        let confirm = confirmationButton(labeled: "Reset Git Progress", in: app)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        activate(confirm)
+
+        let error = app.descendants(matching: .any)[
+            "git-progress-reset-error"
+        ].firstMatch
+        XCTAssertTrue(error.waitForExistence(timeout: 10))
+        XCTAssertTrue(
+            accessibleText(of: error).contains("Git reset is unavailable")
+        )
+        assertSummary(summary, equals: "1 of 139 commands", in: app)
+    }
+
+    @MainActor
     func testGitProgressSurvivesRelaunch() {
         let app = launchApp(persistsData: true)
         openTab("git-tab", label: "Git", in: app, tvDirection: .right)
@@ -1627,6 +1661,7 @@ final class Swift_LearnUITests: XCTestCase {
         levelCompletionFixture: Bool = false,
         projectFixture: Bool = false,
         gitFinalFixture: Bool = false,
+        failsGitReset: Bool = false,
         failsFirstBossCompletionSave: Bool = false,
         discoveryQuery: String = "",
         rightToLeft: Bool = false
@@ -1665,6 +1700,9 @@ final class Swift_LearnUITests: XCTestCase {
         }
         if gitFinalFixture {
             app.launchArguments.append("--ui-testing-git-final-fixture")
+        }
+        if failsGitReset {
+            app.launchArguments.append("--ui-testing-fail-git-reset")
         }
         if failsFirstBossCompletionSave {
             app.launchArguments.append(
