@@ -1512,7 +1512,8 @@ final class Swift_LearnUITests: XCTestCase {
         assertSummary(summary, equals: "1 of 139 commands", in: app)
 
         let reset = app.buttons["reset-git-progress"].firstMatch
-        revealInteractive(reset, in: app)
+        // 139 command rows sit above the reset action.
+        revealInteractive(reset, in: app, maxMoves: 80)
         activate(reset)
         let cancel = confirmationButton(labeled: "Cancel", in: app)
         XCTAssertTrue(cancel.waitForExistence(timeout: 5))
@@ -1523,7 +1524,7 @@ final class Swift_LearnUITests: XCTestCase {
         activate(reset)
         let confirm = confirmationButton(labeled: "Reset Git Progress", in: app)
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
-        activate(confirm)
+        activateResetConfirmation(confirm)
 
         XCTAssertTrue(
             app.descendants(matching: .any)["git-progress-reset-success"]
@@ -1531,10 +1532,19 @@ final class Swift_LearnUITests: XCTestCase {
         )
         assertSummary(summary, equals: "0 of 139 commands", in: app)
 
-        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
-        let restoredLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
-        reveal(restoredLesson, in: app)
-        assertValue(restoredLesson, equals: "Completed", in: app)
+        // Relaunch instead of popping the pushed lesson: the Journey root is
+        // then deterministic on every platform, and persistence is re-proven.
+        app.terminate()
+        let relaunched = launchApp(persistsData: true, resetsPersistentData: false)
+        openTab("journey-tab", label: "Journey", in: relaunched, tvDirection: .left)
+        let restoredLesson = relaunched.buttons["start-lesson-\(lesson.id)"].firstMatch
+        reveal(restoredLesson, in: relaunched, maxMoves: 40)
+        assertValue(restoredLesson, equals: "Completed", in: relaunched)
+
+        openTab("git-tab", label: "Git", in: relaunched, tvDirection: .right)
+        let restoredSummary = relaunched.staticTexts["git-progress-summary"].firstMatch
+        XCTAssertTrue(restoredSummary.waitForExistence(timeout: 10))
+        assertSummary(restoredSummary, equals: "0 of 139 commands", in: relaunched)
     }
 
     @MainActor
@@ -1557,7 +1567,7 @@ final class Swift_LearnUITests: XCTestCase {
         let finish = app.buttons["continue-next-git-question"].firstMatch
         XCTAssertTrue(finish.waitForExistence(timeout: 5))
         XCTAssertEqual(finish.label, "Finish Git Track")
-        revealInteractive(finish, in: app)
+        revealInteractive(finish, in: app, maxMoves: 40)
         activate(finish)
         XCTAssertTrue(
             app.descendants(matching: .any)["git-track-complete"]
@@ -1583,11 +1593,12 @@ final class Swift_LearnUITests: XCTestCase {
         assertSummary(summary, equals: "1 of 139 commands", in: app)
 
         let reset = app.buttons["reset-git-progress"].firstMatch
-        revealInteractive(reset, in: app)
+        // 139 command rows sit above the reset action.
+        revealInteractive(reset, in: app, maxMoves: 80)
         activate(reset)
         let confirm = confirmationButton(labeled: "Reset Git Progress", in: app)
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
-        activate(confirm)
+        activateResetConfirmation(confirm)
 
         let error = app.descendants(matching: .any)[
             "git-progress-reset-error"
@@ -1776,10 +1787,18 @@ final class Swift_LearnUITests: XCTestCase {
     ) {
 #if os(macOS)
         app.activate()
+        // A SwiftUI tab surfaces as a radio button on macOS, and only some
+        // builds expose it as a button, so try both before the identifier.
+        let radioTab = app.radioButtons[label].firstMatch
         let labeledTab = app.buttons[label].firstMatch
-        let tab = labeledTab.waitForExistence(timeout: 5)
-            ? labeledTab
-            : app.descendants(matching: .any)[identifier].firstMatch
+        let tab: XCUIElement
+        if radioTab.waitForExistence(timeout: 5) {
+            tab = radioTab
+        } else if labeledTab.waitForExistence(timeout: 5) {
+            tab = labeledTab
+        } else {
+            tab = app.descendants(matching: .any)[identifier].firstMatch
+        }
 #else
         let identifiedTab = app.descendants(matching: .any)[identifier].firstMatch
         let tab = identifiedTab.waitForExistence(timeout: 5)
@@ -1790,15 +1809,23 @@ final class Swift_LearnUITests: XCTestCase {
 
 #if os(tvOS)
         let remote = XCUIRemote.shared
-        let otherIdentifier = identifier == "profile-tab" ? "journey-tab" : "profile-tab"
-        let otherTab = app.descendants(matching: .any)[otherIdentifier].firstMatch
+        let tabs = ["journey-tab", "git-tab", "profile-tab"].map {
+            app.descendants(matching: .any)[$0].firstMatch
+        }
 
-        for _ in 0..<12 where !tab.hasFocus && !otherTab.hasFocus {
+        for _ in 0..<12 where !tabs.contains(where: \.hasFocus) {
             remote.press(.up)
         }
 
-        if !tab.hasFocus {
+        for _ in 0..<2 where !tab.hasFocus {
             remote.press(tvDirection == .left ? .left : .right)
+            let focused = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "hasFocus == true"),
+                object: tab
+            )
+            if XCTWaiter.wait(for: [focused], timeout: 0.5) == .completed {
+                break
+            }
         }
         if tab.hasFocus {
             remote.press(.select)
@@ -1889,20 +1916,29 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
-    private func revealInteractive(_ element: XCUIElement, in app: XCUIApplication) {
+    private func revealInteractive(
+        _ element: XCUIElement,
+        in app: XCUIApplication,
+        maxMoves: Int = 12
+    ) {
 #if os(macOS)
-        scrollDown(until: element, in: app, requiresHittable: true)
+        scrollDown(
+            until: element,
+            in: app,
+            requiresHittable: true,
+            maxMoves: maxMoves
+        )
 #elseif os(tvOS)
         reveal(element, in: app)
 #else
         _ = element.waitForExistence(timeout: 2)
         XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 5))
 
-        for _ in 0..<12 where !element.isHittable {
+        for _ in 0..<maxMoves where !element.isHittable {
             app.swipeUp()
         }
 
-        for _ in 0..<12 where !element.isHittable {
+        for _ in 0..<maxMoves where !element.isHittable {
             app.swipeDown()
         }
 

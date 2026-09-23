@@ -68,6 +68,8 @@ struct GitLearningView: View {
             .frame(maxWidth: 840, alignment: .leading)
             .padding()
         }
+        // macOS does not always surface an identifier placed on NavigationStack.
+        .accessibilityIdentifier("git-learning")
     }
 
     private var header: some View {
