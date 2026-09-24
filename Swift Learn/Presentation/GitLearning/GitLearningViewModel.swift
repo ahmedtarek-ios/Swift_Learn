@@ -25,6 +25,8 @@ final class GitLearningViewModel {
     private(set) var currentLesson: GitCommandLesson?
     private(set) var selectedChoiceID: String?
     private(set) var answerResult: GitAnswerResult?
+    private(set) var recentlyUnlockedLessonID: String?
+    private(set) var navigationRevision = 0
 
     private let loadTrack: LoadGitLearningTrackUseCase
     private let submitAnswer: SubmitGitAnswerUseCase
@@ -63,6 +65,7 @@ final class GitLearningViewModel {
 
     func load() {
         loadState = .loading
+        recentlyUnlockedLessonID = nil
         do {
             let track = try loadTrack.execute()
             guard track.totalLessonCount > 0 else {
@@ -71,7 +74,7 @@ final class GitLearningViewModel {
             }
             loadState = .loaded(track)
             if currentLesson == nil || track.isCompleted(lessonID: currentLesson?.id ?? "") {
-                currentLesson = track.currentLesson
+                currentLesson = track.resumeLesson
             }
             selectedChoiceID = nil
             answerResult = nil
@@ -88,6 +91,10 @@ final class GitLearningViewModel {
         answerResult = nil
     }
 
+    func beginLesson(id lessonID: String) {
+        open(lessonID: lessonID)
+    }
+
     func select(choiceID: String) {
         guard answerResult == nil else { return }
         selectedChoiceID = choiceID
@@ -95,14 +102,41 @@ final class GitLearningViewModel {
 
     func submit() {
         guard let lesson = currentLesson, let choiceID = selectedChoiceID else { return }
+        submit(lessonID: lesson.id, choiceID: choiceID)
+    }
+
+    func canSubmit(lessonID: String) -> Bool {
+        currentLesson?.id == lessonID && canSubmit
+    }
+
+    func submit(lessonID: String) {
+        guard currentLesson?.id == lessonID, let choiceID = selectedChoiceID else { return }
+        submit(lessonID: lessonID, choiceID: choiceID)
+    }
+
+    func nextLesson(after lessonID: String) -> GitCommandLesson? {
+        track?.lesson(after: lessonID)
+    }
+
+    func finishTrack() {
+        currentLesson = nil
+        selectedChoiceID = nil
+        answerResult = nil
+        recentlyUnlockedLessonID = nil
+        navigationRevision += 1
+    }
+
+    private func submit(lessonID: String, choiceID: String) {
         do {
-            answerResult = try submitAnswer.execute(
-                lessonID: lesson.id,
+            let result = try submitAnswer.execute(
+                lessonID: lessonID,
                 choiceID: choiceID
             )
-            if answerResult?.didComplete == true {
+            if result.didComplete {
                 reloadTrackKeepingLesson()
+                recentlyUnlockedLessonID = track?.lesson(after: lessonID)?.id
             }
+            answerResult = result
         } catch {
             loadState = .failed(error.localizedDescription)
         }
@@ -140,8 +174,10 @@ final class GitLearningViewModel {
             currentLesson = nil
             selectedChoiceID = nil
             answerResult = nil
+            recentlyUnlockedLessonID = nil
             load()
             resetState = .succeeded
+            navigationRevision += 1
         } catch {
             resetState = .failed(error.localizedDescription)
         }

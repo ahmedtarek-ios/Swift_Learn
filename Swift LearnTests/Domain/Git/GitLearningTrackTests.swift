@@ -75,6 +75,78 @@ struct GitLearningTrackTests {
     }
 
     @Test
+    func availabilityReportsExactPrerequisiteAndKeepsCompletedCommandsAvailable() throws {
+        let catalog = try bundledCatalog()
+        let first = catalog.lessons[0]
+        let second = catalog.lessons[1]
+        let emptyTrack = GitLearningTrack(
+            catalog: catalog,
+            completedLessonIDs: []
+        )
+
+        #expect(emptyTrack.availability(for: first.id) == .available)
+        #expect(
+            emptyTrack.availability(for: second.id)
+                == .locked(
+                    prerequisiteID: first.id,
+                    prerequisiteTitle: first.title
+                )
+        )
+        #expect(emptyTrack.availability(for: "git.unknown") == .unavailable)
+
+        let progressedTrack = GitLearningTrack(
+            catalog: catalog,
+            completedLessonIDs: [first.id]
+        )
+        #expect(progressedTrack.availability(for: first.id) == .completed)
+        #expect(progressedTrack.availability(for: second.id) == .available)
+        #expect(progressedTrack.isUnlocked(lessonID: first.id))
+        #expect(progressedTrack.isUnlocked(lessonID: second.id))
+    }
+
+    @Test
+    func categoryProgressCountsOnlyItsCommandsAndHandlesAnEmptyCategory() throws {
+        let catalog = try bundledCatalog()
+        let category = catalog.categories[1]
+        let completedInCategory = try #require(category.lessons.first)
+        let track = GitLearningTrack(
+            catalog: catalog,
+            completedLessonIDs: [catalog.lessons[0].id, completedInCategory.id]
+        )
+
+        let progress = track.progress(for: category)
+        #expect(progress.completedLessonCount == 1)
+        #expect(progress.totalLessonCount == category.lessons.count)
+        #expect(progress.progress == 1.0 / Double(category.lessons.count))
+
+        let emptyProgress = track.progress(
+            for: GitCommandCategory(
+                id: "git.empty",
+                title: "Empty",
+                summary: "No commands",
+                lessons: []
+            )
+        )
+        #expect(emptyProgress.completedLessonCount == 0)
+        #expect(emptyProgress.totalLessonCount == 0)
+        #expect(emptyProgress.progress == 0)
+    }
+
+    @Test
+    func resumeReturnsTheFirstIncompleteAvailableCommand() throws {
+        let catalog = try bundledCatalog()
+        let first = catalog.lessons[0]
+        let second = catalog.lessons[1]
+        let track = GitLearningTrack(
+            catalog: catalog,
+            completedLessonIDs: [first.id]
+        )
+
+        #expect(track.resumeLesson?.id == second.id)
+        #expect(track.currentLesson?.id == second.id)
+    }
+
+    @Test
     func correctAnswerCompletesAndUnlocksTheNextQuestion() throws {
         let catalog = try bundledCatalog()
         let first = catalog.lessons[0]
@@ -113,6 +185,7 @@ struct GitLearningTrackTests {
 
         #expect(track.isTrackComplete)
         #expect(track.currentLesson == nil)
+        #expect(track.resumeLesson == nil)
         #expect(track.progress == 1)
     }
 

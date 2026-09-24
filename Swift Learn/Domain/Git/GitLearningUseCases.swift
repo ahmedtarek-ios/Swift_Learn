@@ -33,6 +33,26 @@ protocol GitTrackResetRepository {
 
 // MARK: - Track state
 
+enum GitLessonAvailability: Equatable, Sendable {
+    case completed
+    case available
+    case locked(prerequisiteID: String, prerequisiteTitle: String)
+    case unavailable
+}
+
+struct GitCategoryProgress: Equatable, Sendable {
+    let completedLessonCount: Int
+    let totalLessonCount: Int
+
+    var progress: Double {
+        guard totalLessonCount > 0 else { return 0 }
+        return min(
+            max(Double(completedLessonCount) / Double(totalLessonCount), 0),
+            1
+        )
+    }
+}
+
 struct GitLearningTrack: Equatable, Sendable {
     let catalog: GitCommandCatalog
     let completedLessonIDs: Set<String>
@@ -54,17 +74,50 @@ struct GitLearningTrack: Equatable, Sendable {
         completedLessonIDs.contains(lessonID)
     }
 
-    /// Questions unlock in catalog order: the first, plus any that follow a
-    /// completed question.
-    func isUnlocked(lessonID: String) -> Bool {
+    func availability(for lessonID: String) -> GitLessonAvailability {
         guard let index = catalog.lessons.firstIndex(where: { $0.id == lessonID })
-        else { return false }
-        guard index > 0 else { return true }
-        return completedLessonIDs.contains(catalog.lessons[index - 1].id)
+        else { return .unavailable }
+        if completedLessonIDs.contains(lessonID) {
+            return .completed
+        }
+        guard index > 0 else { return .available }
+
+        let prerequisite = catalog.lessons[index - 1]
+        guard completedLessonIDs.contains(prerequisite.id) else {
+            return .locked(
+                prerequisiteID: prerequisite.id,
+                prerequisiteTitle: prerequisite.title
+            )
+        }
+        return .available
+    }
+
+    func isUnlocked(lessonID: String) -> Bool {
+        switch availability(for: lessonID) {
+        case .completed, .available:
+            true
+        case .locked, .unavailable:
+            false
+        }
+    }
+
+    func progress(for category: GitCommandCategory) -> GitCategoryProgress {
+        GitCategoryProgress(
+            completedLessonCount: category.lessons.count {
+                completedLessonIDs.contains($0.id)
+            },
+            totalLessonCount: category.lessons.count
+        )
     }
 
     var currentLesson: GitCommandLesson? {
-        catalog.lessons.first { !completedLessonIDs.contains($0.id) }
+        resumeLesson
+    }
+
+    var resumeLesson: GitCommandLesson? {
+        catalog.lessons.first {
+            availability(for: $0.id) == .available
+        }
     }
 
     var isTrackComplete: Bool {

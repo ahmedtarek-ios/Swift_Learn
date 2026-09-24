@@ -10,6 +10,16 @@ import XCTest
 final class Swift_LearnUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
+#if os(iOS)
+        addUIInterruptionMonitor(withDescription: "Dismiss Apple account prompts") { alert in
+            MainActor.assumeIsolated {
+                let notNow = alert.buttons["Not Now"].firstMatch
+                guard notNow.exists else { return false }
+                notNow.tap()
+                return true
+            }
+        }
+#endif
     }
 
     @MainActor
@@ -1434,6 +1444,12 @@ final class Swift_LearnUITests: XCTestCase {
         let summary = app.staticTexts["git-progress-summary"].firstMatch
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
         assertSummary(summary, equals: "0 of 139 commands", in: app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["git-track-header"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+
+        openGitResume(in: app)
 
         XCTAssertTrue(app.staticTexts["git-question-title"].firstMatch.exists)
         XCTAssertTrue(app.staticTexts["git-question-scenario"].firstMatch.exists)
@@ -1441,25 +1457,25 @@ final class Swift_LearnUITests: XCTestCase {
 
         let wrong = app.buttons["git-choice-git-gc-2"].firstMatch
         revealInteractive(wrong, in: app)
-        activate(wrong)
+        activateGitControl(wrong, in: app)
         let submit = app.buttons["submit-git-answer"].firstMatch
         revealInteractive(submit, in: app)
-        activate(submit)
+        activateGitControl(submit, in: app)
         let feedback = app.descendants(matching: .any)["git-answer-feedback"].firstMatch
         XCTAssertTrue(feedback.waitForExistence(timeout: 5))
         assertSummary(summary, equals: "0 of 139 commands", in: app)
 
         let retry = app.buttons["retry-git-question"].firstMatch
         revealInteractive(retry, in: app)
-        activate(retry)
+        activateGitControl(retry, in: app)
 
         let correct = app.buttons[
             "git-choice-git-bundle-create-repo-bundle-all-1"
         ].firstMatch
         revealInteractive(correct, in: app)
-        activate(correct)
+        activateGitControl(correct, in: app)
         revealInteractive(submit, in: app)
-        activate(submit)
+        activateGitControl(submit, in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)["git-answer-feedback"]
                 .firstMatch.waitForExistence(timeout: 5)
@@ -1468,8 +1484,81 @@ final class Swift_LearnUITests: XCTestCase {
 
         let next = app.buttons["continue-next-git-question"].firstMatch
         revealInteractive(next, in: app)
-        activate(next)
+        activateGitControl(next, in: app)
         XCTAssertTrue(app.staticTexts["git-question-title"].firstMatch.exists)
+    }
+
+    @MainActor
+    func testGitTabSupportsKeyboardAndFocusNavigation() {
+        let app = launchApp()
+        openTab("git-tab", label: "Git", in: app, tvDirection: .right)
+        openGitResume(in: app)
+
+        let correct = app.buttons[
+            "git-choice-git-bundle-create-repo-bundle-all-1"
+        ].firstMatch
+        XCTAssertTrue(correct.waitForExistence(timeout: 10))
+
+#if os(macOS)
+        moveKeyboardFocus(to: correct, in: app)
+        app.typeKey(.space, modifierFlags: [])
+#elseif os(tvOS)
+        waitForFocus(on: correct)
+        XCUIRemote.shared.press(.select)
+#else
+        activate(correct)
+#endif
+
+        let submit = app.buttons["submit-git-answer"].firstMatch
+        XCTAssertTrue(submit.waitForExistence(timeout: 5))
+        XCTAssertTrue(submit.isEnabled)
+
+#if os(macOS)
+        moveKeyboardFocus(to: submit, in: app)
+        app.typeKey(.space, modifierFlags: [])
+#elseif os(tvOS)
+        moveFocus(to: submit, in: app)
+        XCUIRemote.shared.press(.select)
+#else
+        activate(submit)
+#endif
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["git-answer-feedback"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+        assertSummary(
+            app.staticTexts["git-progress-summary"].firstMatch,
+            equals: "1 of 139 commands",
+            in: app
+        )
+    }
+
+    @MainActor
+    func testGitCategoryDetailExplainsLockedCommand() {
+        let app = launchApp()
+        openTab("git-tab", label: "Git", in: app, tvDirection: .right)
+
+        let category = app.descendants(matching: .any)[
+            "open-git-category-git.maintenance"
+        ].firstMatch
+        revealInteractive(category, in: app)
+        activateGitControl(category, in: app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["git-category-detail-git.maintenance"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+
+        let lockedCommand = app.descendants(matching: .any)[
+            "git-command-row-git.maintenance.gc"
+        ].firstMatch
+        revealInteractive(lockedCommand, in: app)
+        activateGitControl(lockedCommand, in: app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)[
+                "git-command-locked-reason-git.maintenance.gc"
+            ].firstMatch.waitForExistence(timeout: 5)
+        )
     }
 
     @MainActor
@@ -1501,27 +1590,29 @@ final class Swift_LearnUITests: XCTestCase {
         openTab("git-tab", label: "Git", in: app, tvDirection: .right)
         let summary = app.staticTexts["git-progress-summary"].firstMatch
         XCTAssertTrue(summary.waitForExistence(timeout: 10))
+        openGitResume(in: app)
         let correct = app.buttons[
             "git-choice-git-bundle-create-repo-bundle-all-1"
         ].firstMatch
         revealInteractive(correct, in: app)
-        activate(correct)
+        activateGitControl(correct, in: app)
         let submitGit = app.buttons["submit-git-answer"].firstMatch
         revealInteractive(submitGit, in: app)
-        activate(submitGit)
+        activateGitControl(submitGit, in: app)
         assertSummary(summary, equals: "1 of 139 commands", in: app)
 
+        popToGitRoot(in: app)
+
         let reset = app.buttons["reset-git-progress"].firstMatch
-        // 139 command rows sit above the reset action.
-        revealInteractive(reset, in: app, maxMoves: 80)
-        activate(reset)
+        revealInteractive(reset, in: app)
+        activateGitControl(reset, in: app)
         let cancel = confirmationButton(labeled: "Cancel", in: app)
         XCTAssertTrue(cancel.waitForExistence(timeout: 5))
-        activate(cancel)
+        activateGitControl(cancel, in: app)
         assertSummary(summary, equals: "1 of 139 commands", in: app)
 
         revealInteractive(reset, in: app)
-        activate(reset)
+        activateGitControl(reset, in: app)
         let confirm = confirmationButton(labeled: "Reset Git Progress", in: app)
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         activateResetConfirmation(confirm)
@@ -1555,20 +1646,21 @@ final class Swift_LearnUITests: XCTestCase {
         let summary = app.staticTexts["git-progress-summary"].firstMatch
         XCTAssertTrue(summary.waitForExistence(timeout: 10))
         assertSummary(summary, equals: "138 of 139 commands", in: app)
+        openGitResume(in: app)
 
         let correct = app.buttons["git-choice-git-push-tags-1"].firstMatch
         revealInteractive(correct, in: app)
-        activate(correct)
+        activateGitControl(correct, in: app)
         let submit = app.buttons["submit-git-answer"].firstMatch
         revealInteractive(submit, in: app)
-        activate(submit)
+        activateGitControl(submit, in: app)
         assertSummary(summary, equals: "139 of 139 commands", in: app)
 
         let finish = app.buttons["continue-next-git-question"].firstMatch
         XCTAssertTrue(finish.waitForExistence(timeout: 5))
         XCTAssertEqual(finish.label, "Finish Git Track")
         revealInteractive(finish, in: app, maxMoves: 40)
-        activate(finish)
+        activateGitControl(finish, in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)["git-track-complete"]
                 .firstMatch.waitForExistence(timeout: 5)
@@ -1582,20 +1674,22 @@ final class Swift_LearnUITests: XCTestCase {
 
         let summary = app.staticTexts["git-progress-summary"].firstMatch
         XCTAssertTrue(summary.waitForExistence(timeout: 10))
+        openGitResume(in: app)
         let correct = app.buttons[
             "git-choice-git-bundle-create-repo-bundle-all-1"
         ].firstMatch
         revealInteractive(correct, in: app)
-        activate(correct)
+        activateGitControl(correct, in: app)
         let submit = app.buttons["submit-git-answer"].firstMatch
         revealInteractive(submit, in: app)
-        activate(submit)
+        activateGitControl(submit, in: app)
         assertSummary(summary, equals: "1 of 139 commands", in: app)
 
+        popToGitRoot(in: app)
+
         let reset = app.buttons["reset-git-progress"].firstMatch
-        // 139 command rows sit above the reset action.
-        revealInteractive(reset, in: app, maxMoves: 80)
-        activate(reset)
+        revealInteractive(reset, in: app)
+        activateGitControl(reset, in: app)
         let confirm = confirmationButton(labeled: "Reset Git Progress", in: app)
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         activateResetConfirmation(confirm)
@@ -1614,15 +1708,16 @@ final class Swift_LearnUITests: XCTestCase {
     func testGitProgressSurvivesRelaunch() {
         let app = launchApp(persistsData: true)
         openTab("git-tab", label: "Git", in: app, tvDirection: .right)
+        openGitResume(in: app)
 
         let correct = app.buttons[
             "git-choice-git-bundle-create-repo-bundle-all-1"
         ].firstMatch
         revealInteractive(correct, in: app)
-        activate(correct)
+        activateGitControl(correct, in: app)
         let submit = app.buttons["submit-git-answer"].firstMatch
         revealInteractive(submit, in: app)
-        activate(submit)
+        activateGitControl(submit, in: app)
         assertSummary(
             app.staticTexts["git-progress-summary"].firstMatch,
             equals: "1 of 139 commands",
@@ -1764,6 +1859,45 @@ final class Swift_LearnUITests: XCTestCase {
             .firstMatch.waitForExistence(timeout: 5)
     }
 
+    @MainActor
+    private func openGitResume(in app: XCUIApplication) {
+        let resume = app.buttons["resume-git-command"].firstMatch
+        revealInteractive(resume, in: app)
+        activateGitControl(resume, in: app)
+        XCTAssertTrue(
+            app.staticTexts["git-question-title"].firstMatch
+                .waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    private func activateGitControl(
+        _ element: XCUIElement,
+        in app: XCUIApplication
+    ) {
+#if os(tvOS)
+        moveFocus(to: element, in: app)
+        XCUIRemote.shared.press(.select)
+#else
+        app.activate()
+        element.tap()
+#endif
+    }
+
+    @MainActor
+    private func popToGitRoot(in app: XCUIApplication) {
+#if os(tvOS)
+        XCUIRemote.shared.press(.menu)
+#else
+        let back = app.navigationBars.buttons.element(boundBy: 0)
+        if back.exists, back.isHittable {
+            back.tap()
+        }
+#endif
+        _ = app.descendants(matching: .any)["resume-git-command"]
+            .firstMatch.waitForExistence(timeout: 5)
+    }
+
     /// A confirmation dialog renders as a sheet on iOS and an alert elsewhere,
     /// and the system supplies its buttons, so they are matched by label.
     @MainActor
@@ -1800,10 +1934,13 @@ final class Swift_LearnUITests: XCTestCase {
             tab = app.descendants(matching: .any)[identifier].firstMatch
         }
 #else
+        let tabBarButton = app.tabBars.buttons[label].firstMatch
         let identifiedTab = app.descendants(matching: .any)[identifier].firstMatch
-        let tab = identifiedTab.waitForExistence(timeout: 5)
-            ? identifiedTab
-            : app.buttons[label].firstMatch
+        let tab = tabBarButton.waitForExistence(timeout: 5)
+            ? tabBarButton
+            : identifiedTab.waitForExistence(timeout: 5)
+                ? identifiedTab
+                : app.buttons[label].firstMatch
 #endif
         XCTAssertTrue(tab.waitForExistence(timeout: 5))
 
@@ -1837,7 +1974,32 @@ final class Swift_LearnUITests: XCTestCase {
         }
 #else
         tab.tap()
+        XCTAssertTrue(
+            selectedTabContent(identifier: identifier, in: app)
+                .waitForExistence(timeout: 5)
+        )
 #endif
+    }
+
+    @MainActor
+    private func selectedTabContent(
+        identifier: String,
+        in app: XCUIApplication
+    ) -> XCUIElement {
+        if identifier == "profile-tab" {
+            return app.descendants(matching: .any)["profile-screen"].firstMatch
+        }
+
+        if identifier == "git-tab" {
+            return app.descendants(matching: .any)["git-learning"].firstMatch
+        }
+
+        return app.navigationBars.matching(
+            NSPredicate(
+                format: "identifier IN %@",
+                ["Swift Learn", "Practice", "Boss Challenge", "Guided Project"]
+            )
+        ).firstMatch
     }
 
     @MainActor
@@ -1972,6 +2134,27 @@ final class Swift_LearnUITests: XCTestCase {
 
 #if os(macOS)
     @MainActor
+    private func moveKeyboardFocus(
+        to element: XCUIElement,
+        in app: XCUIApplication
+    ) {
+        app.activate()
+        for _ in 0..<24 where !hasKeyboardFocus(element) {
+            app.typeKey(.tab, modifierFlags: [])
+        }
+        XCTAssertTrue(hasKeyboardFocus(element))
+    }
+
+    @MainActor
+    private func hasKeyboardFocus(_ element: XCUIElement) -> Bool {
+        let focused = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "hasKeyboardFocus == true"),
+            object: element
+        )
+        return XCTWaiter.wait(for: [focused], timeout: 0.2) == .completed
+    }
+
+    @MainActor
     private func scrollDown(
         until element: XCUIElement,
         in app: XCUIApplication,
@@ -2056,23 +2239,6 @@ final class Swift_LearnUITests: XCTestCase {
         ).firstMatch
         XCTAssertTrue(cell.waitForExistence(timeout: 5))
         return cell
-    }
-
-    @MainActor
-    private func selectedTabContent(
-        identifier: String,
-        in app: XCUIApplication
-    ) -> XCUIElement {
-        if identifier == "profile-tab" {
-            return app.descendants(matching: .any)["profile-screen"].firstMatch
-        }
-
-        return app.navigationBars.matching(
-            NSPredicate(
-                format: "identifier IN %@",
-                ["Swift Learn", "Practice", "Boss Challenge", "Guided Project"]
-            )
-        ).firstMatch
     }
 
     /// Steers focus toward `element` by comparing its frame with the focused element's frame.

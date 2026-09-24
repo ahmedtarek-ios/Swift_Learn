@@ -2,6 +2,8 @@ import SwiftUI
 
 struct GitLearningView: View {
     @State private var viewModel: GitLearningViewModel
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.learnerMotionPreference) private var motionPreference
 
     init(viewModel: GitLearningViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -23,12 +25,13 @@ struct GitLearningView: View {
                     .accessibilityIdentifier("git-empty")
                 case let .failed(message):
                     failureView(message)
-                case .loaded:
-                    loadedContent
+                case let .loaded(track):
+                    loadedContent(track)
                 }
             }
             .navigationTitle("Git")
         }
+        .id(viewModel.navigationRevision)
         .accessibilityIdentifier("git-learning")
         .task {
             if viewModel.loadState == .idle {
@@ -37,190 +40,144 @@ struct GitLearningView: View {
         }
     }
 
+    private var reduceMotion: Bool {
+        LearningMotionPolicy.shouldReduceMotion(
+            systemReduceMotion: systemReduceMotion,
+            preference: motionPreference
+        )
+    }
+
     private func failureView(_ message: String) -> some View {
-        VStack(spacing: 12) {
-            Text("Git commands unavailable")
-                .font(.headline)
+        ContentUnavailableView {
+            Label("Git Commands Unavailable", systemImage: "exclamationmark.triangle")
+        } description: {
             Text(message)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Button("Try Again") { viewModel.load() }
-                .buttonStyle(.borderedProminent)
+        } actions: {
+            Button("Try Again", action: viewModel.load)
                 .accessibilityIdentifier("retry-git-learning")
         }
-        .padding()
         .accessibilityIdentifier("git-learning-error")
     }
 
-    private var loadedContent: some View {
+    private func loadedContent(_ track: GitLearningTrack) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                if let lesson = viewModel.currentLesson {
-                    questionCard(lesson)
-                } else if viewModel.isTrackComplete {
-                    completionCard
+            LazyVStack(alignment: .leading, spacing: 24) {
+                GitTrackHeaderView(catalog: track.catalog)
+                GitTrackProgressCard(
+                    track: track,
+                    viewModel: viewModel,
+                    reduceMotion: reduceMotion
+                )
+                GitTrackResetSection(viewModel: viewModel)
+
+                ForEach(track.catalog.categories) { category in
+                    GitCategorySectionView(
+                        category: category,
+                        track: track,
+                        viewModel: viewModel,
+                        reduceMotion: reduceMotion
+                    )
                 }
-                categoryList
-                resetSection
             }
             .frame(maxWidth: 840, alignment: .leading)
             .padding()
         }
-        // macOS does not always surface an identifier placed on NavigationStack.
         .accessibilityIdentifier("git-learning")
     }
+}
 
-    private var header: some View {
+private struct GitTrackHeaderView: View {
+    let catalog: GitCommandCatalog
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("GIT COMMANDS")
+            Text("LEARN GIT SAFELY")
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.secondary)
-            Text(viewModel.progressSummary)
-                .font(.title3.weight(.semibold))
-                .accessibilityIdentifier("git-progress-summary")
-            if let track = viewModel.track {
-                ProgressView(value: track.progress)
-                    .tint(.orange)
-                    .accessibilityHidden(true)
+            Text(catalog.editionTitle)
+                .font(.largeTitle.bold())
+            Text("Choose the right command. Understand the risk. Practice without running it.")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+            Text(catalog.sourceID)
+                .font(.caption.monospaced())
+                .foregroundStyle(.tertiary)
+        }
+        .accessibilityIdentifier("git-track-header")
+    }
+}
+
+private struct GitTrackProgressCard: View {
+    let track: GitLearningTrack
+    let viewModel: GitLearningViewModel
+    let reduceMotion: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Your progress")
+                    .font(.headline)
+                Spacer()
+                Text("\(track.completedLessonCount) / \(track.totalLessonCount)")
+                    .monospacedDigit()
             }
-            Text("Commands are shown as text only. Swift Learn never runs them.")
+
+            ProgressView(value: track.progress)
+                .tint(.orange)
+                .animation(
+                    LearningMotion.progress(reduceMotion: reduceMotion),
+                    value: track.completedLessonCount
+                )
+
+            Text(viewModel.progressSummary)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .contentTransition(reduceMotion ? .identity : .numericText())
+                .animation(
+                    LearningMotion.progress(reduceMotion: reduceMotion),
+                    value: track.completedLessonCount
+                )
+                .accessibilityIdentifier("git-progress-summary")
+
+            if let resumeLesson = track.resumeLesson {
+                NavigationLink {
+                    GitCommandChallengeView(
+                        lesson: resumeLesson,
+                        viewModel: viewModel
+                    )
+                } label: {
+                    Label(
+                        track.completedLessonCount == 0
+                            ? "Start with \(resumeLesson.title)"
+                            : "Resume \(resumeLesson.title)",
+                        systemImage: "play.circle.fill"
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("resume-git-command")
+                .accessibilityValue(resumeLesson.title)
+            } else if track.isTrackComplete {
+                Label("Every Git command completed", systemImage: "checkmark.seal.fill")
+                    .font(.headline)
+                    .foregroundStyle(.green)
+                    .accessibilityIdentifier("git-track-complete")
+            }
+
+            Text("Commands are shown as educational text only. Swift Learn never runs them.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-        }
-    }
-
-    private func questionCard(_ lesson: GitCommandLesson) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(lesson.title)
-                .font(.headline)
-                .accessibilityIdentifier("git-question-title")
-            Text(lesson.scenario)
-                .font(.body)
-                .accessibilityIdentifier("git-question-scenario")
-            Text(lesson.prompt)
-                .font(.callout.weight(.semibold))
-                .accessibilityIdentifier("git-question-instruction")
-
-            if let warning = lesson.safetyWarning, lesson.safetyLevel.requiresWarning {
-                Label(warning, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .accessibilityIdentifier("git-safety-warning")
-                    .accessibilityLabel("Safety warning. \(warning)")
-            }
-
-            ForEach(lesson.choices) { choice in
-                Button {
-                    viewModel.select(choiceID: choice.id)
-                } label: {
-                    Text(choice.command)
-                        .font(.body.monospaced())
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(.bordered)
-                .tint(viewModel.selectedChoiceID == choice.id ? .accentColor : .secondary)
-                .disabled(viewModel.answerResult != nil)
-                .accessibilityIdentifier("git-choice-\(choice.id)")
-                .accessibilityValue(
-                    viewModel.selectedChoiceID == choice.id ? "Selected" : "Not selected"
-                )
-            }
-
-            if let result = viewModel.answerResult {
-                feedback(result)
-            } else {
-                Button("Check Command") { viewModel.submit() }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!viewModel.canSubmit)
-                    .accessibilityIdentifier("submit-git-answer")
-            }
         }
         .padding()
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
     }
+}
 
-    private func feedback(_ result: GitAnswerResult) -> some View {
+private struct GitTrackResetSection: View {
+    let viewModel: GitLearningViewModel
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label(
-                result.feedback,
-                systemImage: result.isCorrect
-                    ? "checkmark.seal.fill"
-                    : "arrow.counterclockwise.circle.fill"
-            )
-            .foregroundStyle(result.isCorrect ? .green : .orange)
-            .accessibilityIdentifier("git-answer-feedback")
-
-            if result.isCorrect {
-                Button(viewModel.nextLesson == nil ? "Finish Git Track" : "Next Command") {
-                    viewModel.continueToNextQuestion()
-                }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("continue-next-git-question")
-            } else {
-                Button("Try Again") { viewModel.retryCurrentQuestion() }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("retry-git-question")
-            }
-        }
-    }
-
-    private var completionCard: some View {
-        Label("Every Git command completed", systemImage: "checkmark.seal.fill")
-            .font(.headline)
-            .foregroundStyle(.green)
-            .accessibilityIdentifier("git-track-complete")
-    }
-
-    @ViewBuilder
-    private var categoryList: some View {
-        if let track = viewModel.track {
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(track.catalog.categories) { category in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(category.title)
-                            .font(.headline)
-                        Text(category.summary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        ForEach(category.lessons) { lesson in
-                            Button {
-                                viewModel.open(lessonID: lesson.id)
-                            } label: {
-                                HStack {
-                                    Text(lesson.title)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                    Image(
-                                        systemName: track.isCompleted(lessonID: lesson.id)
-                                            ? "checkmark.circle.fill"
-                                            : track.isUnlocked(lessonID: lesson.id)
-                                                ? "play.circle"
-                                                : "lock.fill"
-                                    )
-                                    .accessibilityHidden(true)
-                                }
-                            }
-                            .buttonStyle(.bordered)
-                            .disabled(!track.isUnlocked(lessonID: lesson.id))
-                            .accessibilityIdentifier("start-git-question-\(lesson.id)")
-                            .accessibilityValue(
-                                track.isCompleted(lessonID: lesson.id)
-                                    ? "Completed"
-                                    : track.isUnlocked(lessonID: lesson.id)
-                                        ? "Available"
-                                        : "Locked"
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var resetSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Divider()
             switch viewModel.resetState {
             case .resetting:
                 ProgressView("Resetting Git progress")
@@ -245,15 +202,16 @@ struct GitLearningView: View {
                 Button("Reset Git Progress", role: .destructive) {
                     viewModel.requestReset()
                 }
+                .buttonStyle(.bordered)
                 .accessibilityIdentifier("reset-git-progress")
             }
         }
+        .padding()
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
         .alert(
             "Reset Git progress?",
             isPresented: Binding(
                 get: { viewModel.resetState == .confirming },
-                // Dismissal fires after the destructive action too; only a
-                // real dismissal while confirming counts as a cancel.
                 set: { isPresented in
                     if !isPresented, viewModel.resetState == .confirming {
                         viewModel.cancelReset()
@@ -271,4 +229,90 @@ struct GitLearningView: View {
             Text("This clears Git commands only. Your Swift progress is preserved.")
         }
     }
+}
+
+private struct GitCategorySectionView: View {
+    let category: GitCommandCategory
+    let track: GitLearningTrack
+    let viewModel: GitLearningViewModel
+    let reduceMotion: Bool
+
+    var body: some View {
+        LazyVStack(alignment: .leading, spacing: 14) {
+            NavigationLink {
+                GitCategoryDetailView(
+                    category: category,
+                    viewModel: viewModel
+                )
+            } label: {
+                HStack {
+                    Text(category.title)
+                        .font(.title2.bold())
+                    Spacer()
+                    Image(systemName: "chevron.forward")
+                        .accessibilityHidden(true)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("open-git-category-\(category.id)")
+
+            Text(category.summary)
+                .foregroundStyle(.secondary)
+
+            let categoryProgress = track.progress(for: category)
+            Text(
+                "\(categoryProgress.completedLessonCount) of "
+                    + "\(categoryProgress.totalLessonCount) commands completed"
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("git-category-progress-\(category.id)")
+
+            ForEach(category.lessons) { lesson in
+                let availability = track.availability(for: lesson.id)
+                let isUnlocked = track.isUnlocked(lessonID: lesson.id)
+                let isHighlighted = viewModel.recentlyUnlockedLessonID == lesson.id
+                NavigationLink {
+                    GitCommandChallengeView(
+                        lesson: lesson,
+                        viewModel: viewModel
+                    )
+                } label: {
+                    GitCommandSummaryRow(
+                        lesson: lesson,
+                        availability: availability,
+                        isHighlighted: isHighlighted
+                    )
+                }
+                .buttonStyle(.bordered)
+                .disabled(!isUnlocked)
+                .accessibilityIdentifier("start-git-question-\(lesson.id)")
+                .accessibilityValue(availability.accessibilityValue)
+                .animation(
+                    LearningMotion.feedback(reduceMotion: reduceMotion),
+                    value: isHighlighted
+                )
+            }
+        }
+    }
+}
+
+private extension GitLessonAvailability {
+    var accessibilityValue: String {
+        switch self {
+        case .completed:
+            "Completed"
+        case .available:
+            "Available"
+        case .locked:
+            "Locked"
+        case .unavailable:
+            "Unavailable"
+        }
+    }
+}
+
+#Preview {
+    let container = try! AppContainer(isStoredInMemoryOnly: true)
+    GitLearningView(viewModel: container.gitLearningViewModel)
 }

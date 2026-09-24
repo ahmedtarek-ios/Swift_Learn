@@ -54,7 +54,7 @@ struct GitLearningViewModelTests {
 
         harness.viewModel.select(choiceID: wrong.id)
         #expect(harness.viewModel.canSubmit)
-        harness.viewModel.submit()
+        harness.viewModel.submit(lessonID: first.id)
 
         #expect(harness.viewModel.answerResult?.isCorrect == false)
         #expect(harness.viewModel.track?.completedLessonCount == 0)
@@ -64,7 +64,7 @@ struct GitLearningViewModelTests {
         #expect(harness.viewModel.selectedChoiceID == nil)
 
         harness.viewModel.select(choiceID: first.correctChoiceID)
-        harness.viewModel.submit()
+        harness.viewModel.submit(lessonID: first.id)
 
         #expect(harness.viewModel.answerResult?.isCorrect == true)
         #expect(harness.viewModel.answerResult?.didComplete == true)
@@ -86,6 +86,24 @@ struct GitLearningViewModelTests {
     }
 
     @Test
+    func beginningACommandClearsStaleSelectionAndFeedback() throws {
+        let harness = try Harness()
+        harness.viewModel.load()
+        let first = try #require(harness.viewModel.currentLesson)
+        let wrong = try #require(first.choices.first { $0.id != first.correctChoiceID })
+        harness.viewModel.select(choiceID: wrong.id)
+        harness.viewModel.submit(lessonID: first.id)
+        #expect(harness.viewModel.answerResult != nil)
+
+        harness.viewModel.beginLesson(id: first.id)
+
+        #expect(harness.viewModel.currentLesson?.id == first.id)
+        #expect(harness.viewModel.selectedChoiceID == nil)
+        #expect(harness.viewModel.answerResult == nil)
+        #expect(harness.viewModel.canSubmit(lessonID: first.id) == false)
+    }
+
+    @Test
     func completingFinalQuestionRevealsTrackCompletion() throws {
         let harness = try Harness(completedLessonCount: 138)
         harness.viewModel.load()
@@ -93,13 +111,15 @@ struct GitLearningViewModelTests {
 
         #expect(harness.viewModel.currentLesson?.id == finalLesson.id)
         harness.viewModel.select(choiceID: finalLesson.correctChoiceID)
-        harness.viewModel.submit()
+        harness.viewModel.submit(lessonID: finalLesson.id)
 
         #expect(harness.viewModel.track?.isTrackComplete == true)
         #expect(harness.viewModel.nextLesson == nil)
-        harness.viewModel.continueToNextQuestion()
+        let navigationRevision = harness.viewModel.navigationRevision
+        harness.viewModel.finishTrack()
         #expect(harness.viewModel.currentLesson == nil)
         #expect(harness.viewModel.isTrackComplete)
+        #expect(harness.viewModel.navigationRevision == navigationRevision + 1)
     }
 
     @Test
@@ -120,12 +140,14 @@ struct GitLearningViewModelTests {
         let harness = try Harness(completedLessonCount: 1)
         harness.viewModel.load()
 
+        let navigationRevision = harness.viewModel.navigationRevision
         harness.viewModel.requestReset()
         harness.viewModel.confirmReset()
 
         #expect(harness.viewModel.resetState == .succeeded)
         #expect(harness.viewModel.track?.completedLessonCount == 0)
         #expect(harness.viewModel.currentLesson?.id == harness.catalog.lessons[0].id)
+        #expect(harness.viewModel.navigationRevision == navigationRevision + 1)
 
         harness.viewModel.acknowledgeResetOutcome()
         #expect(harness.viewModel.resetState == .idle)
