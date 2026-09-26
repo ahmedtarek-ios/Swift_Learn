@@ -252,6 +252,8 @@ private struct GitCategorySectionView: View {
                     Image(systemName: "chevron.forward")
                         .accessibilityHidden(true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("open-git-category-\(category.id)")

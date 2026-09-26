@@ -9,6 +9,7 @@ import SwiftUI
 
 struct LearningRootView: View {
     @State private var introViewModel: IntroViewModel
+    @State private var selectedTab: LearningTab = .journey
     private let learningJourneyViewModel: LearningJourneyViewModel
     private let bossChallengeViewModel: BossChallengeViewModel
     private let projectViewModel: LearningProjectViewModel
@@ -44,6 +45,12 @@ struct LearningRootView: View {
         self.supplementalTracksViewModel = supplementalTracksViewModel
         self.gitLearningViewModel = gitLearningViewModel
         self.forcesRightToLeftLayout = forcesRightToLeftLayout
+    }
+
+    private enum LearningTab: Hashable {
+        case journey
+        case git
+        case profile
     }
 
     var body: some View {
@@ -90,7 +97,7 @@ struct LearningRootView: View {
     }
 
     private var learningTabs: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             LearningJourneyView(
                 viewModel: learningJourneyViewModel,
                 bossChallengeViewModel: bossChallengeViewModel,
@@ -104,18 +111,21 @@ struct LearningRootView: View {
                     Label("Journey", systemImage: "map.fill")
                         .accessibilityIdentifier("journey-tab")
                 }
+                .tag(LearningTab.journey)
 
             GitLearningView(viewModel: gitLearningViewModel)
                 .tabItem {
                     Label("Git", systemImage: "arrow.trianglehead.branch")
                         .accessibilityIdentifier("git-tab")
                 }
+                .tag(LearningTab.git)
 
             LearnerProfileView(viewModel: learnerProfileViewModel)
                 .tabItem {
                     Label("Profile", systemImage: "person.crop.circle.fill")
                         .accessibilityIdentifier("profile-tab")
                 }
+                .tag(LearningTab.profile)
         }
     }
 

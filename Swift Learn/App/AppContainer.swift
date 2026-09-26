@@ -50,6 +50,7 @@ final class AppContainer {
         failsGitReset: Bool = false,
         failsFirstBossCompletionSave: Bool = false,
         initialDiscoveryQuery: String = "",
+        usesFixedChoiceOrder: Bool = false,
         clock: any LearningClock = SystemLearningClock(),
         idGenerator: any LearningAttemptIDGenerating = SystemLearningAttemptIDGenerator(),
         projectSubmissionIDGenerator: any LearningProjectSubmissionIDGenerating
@@ -203,6 +204,13 @@ final class AppContainer {
             contentRepository: contentRepository,
             progressRepository: progressRepository
         )
+        // Fixed order keeps UI tests deterministic; everywhere else the answers
+        // are shuffled so a learner cannot answer from position memory.
+        let orderChoices = OrderActivityChoicesUseCase(
+            randomizer: usesFixedChoiceOrder
+                ? IdentityChoiceOrder()
+                : SeededChoiceOrderRandomizer()
+        )
         let loadProfile = LoadLearnerProfileUseCase(
             contentRepository: contentRepository,
             progressRepository: progressRepository,
@@ -223,7 +231,8 @@ final class AppContainer {
             recordAttempt: recordAttempt,
             calculateProgressEvents: CalculateLearningProgressEventsUseCase(
                 calculateAchievements: CalculateAchievementsUseCase()
-            )
+            ),
+            orderChoices: orderChoices
         )
         bossChallengeViewModel = BossChallengeViewModel(
             levelID: firstLevelID,
@@ -236,7 +245,8 @@ final class AppContainer {
                 loadChallenge: loadBossChallenge,
                 completionRepository: bossCompletionRepository,
                 clock: clock
-            )
+            ),
+            orderChoices: orderChoices
         )
         projectViewModel = LearningProjectViewModel(
             projectID: ContentLearningProjectRepository.foundationsProjectID,
@@ -248,7 +258,8 @@ final class AppContainer {
                 clock: clock,
                 attemptIDGenerator: idGenerator,
                 submissionIDGenerator: projectSubmissionIDGenerator
-            )
+            ),
+            orderChoices: orderChoices
         )
         learnerProfileViewModel = LearnerProfileViewModel(
             loadProfile: loadProfile,
@@ -294,7 +305,8 @@ final class AppContainer {
             completeReview: CompleteReviewUseCase(
                 loadReviewQueue: loadReviewQueue,
                 recordAttempt: recordAttempt
-            )
+            ),
+            orderChoices: orderChoices
         )
         mistakeNotebookViewModel = MistakeNotebookViewModel(
             loadMistakes: LoadMistakeNotebookUseCase(
@@ -316,7 +328,8 @@ final class AppContainer {
                 repository: BundledSupplementalTrackRepository()
             ),
             evaluatePractice: EvaluateSupplementalPracticeUseCase(),
-            evaluateLab: EvaluateSupplementalAuthoredLabUseCase()
+            evaluateLab: EvaluateSupplementalAuthoredLabUseCase(),
+            orderChoices: orderChoices
         )
         let gitContentRepository = BundledGitCommandRepository(bundle: .main)
         let gitTrackRepository = SwiftDataGitTrackRepository(
@@ -344,7 +357,8 @@ final class AppContainer {
             ),
             resetProgress: ResetGitTrackProgressUseCase(
                 repository: gitResetRepository
-            )
+            ),
+            orderChoices: orderChoices
         )
 #if os(iOS)
         let createWatchLearningSnapshot = CreateWatchLearningSnapshotUseCase(
@@ -359,6 +373,7 @@ final class AppContainer {
                 attemptRepository: attemptRepository,
                 clock: clock
             ),
+            orderChoices: orderChoices,
             clock: clock
         )
         self.createWatchLearningSnapshot = createWatchLearningSnapshot

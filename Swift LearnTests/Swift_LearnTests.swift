@@ -2716,9 +2716,94 @@ struct Swift_LearnTests {
         #expect(submissions.submissions.count == 1)
     }
 
+    @Test
+    func journeyShufflesAnswersWithoutLosingAnyAndStaysStableWithinAnAttempt() throws {
+        let catalog = try bundledCatalog()
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let progress = InMemoryLearningProgressRepository(completedLessonIDs: [])
+        let viewModel = makeViewModel(
+            content: content,
+            progress: progress,
+            orderChoices: OrderActivityChoicesUseCase(
+                randomizer: SeededChoiceOrderRandomizer()
+            )
+        )
+        viewModel.load()
+
+        guard let lesson = catalog.lessons.first(where: {
+            $0.activity.choices.count >= 3
+        }) else {
+            Issue.record("Expected a lesson with at least three answers")
+            return
+        }
+        let authored = lesson.activity.choices.map(\.id)
+        viewModel.beginAttempt(lessonID: lesson.id)
+        let ordered = viewModel.orderedChoices(for: lesson).map(\.id)
+
+        // Every authored answer survives the shuffle exactly once.
+        #expect(ordered.count == authored.count)
+        #expect(Set(ordered) == Set(authored))
+        // A redraw asks again and must get the same order back.
+        #expect(viewModel.orderedChoices(for: lesson).map(\.id) == ordered)
+
+        // SwiftUI can fire onAppear again for the same lesson. That must not
+        // reorder the answers under the learner.
+        let revisionBefore = viewModel.choiceOrderRevision
+        viewModel.beginAttempt(lessonID: lesson.id)
+        #expect(viewModel.choiceOrderRevision == revisionBefore)
+        #expect(viewModel.orderedChoices(for: lesson).map(\.id) == ordered)
+
+        // Moving to another lesson and back draws a new order.
+        guard let otherLesson = catalog.lessons.first(where: { $0.id != lesson.id }) else {
+            Issue.record("Expected a second lesson")
+            return
+        }
+        viewModel.beginAttempt(lessonID: otherLesson.id)
+        viewModel.beginAttempt(lessonID: lesson.id)
+        #expect(viewModel.choiceOrderRevision == revisionBefore + 2)
+        #expect(Set(viewModel.orderedChoices(for: lesson).map(\.id)) == Set(authored))
+    }
+
+    @Test
+    func submittingTheCorrectAnswerSucceedsWhateverTheDisplayOrder() throws {
+        let catalog = try bundledCatalog()
+        let content = InMemoryLearningContentRepository(catalog: catalog)
+        let lessons = catalog.lessons
+        guard let index = lessons.firstIndex(where: {
+            $0.activity.choices.count >= 3 && $0.activity.correctChoiceID != nil
+        }) else {
+            Issue.record("Expected a lesson with a correct answer")
+            return
+        }
+        let lesson = lessons[index]
+        let correctChoiceID = try #require(lesson.activity.correctChoiceID)
+        // The lesson has to be unlocked before it can be answered.
+        let progress = InMemoryLearningProgressRepository(
+            completedLessonIDs: Set(lessons[..<index].map(\.id))
+        )
+        let viewModel = makeViewModel(
+            content: content,
+            progress: progress,
+            orderChoices: OrderActivityChoicesUseCase(
+                randomizer: SeededChoiceOrderRandomizer()
+            )
+        )
+        viewModel.load()
+        // The shuffle moved it somewhere, and correctness still follows the ID.
+        #expect(viewModel.orderedChoices(for: lesson).contains { $0.id == correctChoiceID })
+
+        viewModel.selectChoice(correctChoiceID)
+        viewModel.submit(lessonID: lesson.id)
+
+        #expect(viewModel.attemptResult?.isCorrect == true)
+    }
+
     private func makeViewModel(
         content: InMemoryLearningContentRepository,
-        progress: any LearningProgressRepository
+        progress: any LearningProgressRepository,
+        orderChoices: OrderActivityChoicesUseCase = OrderActivityChoicesUseCase(
+            randomizer: IdentityChoiceOrder()
+        )
     ) -> LearningJourneyViewModel {
         let loadCanonicalSkills = LoadCanonicalSkillsUseCase(
             contentRepository: content,
@@ -2743,7 +2828,8 @@ struct Swift_LearnTests {
             ),
             calculateProgressEvents: CalculateLearningProgressEventsUseCase(
                 calculateAchievements: CalculateAchievementsUseCase()
-            )
+            ),
+            orderChoices: orderChoices
         )
     }
 

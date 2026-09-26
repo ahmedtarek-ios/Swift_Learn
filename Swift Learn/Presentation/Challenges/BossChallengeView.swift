@@ -62,6 +62,7 @@ struct BossChallengeView: View {
 
             LearningActivityRenderer(
                 activity: item.lesson.activity,
+                orderedChoices: viewModel.orderedChoices(for: item),
                 selectedChoiceID: viewModel.selectedChoiceID,
                 codeIdentifier: "boss-code-\(item.id)",
                 choiceIdentifierPrefix: "boss-choice-\(item.id)-",

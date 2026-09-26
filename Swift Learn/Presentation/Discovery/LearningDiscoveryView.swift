@@ -401,6 +401,7 @@ private struct SupplementalLessonDetailView: View {
                     .font(.headline)
                 LearningActivityRenderer(
                     activity: lab.activity,
+                    orderedChoices: viewModel.orderedLabChoices(for: lesson),
                     selectedChoiceID: nil,
                     codeIdentifier: "supplemental-lab-code",
                     choiceIdentifierPrefix: "supplemental-lab-choice-",
@@ -444,7 +445,7 @@ private struct SupplementalLessonDetailView: View {
 
     @ViewBuilder
     private var choices: some View {
-        ForEach(lesson.practice.choices) { choice in
+        ForEach(viewModel.orderedPracticeChoices(for: lesson)) { choice in
             Button {
                 viewModel.select(choiceID: choice.id, for: lesson.id)
             } label: {

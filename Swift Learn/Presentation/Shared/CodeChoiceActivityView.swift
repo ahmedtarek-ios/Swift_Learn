@@ -9,6 +9,9 @@ import SwiftUI
 
 struct LearningActivityRenderer: View {
     let activity: LearningActivity
+    /// Answers in the order Domain decided they should be shown. `nil` keeps
+    /// the authored order, which is what non-choice activities use.
+    let orderedChoices: [LearningChoice]?
     let selectedChoiceID: String?
     let codeIdentifier: String
     let choiceIdentifierPrefix: String
@@ -28,6 +31,7 @@ struct LearningActivityRenderer: View {
 
     init(
         activity: LearningActivity,
+        orderedChoices: [LearningChoice]? = nil,
         selectedChoiceID: String?,
         codeIdentifier: String,
         choiceIdentifierPrefix: String,
@@ -46,6 +50,7 @@ struct LearningActivityRenderer: View {
         selectLayer: @escaping (String, ArchitectureLayer) -> Void = { _, _ in }
     ) {
         self.activity = activity
+        self.orderedChoices = orderedChoices
         self.selectedChoiceID = selectedChoiceID
         self.codeIdentifier = codeIdentifier
         self.choiceIdentifierPrefix = choiceIdentifierPrefix
@@ -86,7 +91,7 @@ struct LearningActivityRenderer: View {
                 CodeChoiceActivityView(
                     prompt: activity.prompt,
                     code: activity.code(selectedChoiceID: selectedChoiceID),
-                    choices: activity.choices,
+                    choices: displayedChoices,
                     selectedChoiceID: selectedChoiceID,
                     codeIdentifier: codeIdentifier,
                     choiceIdentifierPrefix: choiceIdentifierPrefix,
@@ -157,6 +162,17 @@ struct LearningActivityRenderer: View {
                 ProjectValidationActivityView(activity: validation)
             }
         }
+    }
+
+    /// The ordered array when the caller supplied one and it still covers every
+    /// authored answer; otherwise the authored order, so a bad order can never
+    /// hide an answer.
+    private var displayedChoices: [LearningChoice] {
+        guard let orderedChoices,
+              orderedChoices.count == activity.choices.count else {
+            return activity.choices
+        }
+        return orderedChoices
     }
 
     private var activityKindLabel: String {

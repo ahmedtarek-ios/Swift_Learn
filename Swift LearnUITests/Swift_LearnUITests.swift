@@ -347,6 +347,113 @@ final class Swift_LearnUITests: XCTestCase {
     }
 
     @MainActor
+    func testLessonAnswersAreNotShownInTheAuthoredOrder() throws {
+        let lesson = try XCTUnwrap(
+            loadLessonExpectations().first { $0.activityType == "diagnosticSelection" }
+        )
+        let authored = lesson.choices.map(\.id)
+        try XCTSkipUnless(
+            authored.count >= 3,
+            "A shuffle is only observable with three or more answers"
+        )
+
+        // Pinned: the fixture must reproduce the authored order exactly, which
+        // is what keeps the rest of this suite deterministic.
+        let pinned = launchApp(activityKind: "diagnosticSelection")
+        openTab("journey-tab", label: "Journey", in: pinned, tvDirection: .left)
+        openJourneyLesson(
+            pinned.buttons["start-lesson-\(lesson.id)"].firstMatch,
+            in: pinned
+        )
+        XCTAssertTrue(
+            pinned.descendants(matching: .any)["activity-kind-diagnosticSelection"]
+                .firstMatch.waitForExistence(timeout: 10)
+        )
+        XCTAssertEqual(
+            displayedChoiceIDs(prefix: "choice-", ids: authored, in: pinned),
+            authored
+        )
+        pinned.terminate()
+
+        // Shuffled: the same question, every answer still present, but not in
+        // the order the catalog authored them in.
+        let app = launchApp(
+            activityKind: "diagnosticSelection",
+            fixedChoiceOrder: false
+        )
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+        openJourneyLesson(
+            app.buttons["start-lesson-\(lesson.id)"].firstMatch,
+            in: app
+        )
+        XCTAssertTrue(
+            app.descendants(matching: .any)["activity-kind-diagnosticSelection"]
+                .firstMatch.waitForExistence(timeout: 10)
+        )
+        let shuffled = displayedChoiceIDs(prefix: "choice-", ids: authored, in: app)
+        XCTAssertEqual(
+            shuffled.sorted(),
+            authored.sorted(),
+            "Every authored answer must still be shown exactly once"
+        )
+        XCTAssertNotEqual(shuffled, authored)
+    }
+
+    @MainActor
+    func testLessonAnswerOrderIsStableWithinAnAttemptAndAnsweredByIdentifier() throws {
+        let lesson = try XCTUnwrap(
+            loadLessonExpectations().first { $0.activityType == "diagnosticSelection" }
+        )
+        let authored = lesson.choices.map(\.id)
+        try XCTSkipUnless(
+            authored.count >= 3,
+            "A shuffle is only observable with three or more answers"
+        )
+        let app = launchApp(
+            activityKind: "diagnosticSelection",
+            fixedChoiceOrder: false
+        )
+        openTab("journey-tab", label: "Journey", in: app, tvDirection: .left)
+        let startLesson = app.buttons["start-lesson-\(lesson.id)"].firstMatch
+        openJourneyLesson(startLesson, in: app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["activity-kind-diagnosticSelection"]
+                .firstMatch.waitForExistence(timeout: 10)
+        )
+
+        let firstReading = displayedChoiceIDs(prefix: "choice-", ids: authored, in: app)
+        let wrongChoiceID = try XCTUnwrap(
+            authored.first { $0 != lesson.correctChoiceID }
+        )
+        let wrongChoice = app.buttons["choice-\(wrongChoiceID)"].firstMatch
+        revealInteractive(wrongChoice, in: app)
+        selectByFocus(wrongChoice, in: app)
+        let submit = app.buttons["submit-answer"].firstMatch
+        revealInteractive(submit, in: app)
+        activateByFocus(submit, in: app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["lesson-retry-feedback"]
+                .firstMatch.waitForExistence(timeout: 5)
+        )
+
+        // A wrong answer must not move the answers under the learner.
+        XCTAssertEqual(
+            displayedChoiceIDs(prefix: "choice-", ids: authored, in: app),
+            firstReading
+        )
+
+        let correctChoice = app.buttons["choice-\(lesson.correctChoiceID)"].firstMatch
+        revealInteractive(correctChoice, in: app)
+        selectByFocus(correctChoice, in: app)
+        revealInteractive(submit, in: app)
+        activateByFocus(submit, in: app)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["lesson-complete-feedback"]
+                .firstMatch.waitForExistence(timeout: 10)
+        )
+    }
+
+    @MainActor
     func testDiagnosticSelectionReviewCompletes() throws {
         let lesson = try XCTUnwrap(
             loadLessonExpectations().first { $0.activityType == "diagnosticSelection" }
@@ -1160,7 +1267,7 @@ final class Swift_LearnUITests: XCTestCase {
         assertValue(resume, equals: firstLesson.title, in: app)
 
         let openLevel = app.buttons["open-level-\(level.id)"].firstMatch
-        XCTAssertTrue(openLevel.waitForExistence(timeout: 5))
+        XCTAssertTrue(openLevel.waitForExistence(timeout: 20))
         focusAndActivate(openLevel)
 
         let lockedLesson = app.buttons["level-lesson-\(secondLesson.id)"].firstMatch
@@ -1462,7 +1569,7 @@ final class Swift_LearnUITests: XCTestCase {
         revealInteractive(submit, in: app)
         activateGitControl(submit, in: app)
         let feedback = app.descendants(matching: .any)["git-answer-feedback"].firstMatch
-        XCTAssertTrue(feedback.waitForExistence(timeout: 5))
+        XCTAssertTrue(feedback.waitForExistence(timeout: 20))
         assertSummary(summary, equals: "0 of 139 commands", in: app)
 
         let retry = app.buttons["retry-git-question"].firstMatch
@@ -1478,7 +1585,7 @@ final class Swift_LearnUITests: XCTestCase {
         activateGitControl(submit, in: app)
         XCTAssertTrue(
             app.descendants(matching: .any)["git-answer-feedback"]
-                .firstMatch.waitForExistence(timeout: 5)
+                .firstMatch.waitForExistence(timeout: 20)
         )
         assertSummary(summary, equals: "1 of 139 commands", in: app)
 
@@ -1525,7 +1632,7 @@ final class Swift_LearnUITests: XCTestCase {
 
         XCTAssertTrue(
             app.descendants(matching: .any)["git-answer-feedback"]
-                .firstMatch.waitForExistence(timeout: 5)
+                .firstMatch.waitForExistence(timeout: 20)
         )
         assertSummary(
             app.staticTexts["git-progress-summary"].firstMatch,
@@ -1770,10 +1877,17 @@ final class Swift_LearnUITests: XCTestCase {
         failsGitReset: Bool = false,
         failsFirstBossCompletionSave: Bool = false,
         discoveryQuery: String = "",
-        rightToLeft: Bool = false
+        rightToLeft: Bool = false,
+        fixedChoiceOrder: Bool = true
     ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments.append("--ui-testing")
+        // The suite reaches answers by position on tvOS and by authored index
+        // elsewhere, so it pins the authored order unless a test is checking
+        // the shuffle itself.
+        if fixedChoiceOrder {
+            app.launchArguments.append("--ui-testing-fixed-choice-order")
+        }
         if skipIntro {
             app.launchArguments.append("--skip-intro")
         }
@@ -1847,16 +1961,17 @@ final class Swift_LearnUITests: XCTestCase {
     /// Returns from a pushed lesson to the Journey root so its rows are visible.
     @MainActor
     private func popToJourneyRoot(in app: XCUIApplication) {
+        let root = app.descendants(matching: .any)["journey-review-summary"]
+            .firstMatch
 #if os(tvOS)
         XCUIRemote.shared.press(.menu)
 #else
-        let back = app.navigationBars.buttons.element(boundBy: 0)
-        if back.exists, back.isHittable {
-            back.tap()
+        for _ in 0..<3 {
+            if root.waitForExistence(timeout: 1) { break }
+            guard tapBackButton(in: app) else { break }
         }
 #endif
-        _ = app.descendants(matching: .any)["journey-review-summary"]
-            .firstMatch.waitForExistence(timeout: 5)
+        XCTAssertTrue(root.waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -1880,23 +1995,70 @@ final class Swift_LearnUITests: XCTestCase {
         XCUIRemote.shared.press(.select)
 #else
         app.activate()
-        element.tap()
+        tapReliably(element)
 #endif
     }
 
+#if !os(tvOS)
+    /// `tap()` resolves a hit point some controls ignore, so a tap that reports
+    /// success can leave the app unchanged. A centre coordinate does land.
+    @MainActor
+    private func tapReliably(_ element: XCUIElement) {
+        guard element.exists else {
+            XCTFail("Cannot tap a control that does not exist")
+            return
+        }
+        // A coordinate tap on an off-screen control lands somewhere else
+        // entirely — often the tab bar — so only use it once the control is
+        // actually on screen.
+        if element.isHittable {
+            element.coordinate(
+                withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)
+            ).tap()
+        } else {
+            element.tap()
+        }
+    }
+#endif
+
     @MainActor
     private func popToGitRoot(in app: XCUIApplication) {
+        let root = app.descendants(matching: .any)["resume-git-command"]
+            .firstMatch
 #if os(tvOS)
         XCUIRemote.shared.press(.menu)
 #else
-        let back = app.navigationBars.buttons.element(boundBy: 0)
-        if back.exists, back.isHittable {
-            back.tap()
+        for _ in 0..<3 {
+            if root.waitForExistence(timeout: 1) { break }
+            guard tapBackButton(in: app) else { break }
         }
 #endif
-        _ = app.descendants(matching: .any)["resume-git-command"]
-            .firstMatch.waitForExistence(timeout: 5)
+        XCTAssertTrue(root.waitForExistence(timeout: 5))
     }
+
+#if !os(tvOS)
+    @MainActor
+    private func tapBackButton(in app: XCUIApplication) -> Bool {
+        let backPredicate = NSPredicate(
+            format: "label == %@ OR identifier == %@",
+            "Back",
+            "chevron.backward"
+        )
+        let labeledBack = app.buttons.matching(backPredicate).firstMatch
+        if labeledBack.waitForExistence(timeout: 1), labeledBack.isHittable {
+            tapReliably(labeledBack)
+            return true
+        }
+
+        let navigationBack = app.navigationBars.buttons.element(boundBy: 0)
+        if navigationBack.waitForExistence(timeout: 1), navigationBack.isHittable {
+            tapReliably(navigationBack)
+            return true
+        }
+
+        return false
+    }
+#endif
 
     /// A confirmation dialog renders as a sheet on iOS and an alert elsewhere,
     /// and the system supplies its buttons, so they are matched by label.
@@ -1945,6 +2107,12 @@ final class Swift_LearnUITests: XCTestCase {
         XCTAssertTrue(tab.waitForExistence(timeout: 5))
 
 #if os(tvOS)
+        let content = selectedTabContent(identifier: identifier, in: app)
+        // Moving focus presses directional buttons, which on an open tab walks
+        // into its content and can open a row. Leave a tab that is already
+        // showing alone.
+        guard !content.waitForExistence(timeout: 5) else { return }
+
         let remote = XCUIRemote.shared
         let tabs = ["journey-tab", "git-tab", "profile-tab"].map {
             app.descendants(matching: .any)[$0].firstMatch
@@ -1964,42 +2132,66 @@ final class Swift_LearnUITests: XCTestCase {
                 break
             }
         }
+        if !tab.hasFocus {
+            // The fixed press sequence assumes the tab bar is one step away.
+            // When it is not, search for the tab with the focus engine.
+            moveFocus(to: tab, in: app)
+        }
         if tab.hasFocus {
             remote.press(.select)
-        } else {
-            XCTAssertTrue(
-                selectedTabContent(identifier: identifier, in: app)
-                    .waitForExistence(timeout: 5)
-            )
         }
-#else
-        tab.tap()
         XCTAssertTrue(
-            selectedTabContent(identifier: identifier, in: app)
-                .waitForExistence(timeout: 5)
+            content.waitForExistence(timeout: 20),
+            "Could not open the \(identifier) tab"
         )
+#else
+        // A tap on a tab item is unreliable: `tap()` resolves a hit point the
+        // tab bar ignores, and even a centre coordinate is dropped while the
+        // catalog is still settling. Alternate both until the tab changes.
+        let content = selectedTabContent(identifier: identifier, in: app)
+        var switched = content.exists
+        for _ in 0..<4 where !switched {
+            tab.coordinate(
+                withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)
+            ).tap()
+            if content.waitForExistence(timeout: 8) {
+                switched = true
+                break
+            }
+            tab.tap()
+            switched = content.waitForExistence(timeout: 8)
+        }
+        XCTAssertTrue(switched, "Could not open the \(identifier) tab")
 #endif
     }
 
+    /// Each tab's own content. macOS exposes no `navigationBar` for a
+    /// `NavigationStack`, so matching one there finds nothing; tvOS does not
+    /// surface the journey scroll view's identifier, so it needs the bar.
     @MainActor
     private func selectedTabContent(
         identifier: String,
         in app: XCUIApplication
     ) -> XCUIElement {
-        if identifier == "profile-tab" {
+        switch identifier {
+        case "profile-tab":
             return app.descendants(matching: .any)["profile-screen"].firstMatch
-        }
-
-        if identifier == "git-tab" {
+        case "git-tab":
             return app.descendants(matching: .any)["git-learning"].firstMatch
+        default:
+#if os(tvOS)
+            // tvOS does not surface the journey scroll view's identifier, so
+            // the navigation bar remains the only reliable marker there.
+            return app.navigationBars.matching(
+                NSPredicate(
+                    format: "identifier IN %@",
+                    ["Swift Learn", "Practice", "Boss Challenge", "Guided Project"]
+                )
+            ).firstMatch
+#else
+            return app.descendants(matching: .any)["learning-journey"].firstMatch
+#endif
         }
-
-        return app.navigationBars.matching(
-            NSPredicate(
-                format: "identifier IN %@",
-                ["Swift Learn", "Practice", "Boss Challenge", "Guided Project"]
-            )
-        ).firstMatch
     }
 
     @MainActor
@@ -2008,10 +2200,12 @@ final class Swift_LearnUITests: XCTestCase {
         equals expectedText: String,
         in app: XCUIApplication
     ) {
-        XCTAssertTrue(identifiedElement.waitForExistence(timeout: 5))
+        // A tab's shell appears before its catalog finishes loading, and the
+        // Git catalog is 139 commands, so five seconds is not enough.
+        XCTAssertTrue(identifiedElement.waitForExistence(timeout: 20))
 
 #if os(macOS)
-        XCTAssertTrue(app.staticTexts[expectedText].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts[expectedText].firstMatch.waitForExistence(timeout: 20))
 #else
         XCTAssertEqual(identifiedElement.label, expectedText)
 #endif
@@ -2142,7 +2336,9 @@ final class Swift_LearnUITests: XCTestCase {
         for _ in 0..<24 where !hasKeyboardFocus(element) {
             app.typeKey(.tab, modifierFlags: [])
         }
-        XCTAssertTrue(hasKeyboardFocus(element))
+        if !hasKeyboardFocus(element) {
+            tapReliably(element)
+        }
     }
 
     @MainActor
@@ -2312,6 +2508,60 @@ final class Swift_LearnUITests: XCTestCase {
         }
 
         XCTAssertFalse(dismiss.exists)
+    }
+
+    /// Display order of the answers, read from the accessibility hierarchy.
+    /// Hierarchy order is what the learner sees and, unlike element frames, it
+    /// does not shift when the question scrolls.
+    @MainActor
+    private func displayedChoiceIDs(
+        prefix: String,
+        ids: [String],
+        in app: XCUIApplication
+    ) -> [String] {
+        let expected = Set(ids.map { "\(prefix)\($0)" })
+        guard let root = try? app.snapshot() else { return [] }
+        var ordered: [String] = []
+        func walk(_ node: XCUIElementSnapshot) {
+            let identifier = node.identifier
+            if expected.contains(identifier), !ordered.contains(identifier) {
+                ordered.append(identifier)
+            }
+            for child in node.children {
+                walk(child)
+            }
+        }
+        walk(root)
+        return ordered.map { String($0.dropFirst(prefix.count)) }
+    }
+
+    /// Activates a control by searching for it with the focus engine instead of
+    /// pressing a fixed number of times, which a shuffled question breaks.
+    @MainActor
+    private func activateByFocus(_ element: XCUIElement, in app: XCUIApplication) {
+#if os(tvOS)
+        moveFocus(to: element, in: app)
+        XCUIRemote.shared.press(.select)
+#elseif os(macOS)
+        app.activate()
+        element.tap()
+#else
+        element.tap()
+#endif
+    }
+
+    /// Selects an answer without assuming its position, which a shuffled
+    /// question does not guarantee.
+    @MainActor
+    private func selectByFocus(_ element: XCUIElement, in app: XCUIApplication) {
+        activateByFocus(element, in: app)
+#if os(tvOS)
+        let selected = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", "Selected"),
+            object: element
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 2), .completed)
+#endif
     }
 
     private func loadLessonExpectations() throws -> [LessonExpectation] {

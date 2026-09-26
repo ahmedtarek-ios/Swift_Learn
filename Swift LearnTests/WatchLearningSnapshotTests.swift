@@ -107,6 +107,93 @@ struct WatchLearningSnapshotTests {
     }
 
     @Test
+    func snapshotCarriesOrderedReviewChoicesAndKeepsTheCorrectID() throws {
+        let now = Date(timeIntervalSince1970: 2_000_000_000)
+        let catalog = makeCatalog()
+        let content = WatchTestContentRepository(catalog: catalog)
+        let progress = WatchTestProgressRepository(completedLessonIDs: ["lesson.one"])
+        let profile = WatchTestProfileRepository(
+            profile: LearnerProfile(
+                displayName: "Ahmed",
+                avatar: .man,
+                appearance: .system
+            )
+        )
+        let skillID = SkillID(rawValue: "skill.one")
+        let attempts = WatchTestAttemptRepository(
+            attempts: [
+                LearningAttempt(
+                    id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+                    evidence: LearningEvidence(
+                        lessonID: "lesson.one",
+                        skillID: skillID,
+                        activityID: LearningActivityID(rawValue: "lesson.one"),
+                        outcome: .incorrect,
+                        errorCategory: .incorrectChoice
+                    ),
+                    recordedAt: now
+                )
+            ]
+        )
+        let loadCanonicalSkills = LoadCanonicalSkillsUseCase(
+            contentRepository: content,
+            skillRepository: WatchTestSkillRepository(
+                skills: [
+                    CanonicalSkill(
+                        id: skillID,
+                        title: "Foundations",
+                        lessonIDs: ["lesson.one", "lesson.two"],
+                        activityIDs: [
+                            LearningActivityID(rawValue: "lesson.one"),
+                            LearningActivityID(rawValue: "lesson.two"),
+                            .review(skillID: skillID)
+                        ]
+                    )
+                ]
+            )
+        )
+        let clock = WatchTestClock(now: now)
+        let useCase = CreateWatchLearningSnapshotUseCase(
+            loadJourney: LoadLearningJourneyUseCase(
+                contentRepository: content,
+                progressRepository: progress
+            ),
+            loadProfile: LoadLearnerProfileUseCase(
+                contentRepository: content,
+                progressRepository: progress,
+                profileRepository: profile
+            ),
+            loadReviewQueue: LoadReviewQueueUseCase(
+                contentRepository: content,
+                loadCanonicalSkills: loadCanonicalSkills,
+                attemptRepository: attempts,
+                clock: clock
+            ),
+            loadSyncSnapshot: LoadLearningSyncSnapshotUseCase(
+                repository: WatchTestSyncRepository()
+            ),
+            loadMasteryOverview: LoadMasteryOverviewUseCase(
+                loadCanonicalSkills: loadCanonicalSkills,
+                attemptRepository: attempts,
+                clock: clock
+            ),
+            // Reversing instead of seeded, so the assertion states the expected
+            // order outright rather than restating the generator.
+            orderChoices: OrderActivityChoicesUseCase(
+                randomizer: ReversingChoiceOrder()
+            ),
+            clock: clock
+        )
+
+        let snapshot = try useCase.execute()
+        let reviewItem = try #require(snapshot.reviewItems.first)
+
+        #expect(reviewItem.choices.map(\.id) == ["var", "let"])
+        #expect(reviewItem.correctChoiceID == "let")
+        #expect(reviewItem.choices.contains { $0.id == reviewItem.correctChoiceID })
+    }
+
+    @Test
     func wireFormatRoundTripsCurrentSchema() throws {
         let snapshot = WatchLearningSnapshot(
             learnerName: "Swift Learner",
@@ -323,6 +410,13 @@ struct WatchLearningSnapshotTests {
             correctFeedback: "Correct",
             incorrectFeedback: "Try again"
         )
+    }
+}
+
+@MainActor
+private struct ReversingChoiceOrder: ChoiceOrderRandomizing {
+    func order(_ ids: [String], seed: String) -> [String] {
+        ids.reversed()
     }
 }
 

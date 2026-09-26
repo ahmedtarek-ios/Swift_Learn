@@ -31,6 +31,9 @@ struct LearningProjectView: View {
                 if let validation = viewModel.projectValidationActivity {
                     LearningActivityRenderer(
                         activity: validation,
+                        orderedChoices: viewModel.orderedValidationChoices(
+                            for: validation
+                        ),
                         selectedChoiceID: nil,
                         codeIdentifier: "project-validation-code",
                         choiceIdentifierPrefix: "project-validation-choice-",
@@ -73,6 +76,7 @@ struct LearningProjectView: View {
 
             LearningActivityRenderer(
                 activity: requirement.lesson.activity,
+                orderedChoices: viewModel.orderedChoices(for: requirement),
                 selectedChoiceID: viewModel.selectedChoiceID,
                 codeIdentifier: "project-code-\(requirement.id)",
                 choiceIdentifierPrefix: "project-choice-\(requirement.id)-",

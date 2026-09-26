@@ -109,7 +109,10 @@ struct LearningJourneyView: View {
     private var journeyContent: some View {
         if let journey = viewModel.journey {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                // Lazy: the catalog is hundreds of lessons, and building them
+                // all eagerly blocks the main thread long enough to stall tab
+                // switching and to make the accessibility tree unusable.
+                LazyVStack(alignment: .leading, spacing: 24) {
                     sourceHeader(journey)
                     progressCard(journey)
 
@@ -515,6 +518,7 @@ struct LessonChallengeView: View {
 
                 LearningActivityRenderer(
                     activity: lesson.activity,
+                    orderedChoices: viewModel.orderedChoices(for: lesson),
                     selectedChoiceID: viewModel.selectedChoiceID,
                     codeIdentifier: "lesson-code",
                     choiceIdentifierPrefix: "choice-",
@@ -557,7 +561,7 @@ struct LessonChallengeView: View {
             .padding()
         }
         .navigationTitle("Practice")
-        .onAppear(perform: viewModel.resetAttempt)
+        .onAppear { viewModel.beginAttempt(lessonID: lesson.id) }
         .animation(
             LearningMotion.feedback(reduceMotion: reduceMotion),
             value: viewModel.attemptResult

@@ -26,11 +26,18 @@ final class LearningJourneyViewModel {
     private(set) var recentlyUnlockedLessonID: String?
     private(set) var attemptRevision = 0
     private(set) var navigationRevision = 0
+    /// Bumped when the question being ordered changes. Keyed on the question
+    /// rather than on `onAppear`, which SwiftUI may fire again for the same
+    /// question — a second bump there would reorder the answers under the
+    /// learner mid-attempt.
+    private(set) var choiceOrderRevision = 0
+    private var orderedQuestionID: String?
 
     private let loadJourney: LoadLearningJourneyUseCase
     private let submitAnswer: SubmitLessonAnswerUseCase
     private let recordAttempt: RecordLearningAttemptUseCase
     private let calculateProgressEvents: CalculateLearningProgressEventsUseCase
+    private let orderChoices: OrderActivityChoicesUseCase
 
     var selectedChoiceID: String? { activitySelection.choiceID }
     var selectedFragmentIDs: [String] { activitySelection.orderedFragmentIDs }
@@ -41,12 +48,28 @@ final class LearningJourneyViewModel {
         loadJourney: LoadLearningJourneyUseCase,
         submitAnswer: SubmitLessonAnswerUseCase,
         recordAttempt: RecordLearningAttemptUseCase,
-        calculateProgressEvents: CalculateLearningProgressEventsUseCase
+        calculateProgressEvents: CalculateLearningProgressEventsUseCase,
+        orderChoices: OrderActivityChoicesUseCase = OrderActivityChoicesUseCase(
+            randomizer: IdentityChoiceOrder()
+        )
     ) {
         self.loadJourney = loadJourney
         self.submitAnswer = submitAnswer
         self.recordAttempt = recordAttempt
         self.calculateProgressEvents = calculateProgressEvents
+        self.orderChoices = orderChoices
+    }
+
+    /// The answers for `lesson` in display order. Deterministic for a given
+    /// lesson and `choiceOrderRevision`, so a redraw never reorders anything.
+    func orderedChoices(for lesson: LearningLesson) -> [LearningChoice] {
+        orderChoices.execute(
+            lesson.activity.choices,
+            seed: OrderActivityChoicesUseCase.seed(
+                questionID: lesson.id,
+                attemptNumber: choiceOrderRevision
+            )
+        )
     }
 
     func load() {
@@ -55,6 +78,8 @@ final class LearningJourneyViewModel {
         attemptResult = nil
         progressEvents = []
         recentlyUnlockedLessonID = nil
+        choiceOrderRevision = 0
+        orderedQuestionID = nil
 
         do {
             journey = try loadJourney.execute()
@@ -157,6 +182,15 @@ final class LearningJourneyViewModel {
     func resetAttempt() {
         activitySelection.reset()
         attemptResult = nil
+    }
+
+    /// Starts an attempt at `lessonID`. Safe to call repeatedly for the same
+    /// lesson: the answer order only changes when the lesson does.
+    func beginAttempt(lessonID: String) {
+        resetAttempt()
+        guard orderedQuestionID != lessonID else { return }
+        orderedQuestionID = lessonID
+        choiceOrderRevision += 1
     }
 
     func nextLesson(after lessonID: String) -> LearningLesson? {

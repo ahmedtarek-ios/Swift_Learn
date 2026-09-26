@@ -7,6 +7,11 @@ struct GitCommandChallengeView: View {
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.learnerMotionPreference) private var motionPreference
 
+    /// Display order for this question, decided by Domain.
+    private var orderedChoices: [GitCommandChoice] {
+        viewModel.orderedChoices(for: lesson)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
@@ -36,7 +41,7 @@ struct GitCommandChallengeView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    ForEach(lesson.choices) { choice in
+                    ForEach(orderedChoices) { choice in
                         Button {
                             viewModel.select(choiceID: choice.id)
                         } label: {
@@ -51,6 +56,9 @@ struct GitCommandChallengeView: View {
                                 : Color.secondary
                         )
                         .disabled(viewModel.answerResult != nil)
+#if os(macOS)
+                        .focusable()
+#endif
                         .focused($focusedChoiceID, equals: choice.id)
                         .accessibilityIdentifier("git-choice-\(choice.id)")
                         .accessibilityValue(
@@ -60,13 +68,17 @@ struct GitCommandChallengeView: View {
                         )
                     }
                 }
-                .defaultFocus($focusedChoiceID, lesson.choices.first?.id)
+                .defaultFocus($focusedChoiceID, orderedChoices.first?.id)
 
                 Button("Check Command") {
                     viewModel.submit(lessonID: lesson.id)
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(!viewModel.canSubmit(lessonID: lesson.id))
+#if os(macOS)
+                .focusable()
+                .focused($focusedChoiceID, equals: "__submit-git-answer")
+#endif
                 .accessibilityIdentifier("submit-git-answer")
 
                 if let result = viewModel.answerResult {

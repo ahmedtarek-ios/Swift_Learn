@@ -17,18 +17,51 @@ final class SupplementalTracksViewModel {
     private(set) var resultByLessonID: [String: SupplementalPracticeResult] = [:]
     private(set) var labSelectionByLessonID: [String: LearningActivitySelection] = [:]
     private(set) var labResultByLessonID: [String: SupplementalPracticeResult] = [:]
+    /// Bumped only by the explicit Reset control. Loading the tracks must not
+    /// advance it: the discovery screen reloads while practices are on screen.
+    private(set) var choiceOrderRevision = 0
     private let loadTracks: LoadSupplementalTracksUseCase
     private let evaluatePractice: EvaluateSupplementalPracticeUseCase
     private let evaluateLab: EvaluateSupplementalAuthoredLabUseCase
+    private let orderChoices: OrderActivityChoicesUseCase
 
     init(
         loadTracks: LoadSupplementalTracksUseCase,
         evaluatePractice: EvaluateSupplementalPracticeUseCase,
-        evaluateLab: EvaluateSupplementalAuthoredLabUseCase
+        evaluateLab: EvaluateSupplementalAuthoredLabUseCase,
+        orderChoices: OrderActivityChoicesUseCase = OrderActivityChoicesUseCase(
+            randomizer: IdentityChoiceOrder()
+        )
     ) {
         self.loadTracks = loadTracks
         self.evaluatePractice = evaluatePractice
         self.evaluateLab = evaluateLab
+        self.orderChoices = orderChoices
+    }
+
+    /// Practice answers for `lesson` in display order. Deterministic for a given
+    /// lesson and `choiceOrderRevision`, so a redraw never reorders anything.
+    func orderedPracticeChoices(
+        for lesson: SupplementalLesson
+    ) -> [SupplementalPracticeChoice] {
+        orderChoices.execute(
+            lesson.practice.choices,
+            seed: OrderActivityChoicesUseCase.seed(
+                questionID: lesson.id,
+                attemptNumber: choiceOrderRevision
+            )
+        )
+    }
+
+    func orderedLabChoices(for lesson: SupplementalLesson) -> [LearningChoice] {
+        guard let activity = lesson.lab?.activity else { return [] }
+        return orderChoices.execute(
+            activity.choices,
+            seed: OrderActivityChoicesUseCase.seed(
+                questionID: "\(lesson.id)#lab",
+                attemptNumber: choiceOrderRevision
+            )
+        )
     }
 
     func load() {
@@ -56,6 +89,7 @@ final class SupplementalTracksViewModel {
     }
 
     func resetPractice(for lessonID: String) {
+        choiceOrderRevision += 1
         selectedChoiceByLessonID[lessonID] = nil
         resultByLessonID[lessonID] = nil
         labSelectionByLessonID[lessonID] = nil

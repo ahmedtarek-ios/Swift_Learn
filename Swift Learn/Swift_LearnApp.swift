@@ -58,6 +58,11 @@ struct Swift_LearnApp: App {
         let initialDiscoveryQuery = processInfo.arguments.first {
             $0.hasPrefix("--ui-testing-discovery-query=")
         }?.split(separator: "=", maxSplits: 1).last.map(String.init) ?? ""
+        // UI tests that press Right N times to reach a known answer need the
+        // authored order; everything else sees the shuffled order.
+        let usesFixedChoiceOrder = processInfo.arguments.contains(
+            "--ui-testing-fixed-choice-order"
+        )
         forcesRightToLeftLayout = processInfo.arguments.contains(
             "--ui-testing-rtl"
         )
@@ -87,6 +92,7 @@ struct Swift_LearnApp: App {
                 failsGitReset: failsGitReset,
                 failsFirstBossCompletionSave: failsFirstBossCompletionSave,
                 initialDiscoveryQuery: initialDiscoveryQuery,
+                usesFixedChoiceOrder: usesFixedChoiceOrder,
                 clock: clock,
                 idGenerator: idGenerator
             )

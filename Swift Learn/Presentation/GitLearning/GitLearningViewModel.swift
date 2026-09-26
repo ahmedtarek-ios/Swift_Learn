@@ -27,19 +27,40 @@ final class GitLearningViewModel {
     private(set) var answerResult: GitAnswerResult?
     private(set) var recentlyUnlockedLessonID: String?
     private(set) var navigationRevision = 0
+    /// Bumped when the question being ordered changes, so re-opening the same
+    /// question never reorders the commands mid-attempt.
+    private(set) var choiceOrderRevision = 0
+    private var orderedQuestionID: String?
 
     private let loadTrack: LoadGitLearningTrackUseCase
     private let submitAnswer: SubmitGitAnswerUseCase
     private let resetProgress: ResetGitTrackProgressUseCase
+    private let orderChoices: OrderActivityChoicesUseCase
 
     init(
         loadTrack: LoadGitLearningTrackUseCase,
         submitAnswer: SubmitGitAnswerUseCase,
-        resetProgress: ResetGitTrackProgressUseCase
+        resetProgress: ResetGitTrackProgressUseCase,
+        orderChoices: OrderActivityChoicesUseCase = OrderActivityChoicesUseCase(
+            randomizer: IdentityChoiceOrder()
+        )
     ) {
         self.loadTrack = loadTrack
         self.submitAnswer = submitAnswer
         self.resetProgress = resetProgress
+        self.orderChoices = orderChoices
+    }
+
+    /// The commands for `lesson` in display order. Deterministic for a given
+    /// lesson and `choiceOrderRevision`, so a redraw never reorders anything.
+    func orderedChoices(for lesson: GitCommandLesson) -> [GitCommandChoice] {
+        orderChoices.execute(
+            lesson.choices,
+            seed: OrderActivityChoicesUseCase.seed(
+                questionID: lesson.id,
+                attemptNumber: choiceOrderRevision
+            )
+        )
     }
 
     var track: GitLearningTrack? {
@@ -86,12 +107,21 @@ final class GitLearningViewModel {
     func open(lessonID: String) {
         guard let track, track.isUnlocked(lessonID: lessonID),
               let lesson = track.catalog.lesson(id: lessonID) else { return }
+        if orderedQuestionID != lessonID {
+            orderedQuestionID = lessonID
+            choiceOrderRevision += 1
+        }
         currentLesson = lesson
         selectedChoiceID = nil
         answerResult = nil
     }
 
+    /// Called from the challenge view's `onAppear`, which SwiftUI fires again
+    /// for the question already on screen. Opening it again would clear the
+    /// learner's selected command and any feedback, so only a change of
+    /// question starts a new attempt.
     func beginLesson(id lessonID: String) {
+        guard currentLesson?.id != lessonID else { return }
         open(lessonID: lessonID)
     }
 

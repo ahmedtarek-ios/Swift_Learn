@@ -104,6 +104,7 @@ struct ReviewQueueView: View {
 
             LearningActivityRenderer(
                 activity: item.lesson.activity,
+                orderedChoices: viewModel.orderedChoices(for: item),
                 selectedChoiceID: viewModel.selectedChoiceID,
                 codeIdentifier: "review-code",
                 choiceIdentifierPrefix: "review-choice-",

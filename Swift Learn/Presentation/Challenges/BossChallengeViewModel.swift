@@ -28,21 +28,42 @@ final class BossChallengeViewModel {
     private(set) var errorMessage: String?
     private(set) var completionSaveError: String?
     private(set) var attemptRevision = 0
+    /// Bumped when the challenge being ordered changes. `startSession()` runs
+    /// from `onAppear`, which SwiftUI may fire again for the same challenge.
+    private(set) var choiceOrderRevision = 0
+    private var orderedQuestionID: String?
 
     private let loadChallenge: LoadBossChallengeUseCase
     private let submitAnswer: SubmitBossChallengeAnswerUseCase
     private let completeChallenge: CompleteBossChallengeUseCase
+    private let orderChoices: OrderActivityChoicesUseCase
 
     init(
         levelID: String,
         loadChallenge: LoadBossChallengeUseCase,
         submitAnswer: SubmitBossChallengeAnswerUseCase,
-        completeChallenge: CompleteBossChallengeUseCase
+        completeChallenge: CompleteBossChallengeUseCase,
+        orderChoices: OrderActivityChoicesUseCase = OrderActivityChoicesUseCase(
+            randomizer: IdentityChoiceOrder()
+        )
     ) {
         self.levelID = levelID
         self.loadChallenge = loadChallenge
         self.submitAnswer = submitAnswer
         self.completeChallenge = completeChallenge
+        self.orderChoices = orderChoices
+    }
+
+    /// The answers for `item` in display order. Deterministic for a given item
+    /// and `choiceOrderRevision`, so a redraw never reorders anything.
+    func orderedChoices(for item: BossChallengeItem) -> [LearningChoice] {
+        orderChoices.execute(
+            item.lesson.activity.choices,
+            seed: OrderActivityChoicesUseCase.seed(
+                questionID: item.id,
+                attemptNumber: choiceOrderRevision
+            )
+        )
     }
 
     func load() {
@@ -56,7 +77,14 @@ final class BossChallengeViewModel {
         }
     }
 
+    /// Called from `onAppear`, which SwiftUI fires again for the challenge
+    /// already on screen. Restarting then would discard answers the learner
+    /// has already given, so only a new challenge starts a session.
     func startSession() {
+        let questionID = availability?.challenge.items.first?.id
+        guard orderedQuestionID != questionID || result != nil else { return }
+        orderedQuestionID = questionID
+        choiceOrderRevision += 1
         selectedChoiceID = nil
         currentItemIndex = 0
         answerResults = []

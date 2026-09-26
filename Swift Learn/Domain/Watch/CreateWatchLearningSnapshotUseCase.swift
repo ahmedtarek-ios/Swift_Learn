@@ -7,6 +7,7 @@ struct CreateWatchLearningSnapshotUseCase {
     private let loadReviewQueue: LoadReviewQueueUseCase
     private let loadSyncSnapshot: LoadLearningSyncSnapshotUseCase
     private let loadMasteryOverview: LoadMasteryOverviewUseCase
+    private let orderChoices: OrderActivityChoicesUseCase
     private let clock: any LearningClock
 
     init(
@@ -15,6 +16,9 @@ struct CreateWatchLearningSnapshotUseCase {
         loadReviewQueue: LoadReviewQueueUseCase,
         loadSyncSnapshot: LoadLearningSyncSnapshotUseCase,
         loadMasteryOverview: LoadMasteryOverviewUseCase,
+        orderChoices: OrderActivityChoicesUseCase = OrderActivityChoicesUseCase(
+            randomizer: IdentityChoiceOrder()
+        ),
         clock: any LearningClock
     ) {
         self.loadJourney = loadJourney
@@ -22,6 +26,7 @@ struct CreateWatchLearningSnapshotUseCase {
         self.loadReviewQueue = loadReviewQueue
         self.loadSyncSnapshot = loadSyncSnapshot
         self.loadMasteryOverview = loadMasteryOverview
+        self.orderChoices = orderChoices
         self.clock = clock
     }
 
@@ -40,7 +45,14 @@ struct CreateWatchLearningSnapshotUseCase {
             completedLessonCount: journey.completedLessonCount,
             totalLessonCount: journey.totalLessonCount,
             dueReviewCount: reviews.count,
-            reviewItems: reviews.compactMap(makeReviewSnapshot),
+            reviewItems: reviews.compactMap {
+                // Seeded on the reset generation, so a snapshot republished
+                // while the learner is answering keeps the same order.
+                makeReviewSnapshot(
+                    from: $0,
+                    attemptNumber: syncSnapshot.resetGeneration
+                )
+            },
             progressDetail: makeProgressDetail(
                 journey: journey,
                 mastery: try loadMasteryOverview.execute()
@@ -82,7 +94,8 @@ struct CreateWatchLearningSnapshotUseCase {
     }
 
     private func makeReviewSnapshot(
-        from item: ReviewItem
+        from item: ReviewItem,
+        attemptNumber: Int
     ) -> WatchReviewItemSnapshot? {
         let activity = item.lesson.activity
         guard let correctChoiceID = activity.correctChoiceID,
@@ -99,9 +112,15 @@ struct CreateWatchLearningSnapshotUseCase {
             ).rawValue,
             title: item.skill.title,
             prompt: activity.prompt,
-            choices: activity.choices.map {
-                WatchReviewChoiceSnapshot(id: $0.id, text: $0.code)
-            },
+            choices: orderChoices.execute(
+                activity.choices.map {
+                    WatchReviewChoiceSnapshot(id: $0.id, text: $0.code)
+                },
+                seed: OrderActivityChoicesUseCase.seed(
+                    questionID: item.lesson.id,
+                    attemptNumber: attemptNumber
+                )
+            ),
             correctChoiceID: correctChoiceID,
             correctFeedback: item.lesson.correctFeedback,
             incorrectFeedback: item.lesson.incorrectFeedback

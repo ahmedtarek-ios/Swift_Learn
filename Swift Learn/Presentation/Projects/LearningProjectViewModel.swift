@@ -27,18 +27,53 @@ final class LearningProjectViewModel {
     private(set) var submission: LearningProjectSubmission?
     private(set) var errorMessage: String?
     private(set) var attemptRevision = 0
+    /// Bumped when the project being ordered changes. `startSession()` runs
+    /// from `onAppear`, which SwiftUI may fire again for the same project.
+    private(set) var choiceOrderRevision = 0
+    private var orderedQuestionID: String?
 
     private let loadProject: LoadLearningProjectUseCase
     private let submitProject: SubmitLearningProjectUseCase
+    private let orderChoices: OrderActivityChoicesUseCase
 
     init(
         projectID: String,
         loadProject: LoadLearningProjectUseCase,
-        submitProject: SubmitLearningProjectUseCase
+        submitProject: SubmitLearningProjectUseCase,
+        orderChoices: OrderActivityChoicesUseCase = OrderActivityChoicesUseCase(
+            randomizer: IdentityChoiceOrder()
+        )
     ) {
         self.projectID = projectID
         self.loadProject = loadProject
         self.submitProject = submitProject
+        self.orderChoices = orderChoices
+    }
+
+    /// The answers for `requirement` in display order. Deterministic for a given
+    /// requirement and `choiceOrderRevision`, so a redraw never reorders anything.
+    func orderedChoices(
+        for requirement: LearningProjectRequirement
+    ) -> [LearningChoice] {
+        orderChoices.execute(
+            requirement.lesson.activity.choices,
+            seed: OrderActivityChoicesUseCase.seed(
+                questionID: requirement.id,
+                attemptNumber: choiceOrderRevision
+            )
+        )
+    }
+
+    func orderedValidationChoices(
+        for activity: LearningActivity
+    ) -> [LearningChoice] {
+        orderChoices.execute(
+            activity.choices,
+            seed: OrderActivityChoicesUseCase.seed(
+                questionID: projectID,
+                attemptNumber: choiceOrderRevision
+            )
+        )
     }
 
     func load() {
@@ -52,7 +87,14 @@ final class LearningProjectViewModel {
         }
     }
 
+    /// Called from `onAppear`, which SwiftUI fires again for the project
+    /// already on screen. Restarting then would discard requirements the
+    /// learner has already answered, so only a new project starts a session.
     func startSession() {
+        let questionID = availability?.project.requirements.first?.id
+        guard orderedQuestionID != questionID || submission != nil else { return }
+        orderedQuestionID = questionID
+        choiceOrderRevision += 1
         currentRequirementIndex = 0
         selectedChoiceID = nil
         responses = []

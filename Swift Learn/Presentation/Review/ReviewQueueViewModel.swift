@@ -23,9 +23,15 @@ final class ReviewQueueViewModel {
     private(set) var activitySelection = LearningActivitySelection()
     private(set) var attemptResult: LessonAttemptResult?
     private(set) var isSessionComplete = false
+    /// Bumped when the question being ordered changes. `load()` runs again on
+    /// every journey attempt, so keying on the question is what stops the
+    /// answers reordering under the learner mid-review.
+    private(set) var choiceOrderRevision = 0
+    private var orderedQuestionID: String?
 
     private let loadReviewQueue: LoadReviewQueueUseCase
     private let completeReview: CompleteReviewUseCase
+    private let orderChoices: OrderActivityChoicesUseCase
 
     var selectedChoiceID: String? { activitySelection.choiceID }
     var selectedFragmentIDs: [String] { activitySelection.orderedFragmentIDs }
@@ -34,10 +40,26 @@ final class ReviewQueueViewModel {
 
     init(
         loadReviewQueue: LoadReviewQueueUseCase,
-        completeReview: CompleteReviewUseCase
+        completeReview: CompleteReviewUseCase,
+        orderChoices: OrderActivityChoicesUseCase = OrderActivityChoicesUseCase(
+            randomizer: IdentityChoiceOrder()
+        )
     ) {
         self.loadReviewQueue = loadReviewQueue
         self.completeReview = completeReview
+        self.orderChoices = orderChoices
+    }
+
+    /// The answers for `item` in display order. Deterministic for a given
+    /// lesson and `choiceOrderRevision`, so a redraw never reorders anything.
+    func orderedChoices(for item: ReviewItem) -> [LearningChoice] {
+        orderChoices.execute(
+            item.lesson.activity.choices,
+            seed: OrderActivityChoicesUseCase.seed(
+                questionID: item.lesson.id,
+                attemptNumber: choiceOrderRevision
+            )
+        )
     }
 
     func load() {
@@ -47,6 +69,7 @@ final class ReviewQueueViewModel {
             activitySelection.reset()
             attemptResult = nil
             isSessionComplete = false
+            advanceChoiceOrderIfQuestionChanged()
             loadState = .loaded
         } catch {
             loadState = .failed(error.localizedDescription)
@@ -89,6 +112,13 @@ final class ReviewQueueViewModel {
     func resetSelection() {
         activitySelection.reset()
         attemptResult = nil
+    }
+
+    private func advanceChoiceOrderIfQuestionChanged() {
+        let questionID = items.first?.lesson.id
+        guard orderedQuestionID != questionID else { return }
+        orderedQuestionID = questionID
+        choiceOrderRevision += 1
     }
 
     var canSubmitCurrentItem: Bool {
