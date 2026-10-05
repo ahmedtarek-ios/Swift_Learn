@@ -86,20 +86,20 @@ struct GitLearningViewModelTests {
     }
 
     @Test
-    func beginningACommandClearsStaleSelectionAndFeedback() throws {
+    func beginningTheCurrentCommandPreservesSelectionAndFeedback() throws {
         let harness = try Harness()
         harness.viewModel.load()
         let first = try #require(harness.viewModel.currentLesson)
         let wrong = try #require(first.choices.first { $0.id != first.correctChoiceID })
         harness.viewModel.select(choiceID: wrong.id)
         harness.viewModel.submit(lessonID: first.id)
-        #expect(harness.viewModel.answerResult != nil)
+        let answerResult = try #require(harness.viewModel.answerResult)
 
         harness.viewModel.beginLesson(id: first.id)
 
         #expect(harness.viewModel.currentLesson?.id == first.id)
-        #expect(harness.viewModel.selectedChoiceID == nil)
-        #expect(harness.viewModel.answerResult == nil)
+        #expect(harness.viewModel.selectedChoiceID == wrong.id)
+        #expect(harness.viewModel.answerResult == answerResult)
         #expect(harness.viewModel.canSubmit(lessonID: first.id) == false)
     }
 

@@ -1993,6 +1993,8 @@ final class Swift_LearnUITests: XCTestCase {
 #if os(tvOS)
         moveFocus(to: element, in: app)
         XCUIRemote.shared.press(.select)
+#elseif os(visionOS)
+        element.tap()
 #else
         app.activate()
         tapReliably(element)
@@ -2120,6 +2122,12 @@ final class Swift_LearnUITests: XCTestCase {
 
         for _ in 0..<12 where !tabs.contains(where: \.hasFocus) {
             remote.press(.up)
+        }
+        if !tabs.contains(where: \.hasFocus) {
+            remote.press(.menu)
+            for _ in 0..<4 where !tabs.contains(where: \.hasFocus) {
+                remote.press(.up)
+            }
         }
 
         for _ in 0..<2 where !tab.hasFocus {
@@ -2256,6 +2264,14 @@ final class Swift_LearnUITests: XCTestCase {
         for _ in 0..<max(20, maxMoves) where !element.exists {
             remote.press(.up)
         }
+#elseif os(visionOS)
+        let scrollView = visionScrollView(in: app)
+        for _ in 0..<maxMoves where !element.exists {
+            scrollView.swipeUp()
+        }
+        for _ in 0..<maxMoves where !element.exists {
+            scrollView.swipeDown()
+        }
 #else
         XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 5))
 
@@ -2286,6 +2302,17 @@ final class Swift_LearnUITests: XCTestCase {
         )
 #elseif os(tvOS)
         reveal(element, in: app)
+#elseif os(visionOS)
+        _ = element.waitForExistence(timeout: 2)
+        let scrollView = visionScrollView(in: app)
+        for _ in 0..<maxMoves where !element.isHittable {
+            scrollView.swipeUp()
+        }
+        for _ in 0..<maxMoves where !element.isHittable {
+            scrollView.swipeDown()
+        }
+        XCTAssertTrue(element.waitForExistence(timeout: 5))
+        XCTAssertTrue(element.isHittable)
 #else
         _ = element.waitForExistence(timeout: 2)
         XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 5))
@@ -2321,10 +2348,23 @@ final class Swift_LearnUITests: XCTestCase {
 #elseif !os(tvOS)
         XCTAssertTrue(app.scrollViews.firstMatch.waitForExistence(timeout: 5))
         for _ in 0..<16 {
+#if os(visionOS)
+            visionScrollView(in: app).swipeDown()
+#else
             app.swipeDown()
+#endif
         }
 #endif
     }
+
+#if os(visionOS)
+    @MainActor
+    private func visionScrollView(in app: XCUIApplication) -> XCUIElement {
+        let scrollView = app.scrollViews.firstMatch
+        XCTAssertTrue(scrollView.waitForExistence(timeout: 5))
+        return scrollView
+    }
+#endif
 
 #if os(macOS)
     @MainActor
